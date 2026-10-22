@@ -1,22 +1,17 @@
 # SyncDrive Server
 
-The server is a single ASP.NET Core process in a Linux container. It stores metadata in an embedded SQLite database and file content
-as content-addressed blocks on disk, and serves the REST API under `/api/v1` and the web interface under `/` — all on one port.
+Reference for running the server. Installation with Docker Compose or `docker run` is in the [README](../README.md#usage).
 
-Every release publishes a multi-arch image (`linux/amd64`, `linux/arm64`) on Docker Hub:
-
-| Image | Tags |
-|---|---|
-| [`magpeek/syncdrive-server`](https://hub.docker.com/r/magpeek/syncdrive-server) | `latest` (newest release), `<version>` (e.g. `0.18.5`) |
+| Image | Tags | Platforms |
+|---|---|---|
+| [`magpeek/syncdrive-server`](https://hub.docker.com/r/magpeek/syncdrive-server) | `latest`, `<version>` | `linux/amd64`, `linux/arm64` |
 
 | Port in the container | Protocol | When |
 |---|---|---|
 | **8080** | HTTP | always (also used by the health check) |
 | **8443** | HTTPS | only when a certificate is configured, see [HTTPS](#https) |
 
-- [Requirements](#requirements)
-- [Docker Compose](#docker-compose)
-- [docker run](#docker-run)
+- [Docker Compose variables](#docker-compose-variables)
 - [HTTPS](#https)
 - [Configuration variables](#configuration-variables)
 - [Backup and restore](#backup-and-restore)
@@ -24,47 +19,9 @@ Every release publishes a multi-arch image (`linux/amd64`, `linux/arm64`) on Doc
 - [Health and version](#health-and-version)
 - [Troubleshooting](#troubleshooting)
 
-## Requirements
+## Docker Compose variables
 
-- Linux host (x64 or arm64) with Docker 24+ and the Compose plugin (`docker compose version`). A NAS with Docker works as well.
-- A **local** volume for `/data` (ext4, btrfs, xfs …). SQLite in WAL mode must not live on NFS or SMB shares.
-
-## Docker Compose
-
-The folder **[`docker/`](../docker)** contains a ready-to-run example. Copy `docker-compose.yml` and `.env.example` to the
-server, e.g. to `/opt/syncdrive`:
-
-```yaml
-services:
-  syncdrive:
-    image: magpeek/syncdrive-server:${SYNCDRIVE_VERSION:-latest}
-    container_name: syncdrive
-    restart: unless-stopped
-    ports:
-      - "${SYNCDRIVE_PORT:-8080}:8080"          # the application listens on 8080 (HTTP) inside the container
-    environment:
-      TZ: ${TZ:-Europe/Berlin}
-      SYNCDRIVE_Server__AdminUserName: ${SYNCDRIVE_ADMIN_USER:-admin}
-      SYNCDRIVE_Server__AdminPassword: ${SYNCDRIVE_ADMIN_PASSWORD:?set SYNCDRIVE_ADMIN_PASSWORD in .env}
-      SYNCDRIVE_Server__RequireTls: "false"     # plain HTTP; HTTPS: see docs/server.md
-      SYNCDRIVE_Server__BackupDirectory: /backup
-      SYNCDRIVE_Server__BackupTime: ${SYNCDRIVE_BACKUP_TIME:-02:30}
-    volumes:
-      - syncdrive-data:/data
-      - syncdrive-backup:/backup
-    read_only: true
-    tmpfs:
-      - /tmp
-    security_opt:
-      - no-new-privileges:true
-    cap_drop: [ALL]
-
-volumes:
-  syncdrive-data:
-  syncdrive-backup:
-```
-
-Variables in `.env`:
+Variables in `.env` of the [Compose example](../docker):
 
 | Variable | Default | Meaning |
 |---|---|---|
@@ -75,40 +32,7 @@ Variables in `.env`:
 | `SYNCDRIVE_BACKUP_TIME` | `02:30` | Time of the nightly backup (`HH:mm`, in `TZ`) |
 | `SYNCDRIVE_VERSION` | `latest` | Image tag; pin a version for controlled updates |
 
-Start:
-
-```bash
-cd /opt/syncdrive
-cp .env.example .env
-nano .env                       # set SYNCDRIVE_ADMIN_PASSWORD
-docker compose up -d
-docker compose ps               # STATUS shows "healthy" after a few seconds
-```
-
-Open `http://<server>:8080/` and sign in as `admin`. The administrator is created on the first start only (when no user exists
-yet); afterwards you can remove the password from `.env` and change it in the web interface. Further users, groups and team folders
-are created in the account menu → *Administration*.
-
-In the Windows client enter the address with scheme and port, e.g. `http://drive.example.lan:8080` (without a scheme the client assumes
-HTTPS).
-
-## docker run
-
-The same without Compose:
-
-```bash
-docker run -d --name syncdrive --restart unless-stopped \
-  -p 8080:8080 \
-  -v syncdrive-data:/data \
-  -v syncdrive-backup:/backup \
-  -e TZ=Europe/Berlin \
-  -e SYNCDRIVE_Server__RequireTls=false \
-  -e SYNCDRIVE_Server__AdminUserName=admin \
-  -e SYNCDRIVE_Server__AdminPassword='a-long-admin-password' \
-  -e SYNCDRIVE_Server__BackupDirectory=/backup \
-  --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges \
-  magpeek/syncdrive-server:latest
-```
+The data volume must be on a local disk (ext4, btrfs, xfs …), not on an NFS or SMB share.
 
 ## HTTPS
 

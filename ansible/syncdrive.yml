@@ -1,0 +1,59 @@
+# Deploys the SyncDrive server as a Docker container. Usage: see README.md in this folder.
+- name: Deploy SyncDrive server
+  hosts: syncdrive
+  become: true
+  vars:
+    syncdrive_version: latest
+    syncdrive_port: 8080
+    syncdrive_admin_user: admin
+    syncdrive_admin_password: "{{ lookup('env', 'SYNCDRIVE_ADMIN_PASSWORD') }}"
+    syncdrive_require_tls: false           # true behind a reverse proxy or with a certificate
+    syncdrive_timezone: Europe/Berlin
+    syncdrive_backup_time: "02:30"
+    syncdrive_extra_env: {}                # further SYNCDRIVE_Server__* variables
+  tasks:
+    - name: Check the administrator password
+      ansible.builtin.assert:
+        that: syncdrive_admin_password | length > 0
+        fail_msg: Set syncdrive_admin_password (e.g. with ansible-vault) or the environment variable SYNCDRIVE_ADMIN_PASSWORD.
+
+    - name: Create volumes
+      community.docker.docker_volume:
+        name: "{{ item }}"
+      loop: [syncdrive-data, syncdrive-backup]
+
+    - name: Run the SyncDrive container
+      community.docker.docker_container:
+        name: syncdrive
+        image: "magpeek/syncdrive-server:{{ syncdrive_version }}"
+        pull: true
+        restart_policy: unless-stopped
+        published_ports:
+          - "{{ syncdrive_port }}:8080"
+        env: "{{ syncdrive_base_env | combine(syncdrive_extra_env) }}"
+        volumes:
+          - syncdrive-data:/data
+          - syncdrive-backup:/backup
+        read_only: true
+        tmpfs:
+          - /tmp
+        cap_drop: [ALL]
+        security_opts:
+          - no-new-privileges:true
+      vars:
+        syncdrive_base_env:
+          TZ: "{{ syncdrive_timezone }}"
+          SYNCDRIVE_Server__AdminUserName: "{{ syncdrive_admin_user }}"
+          SYNCDRIVE_Server__AdminPassword: "{{ syncdrive_admin_password }}"
+          SYNCDRIVE_Server__RequireTls: "{{ syncdrive_require_tls | string | lower }}"
+          SYNCDRIVE_Server__BackupDirectory: /backup
+          SYNCDRIVE_Server__BackupTime: "{{ syncdrive_backup_time }}"
+      no_log: true
+
+    - name: Wait until the server is healthy
+      community.docker.docker_container_info:
+        name: syncdrive
+      register: info
+      until: info.container.State.Health.Status == 'healthy'
+      retries: 30
+      delay: 2

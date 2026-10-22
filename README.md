@@ -9,83 +9,53 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/MAGPEEK/SyncDrive/actions/workflows/ci.yml"><img src="https://github.com/MAGPEEK/SyncDrive/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/MAGPEEK/SyncDrive/releases"><img src="https://img.shields.io/github/v/release/MAGPEEK/SyncDrive?include_prereleases&label=release" alt="Release"></a>
-  <a href="https://hub.docker.com/r/magpeek/syncdrive-server"><img src="https://img.shields.io/docker/v/magpeek/syncdrive-server?sort=semver&label=docker" alt="Docker Hub"></a>
+  <a href="https://hub.docker.com/r/magpeek/syncdrive-server"><img src="https://img.shields.io/docker/pulls/magpeek/syncdrive-server?label=docker%20pulls" alt="Docker pulls"></a>
+  <a href="https://hub.docker.com/r/magpeek/syncdrive-server/tags"><img src="https://img.shields.io/docker/v/magpeek/syncdrive-server?sort=semver&label=image" alt="Docker image"></a>
+  <a href="https://github.com/MAGPEEK/SyncDrive/releases"><img src="https://img.shields.io/github/v/release/MAGPEEK/SyncDrive?include_prereleases&label=client" alt="Client release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
 </p>
 
----
+# What is SyncDrive?
 
-## Introduction
+SyncDrive keeps your files on your own server — a NAS, a mini PC or a small VPS — and in sync on your Windows PCs. Share folders
+and links, restore earlier versions, and reach everything from the browser.
 
-SyncDrive is an open-source file synchronization and sharing system that you run on your own hardware. A small server in a
-Linux container keeps your files; a Windows client keeps local folders in sync with it; a web interface gives you access from
-any browser. Your data never leaves your server.
-
-SyncDrive is built for homes and small teams who want the comfort of a cloud drive without handing their files to a cloud
-provider: a NAS, a mini PC or a small VPS is all it takes.
-
-With SyncDrive you can
-
-- **sync folders** between your PCs and the server — two-way, upload-only (backup) or download-only, with as many sync tasks as you like;
-- **keep files online-only** and download them on demand when you open them, so a laptop can see terabytes without storing them
-  (Windows Cloud Files, with status icons and "Always keep on this device" / "Free up space" in Explorer);
-- **work from Explorer**: status icons, a SyncDrive context menu, browse and restore previous versions, lock files while you edit them;
-- **use the web interface**: browse, upload by drag & drop, download files or whole folders as ZIP, search, recently changed files,
-  recycle bin, versions, starred files, labels, notifications and image previews;
-- **share** folders with other users (viewer, editor, manager …), create **public links** with password and expiry date, and
-  collect files from anyone with **file requests**;
-- **work in teams** with groups and team folders that belong to the organization rather than one person;
-- **administer** users, storage quotas, groups, team folders, sharing policies and the sign-in page from the browser;
-- **sleep well**: every change creates a version, deleted files go to a recycle bin, conflicts are kept side by side, and the server
-  backs itself up every night.
-
-## Screenshots
+- **Sync** folders two-way, upload-only or download-only; keep files **online-only** and fetch them when opened.
+- **Web interface** to browse, upload, download, search, preview images and restore from the recycle bin or versions.
+- **Share** with other users, groups and team folders, via public links with password and expiry, or collect files with file requests.
+- **Administer** users, quotas and sharing policies in the browser. Nightly backup included.
 
 <p align="center">
-  <img src="docs/images/web-files.png" width="900" alt="File list with image previews"><br>
-  <em>Web interface: files with image previews, categories, labels and the action bar</em>
+  <img src="docs/images/web-files.png" width="860" alt="SyncDrive web interface">
 </p>
 
-<p align="center">
-  <img src="docs/images/web-share.png" width="440" alt="Share dialog">
-  <img src="docs/images/web-signin.png" width="440" alt="Sign-in page"><br>
-  <em>Sharing a folder with roles · sign-in page with your own server name and background</em>
-</p>
+# Requirements
 
-## Components
+- A Linux host (x64 or arm64) with Docker and the Compose plugin — a NAS with Docker works as well
+- A local disk for the data volume (not an NFS/SMB share)
 
-| Component | What it is | Runs on |
-|---|---|---|
-| **SyncDrive Server** | REST API, sync engine, block store (SQLite + files), web interface, daily backup | Linux container (Docker, Podman, any NAS with Docker) |
-| **SyncDrive Client** | Tray app, background service and Explorer integration; `syncdrive_cli` for scripts | Windows 10 (2004+) / Windows 11, x64 |
-| **Web interface** | Blazor WebAssembly app served by the server under `/` | Any current browser |
+# Usage
 
-## Getting started
+The server is a single container, [`magpeek/syncdrive-server`](https://hub.docker.com/r/magpeek/syncdrive-server). It listens on
+port **8080** and serves the web interface and the API for the clients.
 
-### 1. Set up the server with Docker
+## Docker Compose
 
-You need Docker with the Compose plugin on a Linux machine (or a NAS with Docker support). The server image is published on
-Docker Hub as **[`magpeek/syncdrive-server`](https://hub.docker.com/r/magpeek/syncdrive-server)** (`linux/amd64`, `linux/arm64`;
-tags `latest` and `<version>`).
-
-The application listens on port **8080** inside the container.
-
-**Docker Compose:** copy the example folder **[`docker/`](docker)** (`docker-compose.yml`, `.env.example`) to the server, then:
+Copy [`docker/docker-compose.yml`](docker/docker-compose.yml) and [`docker/.env.example`](docker/.env.example) to your server, then:
 
 ```bash
 cp .env.example .env
-nano .env                  # set SYNCDRIVE_ADMIN_PASSWORD (and the port, if 8080 is taken)
+nano .env                  # set SYNCDRIVE_ADMIN_PASSWORD
 docker compose up -d
 ```
 
-**Or with `docker run`:**
+## docker run
 
 ```bash
 docker run -d --name syncdrive --restart unless-stopped \
   -p 8080:8080 \
-  -v syncdrive-data:/data -v syncdrive-backup:/backup \
+  -v syncdrive-data:/data \
+  -v syncdrive-backup:/backup \
   -e SYNCDRIVE_Server__RequireTls=false \
   -e SYNCDRIVE_Server__AdminUserName=admin \
   -e SYNCDRIVE_Server__AdminPassword='a-long-admin-password' \
@@ -93,81 +63,56 @@ docker run -d --name syncdrive --restart unless-stopped \
   magpeek/syncdrive-server:latest
 ```
 
-Open `http://<server>:8080/` and sign in as `admin`. The administrator is created on the first start only.
+## Sign in
 
-Plain HTTP is fine on a trusted home network. Anywhere else, use HTTPS: either give the container a certificate (it then serves
-HTTPS itself on port 8443) or put it behind your reverse proxy. Both are described, together with all configuration variables,
-backup, updates and troubleshooting, in **[docs/server.md](docs/server.md)**.
+Open `http://<server>:8080/` and sign in as `admin`. The administrator is created on the first start; further users, groups and
+team folders are added in the account menu → *Administration*.
 
-### 2. Install the Windows client
+Plain HTTP is fine on a trusted home network. Otherwise enable HTTPS — directly in the container with your certificate, or behind a
+reverse proxy: see **[HTTPS](docs/server.md#https)**.
 
-Download the latest version from the **[Releases page](https://github.com/MAGPEEK/SyncDrive/releases/latest)**:
+# Configuration
 
-| Download | Use it for |
+Environment variables of the container:
+
+| Variable | Default | Description |
+|---|---|---|
+| `SYNCDRIVE_Server__AdminUserName` | — | Administrator created on the first start (only if no user exists yet) |
+| `SYNCDRIVE_Server__AdminPassword` | — | Password of that administrator |
+| `SYNCDRIVE_Server__AdminPasswordFile` | — | Alternative: file containing the password (Docker/Kubernetes secret) |
+| `SYNCDRIVE_Server__RequireTls` | `true` | Reject plain HTTP requests; set `false` for HTTP |
+| `SYNCDRIVE_Server__TrustForwardedHeaders` | `false` | Trust `X-Forwarded-*` headers — only behind a reverse proxy |
+| `SYNCDRIVE_Server__BackupDirectory` | — (off) | Target of the nightly backup, ideally another disk |
+| `SYNCDRIVE_Server__BackupTime` | `02:30` | Time of the backup (`HH:mm`, in `TZ`) |
+| `SYNCDRIVE_Server__BackupsToKeep` | `7` | Number of database snapshots kept |
+| `SYNCDRIVE_Server__MaxPublicUploadBytes` | `4294967296` | Largest file upload via file request link (4 GiB) |
+| `SYNCDRIVE_Server__MaxLongPollSeconds` | `60` | Longest wait for change notifications; keep below a proxy's timeout |
+| `TZ` | `UTC` | Time zone |
+
+Volumes: `/data` (required) and `/backup`. HTTPS variables, all further settings, backup and restore, updates and troubleshooting:
+**[docs/server.md](docs/server.md)**.
+
+# Desktop client
+
+<p>
+  <a href="https://github.com/MAGPEEK/SyncDrive/releases"><b>⬇ Download SyncDrive Client for Windows</b></a>
+  — Windows 10 (2004+) and 11, x64
+</p>
+
+| File | Use it for |
 |---|---|
-| `SyncDrive-Client-<version>-<build>-x64.exe` | Setup program — double-click and follow the wizard (recommended) |
-| `SyncDrive-Client-<version>-<build>-x64.msi` | Windows Installer package — for silent installs and software distribution (Intune, GPO, scripts) |
-| `SyncDrive-Client-<version>-<build>-x64.sha256` | SHA-256 checksums of both files |
+| `SyncDrive-Client-<version>-<build>-x64.exe` | Setup — double-click and follow the wizard |
+| `SyncDrive-Client-<version>-<build>-x64.msi` | Silent install and software distribution (Intune, GPO) |
 
-The client installs per user into `%LOCALAPPDATA%\Programs\SyncDrive` and needs **no administrator rights**. It brings its own .NET
-runtime. After installation the setup wizard opens: enter the server address, your user name and
-password, then choose a server folder and a local folder to sync. Enter the address with scheme and port as the server is
-reachable, e.g. `http://drive.example.lan:8080` or `https://drive.example.lan:8443`.
+No administrator rights needed. After installation, enter your server address — e.g. `http://drive.example.lan:8080` — and your
+user name. The installer also adds the command line tool `syncdrive_cli`. Details: **[docs/client.md](docs/client.md)**.
 
-Silent installation:
+# Other deployment methods
 
-```powershell
-msiexec /i SyncDrive-Client-<version>-<build>-x64.msi /qn LAUNCHAPP=0
-```
+- **Kubernetes** — manifests and an Ingress example in [`kubernetes/`](kubernetes)
+- **Ansible** — playbook in [`ansible/`](ansible)
+- **Build from source** — [docs/development.md](docs/development.md)
 
-Details, uninstalling and the command line are in **[docs/client.md](docs/client.md)**.
+# License
 
-### 3. Command line: `syncdrive_cli`
-
-The installer puts `syncdrive_cli.exe` on your `PATH`. It talks to the same background service as the tray app:
-
-```text
-syncdrive_cli connect drive.example.lan -u alice      # sign in (asks for the password)
-syncdrive_cli ls                                       # list your spaces
-syncdrive_cli sync D:\Projects -s sp_1234 -p Projects  # sync a server folder to a local folder
-syncdrive_cli status                                   # state of all sync tasks
-syncdrive_cli pause | resume [task-id]
-syncdrive_cli desync D:\Projects                       # stop syncing (local files stay)
-```
-
-Exit codes: `0` success, `1` failure, `2` wrong usage — handy for scripts.
-
-## Features in detail
-
-**Sync engine**
-- Content-defined chunking (FastCDC, 256 KiB – 4 MiB blocks): only changed blocks travel, identical content is stored once.
-- Live updates through long polling; changes on the server reach clients within seconds.
-- Rename and move detection, conflict copies that keep both versions, local recycle bin for files deleted by sync.
-- Filters for temporary files, maximum file size and path length, per-task folder selection.
-
-**Server**
-- Single process with embedded SQLite (WAL) and a content-addressed block store — no separate database or cache container needed.
-- Versions (10 per file by default), recycle bin, file locking, favorites, labels, notifications, image thumbnails.
-- Sharing with roles (Previewer, Viewer, Editor, Manager, Owner), public links, file requests, groups, team folders, sharing policies.
-- Admin console: users, quotas (`507` when exceeded), password resets, device management.
-- Nightly consistent backup (`VACUUM INTO` + incremental blocks), health endpoint, hardened container (read-only, no capabilities).
-
-**Security**
-- Passwords hashed with Argon2id; per-device tokens stored only as hashes and revocable from the web interface.
-- HTTPS directly in the container or behind a reverse proxy; clients can pin self-signed certificates.
-- Brute-force protection for sign-in and link passwords (`429` with `Retry-After`).
-- Blocks are scoped per space: knowing a hash never gives access to someone else's file.
-
-## Development
-
-You only need this to work on SyncDrive itself; for running it, the Docker image and the release downloads are enough.
-Building, tests and the project structure are described in **[docs/development.md](docs/development.md)**.
-
-## Versioning
-
-SyncDrive follows [Semantic Versioning](https://semver.org/). Until 1.0.0 the protocol may still change between minor versions.
-See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
-
-## License
-
-SyncDrive is released under the [MIT License](LICENSE).
+[MIT](LICENSE)

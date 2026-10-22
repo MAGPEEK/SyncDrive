@@ -5,6 +5,23 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.18.6] – 2026-10-22 – Schlankes README, Kubernetes und Ansible
+
+### Hinzugefügt
+- `kubernetes/`: Manifeste (Namespace, Volumes, Deployment mit einer Replik, Service auf 8080) und ein Ingress-Beispiel mit TLS; in einem
+  k3s-Testcluster ausgerollt und angemeldet.
+- `ansible/`: Playbook, das den Dienst als Docker-Container ausrollt (Volumes, Container, Warten auf „healthy“), mit Beispiel-Inventar;
+  gegen Docker getestet.
+
+### Geändert
+- README nach dem Muster von passbolt_docker: kurze Einleitung, Voraussetzungen, Docker Compose und `docker run`, Variablentabelle,
+  deutlicher Download-Link für den Windows-Client, Kubernetes, Ansible und Bauen aus dem Quellcode als nachgelagerte Wege. Entfernt:
+  Komponenten, technische Funktionsdetails, Versionierung.
+- `docs/server.md` ist nur noch die Betriebsreferenz (HTTPS, Variablen, Sicherung, Aktualisieren, Fehlersuche).
+
+### Behoben
+- Der Download-Link `releases/latest` lieferte 404, solange alle Releases Vorabversionen sind; er zeigt jetzt auf die Release-Übersicht.
+
 ## [0.18.5] – 2026-10-22 – Reiner Dienst ohne Proxy
 
 ### Geändert

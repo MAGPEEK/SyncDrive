@@ -1,7 +1,7 @@
 # Development
 
 For contributors who want to build, test or change SyncDrive. To run it, use the Docker image and the release downloads
-(see the [README](../README.md#getting-started)).
+(see the [README](../README.md#usage)).
 
 ## Requirements
 

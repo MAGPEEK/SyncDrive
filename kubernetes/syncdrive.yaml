@@ -1,0 +1,113 @@
+# SyncDrive server on Kubernetes: one replica (SQLite), persistent volumes for data and backup, Service on port 8080.
+# Usage: see README.md in this folder.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: syncdrive
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: syncdrive-data
+  namespace: syncdrive
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 50Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: syncdrive-backup
+  namespace: syncdrive
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 50Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: syncdrive
+  namespace: syncdrive
+spec:
+  replicas: 1                     # exactly one: the database is SQLite in the data volume
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: syncdrive
+  template:
+    metadata:
+      labels:
+        app: syncdrive
+    spec:
+      securityContext:
+        runAsUser: 1654
+        runAsGroup: 1654
+        fsGroup: 1654
+        runAsNonRoot: true
+      containers:
+        - name: syncdrive
+          image: magpeek/syncdrive-server:latest
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: TZ
+              value: Europe/Berlin
+            - name: SYNCDRIVE_Server__AdminUserName
+              value: admin
+            - name: SYNCDRIVE_Server__AdminPasswordFile
+              value: /run/secrets/syncdrive/admin-password
+            - name: SYNCDRIVE_Server__RequireTls
+              value: "true"
+            - name: SYNCDRIVE_Server__TrustForwardedHeaders
+              value: "true"           # TLS ends at the ingress controller
+            - name: SYNCDRIVE_Server__BackupDirectory
+              value: /backup
+          volumeMounts:
+            - { name: data, mountPath: /data }
+            - { name: backup, mountPath: /backup }
+            - { name: tmp, mountPath: /tmp }
+            - { name: admin, mountPath: /run/secrets/syncdrive, readOnly: true }
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 1Gi }
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: syncdrive-data }
+        - name: backup
+          persistentVolumeClaim: { claimName: syncdrive-backup }
+        - name: tmp
+          emptyDir: {}
+        - name: admin
+          secret:
+            secretName: syncdrive-admin
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: syncdrive
+  namespace: syncdrive
+spec:
+  selector:
+    app: syncdrive
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

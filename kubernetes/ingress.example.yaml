@@ -1,0 +1,27 @@
+# Example Ingress for ingress-nginx with cert-manager. Adjust host, ingress class and issuer.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: syncdrive
+  namespace: syncdrive
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/proxy-body-size: 16m
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"       # long-poll responses must not be buffered
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "90"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [drive.example.com]
+      secretName: syncdrive-tls
+  rules:
+    - host: drive.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: syncdrive
+                port:
+                  name: http
