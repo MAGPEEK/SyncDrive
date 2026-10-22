@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text;
 using Microsoft.AspNetCore.Mvc.Testing.Handlers;
+using SyncDrive.Contracts;
 using SyncDrive.Core.Chunking;
 using SyncDrive.Server.Host.Tests;
 using SyncDrive.Web.App;
@@ -27,6 +28,15 @@ internal sealed record WebPage(string User, HttpClient Http, HttpDriveApi Api, S
         var browser = new BrowserViewModel(api, WebTexts.English);
         await browser.InitializeAsync(default);
         return new WebPage(user, http, api, session, browser, requests);
+    }
+
+    /// <summary>Öffentlicher Link wie im Freigabedialog: Reiter „Öffentlicher Link“, Häkchen setzen, speichern.</summary>
+    public static async Task<LinkInfo> CreateLinkAsync(ShareViewModel share, SpaceSummary space, DriveItem item)
+    {
+        await share.OpenAsync(space, item, default);
+        share.ShareLink.Enabled = true;
+        Assert.True(await share.SaveLinkAsync(share.ShareLink, default), share.Message);
+        return share.ShareLink.Link!;
     }
 
     public static UploadFile File(string name, string content) => File(name, Encoding.UTF8.GetBytes(content));

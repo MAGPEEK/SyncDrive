@@ -29,7 +29,7 @@
         {
             <div class="link-field">
                 <input readonly value="@url" aria-label="@Title" />
-                <button type="button" class="tool" @onclick="() => OnCopy.InvokeAsync(url)">⧉ @Texts.CopyLink</button>
+                <button type="button" class="copy-icon" title="@Texts.CopyLink" aria-label="@Texts.CopyLink" @onclick="() => OnCopy.InvokeAsync(url)">⧉</button>
             </div>
         }
     </div>

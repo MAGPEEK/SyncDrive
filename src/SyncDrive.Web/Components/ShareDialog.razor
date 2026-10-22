@@ -110,10 +110,6 @@
     [Parameter]
     public bool Request { get; set; }
 
-    /// <summary>Gleich mit dem Reiter „Öffentlicher Link“ öffnen (Dateien lassen sich nur so teilen).</summary>
-    [Parameter]
-    public bool StartWithLink { get; set; }
-
     [Parameter]
     public CancellationToken Token { get; set; }
 
@@ -128,7 +124,7 @@
     protected override async Task OnInitializedAsync()
     {
         Share.Changed += Refresh;
-        _linkTab = StartWithLink || !Item.IsFolder;
+        _linkTab = !Item.IsFolder; // Dateien lassen sich nur per Link teilen
         await Share.OpenAsync(Space, Item, Token);
     }
 

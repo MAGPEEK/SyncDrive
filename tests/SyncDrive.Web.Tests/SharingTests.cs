@@ -115,21 +115,6 @@ public sealed class SharingTests(HostFactory factory) : IClassFixture<HostFactor
     }
 
     [Fact]
-    public async Task Get_link_reuses_the_existing_link()
-    {
-        var anna = await WebPage.OpenAsync(factory);
-        await anna.Browser.UploadAsync([WebPage.File("a.txt", "a")], default);
-        var file = anna.Browser.Items.Single();
-        var share = Share(anna);
-
-        var first = await share.EnsureLinkAsync(anna.Browser.Space!, file, default);
-        var second = await share.EnsureLinkAsync(anna.Browser.Space!, file, default);
-
-        Assert.NotNull(first);
-        Assert.Equal(first.Token, second!.Token);
-    }
-
-    [Fact]
     public async Task Shared_with_others_and_file_requests_list_what_the_user_shared()
     {
         var anna = await WebPage.OpenAsync(factory);
@@ -156,7 +141,7 @@ public sealed class SharingTests(HostFactory factory) : IClassFixture<HostFactor
     {
         var anna = await WebPage.OpenAsync(factory);
         var folder = await FolderWithFilesAsync(anna);
-        var link = (await Share(anna).EnsureLinkAsync(anna.Browser.Space!, folder, default))!;
+        var link = await WebPage.CreateLinkAsync(Share(anna), anna.Browser.Space!, folder);
         var visitor = Visitor();
 
         await visitor.LoadAsync(link.Token, default);

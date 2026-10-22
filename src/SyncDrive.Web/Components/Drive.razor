@@ -11,7 +11,6 @@
 @inject ShareViewModel Share
 @inject SharedByMeViewModel SharedByMe
 @inject NavigationManager Navigation
-@inject IJSRuntime Js
 
 @* Rahmen: schmale Leiste (Logo, Benachrichtigungen, Konto), Kategorien samt „My Labels“, Kopf mit Pfadleiste bzw. Titel
    und Suche, darunter die gewählte Ansicht. Auf schmalen Bildschirmen klappen die Kategorien über den Knopf im Kopf aus. *@
@@ -162,7 +161,7 @@
         {
             case View.Folder:
                 <FolderView Token="Token" OnShowVersions="item => ShowVersionsAsync(Browser.Space!, item)" OnNewLabel="items => _labelDialogFor = items"
-                            OnShare="item => OpenShare(item, request: false)" OnRequestFiles="item => OpenShare(item, request: true)" OnGetLink="GetLinkAsync" />
+                            OnShare="item => OpenShare(item, request: false)" OnRequestFiles="item => OpenShare(item, request: true)" />
                 break;
             case View.SharedWithMe:
                 <SharedWithMeView Token="Token" OnOpen="OpenSpaceAsync" />
@@ -213,7 +212,7 @@
 
     @if (_shareFor is { } shared)
     {
-        <ShareDialog Space="shared.Space" Item="shared.Item" Request="_shareRequest" StartWithLink="_shareStartWithLink" Token="Token" OnClose="CloseShareAsync" />
+        <ShareDialog Space="shared.Space" Item="shared.Item" Request="_shareRequest" Token="Token" OnClose="CloseShareAsync" />
     }
 
     @if (_versionsOpen)
@@ -281,7 +280,6 @@
     private LabelInfo? _deleteLabel;
     private LocatedItem? _shareFor;
     private bool _shareRequest;
-    private bool _shareStartWithLink;
     private string _query = string.Empty;
     private bool _everywhere;
 
@@ -380,7 +378,6 @@
     {
         _shareFor = item;
         _shareRequest = request;
-        _shareStartWithLink = false;
     }
 
     private async Task CloseShareAsync()
@@ -390,24 +387,6 @@
         if (_view is View.SharedByMe or View.FileRequests)
         {
             await SharedByMe.LoadAsync(Browser.Spaces, Token);
-        }
-    }
-
-    /// <summary>„Link holen“: vorhandenen öffentlichen Link nehmen oder einen anlegen und in die Zwischenablage legen.</summary>
-    private async Task GetLinkAsync(DriveItem item)
-    {
-        if (Browser.Policies is { LinkPasswordRequired: true } or { LinkMaxDays: not null })
-        {
-            // Passwort oder Ablaufdatum vorgeschrieben: der Link lässt sich nicht stillschweigend anlegen, also gleich der Reiter „Öffentlicher Link“
-            OpenShare(item, request: false);
-            _shareStartWithLink = true;
-            return;
-        }
-
-        if (await Share.EnsureLinkAsync(Browser.Space!, item, Token) is { } link)
-        {
-            var url = ShareViewModel.UrlOf(link, Navigation.BaseUri);
-            Share.ShowLinkCopied(url, await Clipboard.CopyAsync(Js, url));
         }
     }
 

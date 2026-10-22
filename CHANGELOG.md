@@ -5,6 +5,16 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.21.0] – 2026-10-22 – Freigabe und Link in einem
+
+### Geändert
+- Weboberfläche: „Link holen“ (Werkzeugleiste und Kontextmenü) entfällt; öffentliche Links legt man im Dialog **Freigeben** im Reiter
+  „Öffentlicher Link“ an. Neben dem Link steht ein kleines Kopier-Symbol (⧉, Tooltip „Link kopieren“) statt der Schaltfläche „Kopieren“.
+- Dateien öffnen den Freigabedialog direkt im Reiter „Öffentlicher Link“ (Dateien lassen sich nur per Link teilen).
+
+### Entfernt
+- `ShareViewModel.EnsureLinkAsync`/`ShowLinkCopied` und der Text „Link holen“; Tests legen Links jetzt wie der Dialog an.
+
 ## [0.20.0] – 2026-10-22 – Anheften im SyncDrive-Menü
 
 ### Geändert

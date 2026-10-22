@@ -127,7 +127,6 @@ public sealed record WebTexts
     public required string ExpiryDate { get; init; }
     public required string CopyLink { get; init; }
     public required string LinkCopied { get; init; }
-    public required string GetLink { get; init; }
     public required string RequestFiles { get; init; }
     public required string RequestTitle { get; init; }
     public required string CreateRequest { get; init; }
@@ -341,9 +340,8 @@ public sealed record WebTexts
         PasswordProtect = "Protect with a password",
         PasswordKept = "A password is set. Leave the field empty to keep it.",
         ExpiryDate = "Expiration date",
-        CopyLink = "Copy",
+        CopyLink = "Copy link",
         LinkCopied = "Link copied: {0}",
-        GetLink = "Get link",
         RequestFiles = "Request files",
         RequestTitle = "Request files for “{0}”",
         CreateRequest = "Create an upload link",
@@ -556,9 +554,8 @@ public sealed record WebTexts
         PasswordProtect = "Mit Passwort schützen",
         PasswordKept = "Ein Passwort ist gesetzt. Feld leer lassen, um es zu behalten.",
         ExpiryDate = "Ablaufdatum",
-        CopyLink = "Kopieren",
+        CopyLink = "Link kopieren",
         LinkCopied = "Link kopiert: {0}",
-        GetLink = "Link holen",
         RequestFiles = "Dateien anfordern",
         RequestTitle = "Dateien für „{0}“ anfordern",
         CreateRequest = "Hochlade-Link erstellen",

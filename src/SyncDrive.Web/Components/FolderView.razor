@@ -31,10 +31,6 @@
         @if (Browser.CanShare)
         {
             <button class="tool" disabled="@(Browser.SelectedItems is not [_])" @onclick="() => ShareAsync(OnShare, Browser.SelectedItems[0])">👤 @T.Share</button>
-            @if (Browser.Policies.PublicLinks)
-            {
-                <button class="tool" disabled="@(Browser.SelectedItems is not [_])" @onclick="() => ShareAsync(OnGetLink, Browser.SelectedItems[0])">🔗 @T.GetLink</button>
-            }
         }
         <div class="create-wrap">
             <button class="tool" disabled="@(Browser.Selected.Count == 0)" @onclick="ToggleLabels" @onclick:stopPropagation>🏷 @T.Labels</button>
@@ -121,10 +117,6 @@
             {
                 <div class="menu-line"></div>
                 <button class="menu-item" disabled="@(Browser.Selected.Count != 1)" @onclick="() => ShareAsync(OnShare, context)">@T.Share …</button>
-                @if (Browser.Policies.PublicLinks)
-                {
-                    <button class="menu-item" disabled="@(Browser.Selected.Count != 1)" @onclick="() => ShareAsync(OnGetLink, context)">@T.GetLink</button>
-                }
                 @if (context.IsFolder && Browser.Policies.FileRequests)
                 {
                     <button class="menu-item" disabled="@(Browser.Selected.Count != 1)" @onclick="() => ShareAsync(OnRequestFiles, context)">@T.RequestFiles …</button>
@@ -268,10 +260,6 @@
 
     [Parameter]
     public EventCallback<DriveItem> OnRequestFiles { get; set; }
-
-    /// <summary>„Link holen“: Link anlegen, falls nötig, und kopieren.</summary>
-    [Parameter]
-    public EventCallback<DriveItem> OnGetLink { get; set; }
 
     private async Task ShareAsync(EventCallback<DriveItem> action, DriveItem item)
     {

@@ -57,7 +57,7 @@ public sealed class PoliciesTests(HostFactory factory) : IClassFixture<HostFacto
         var anna = await WebPage.OpenAsync(factory);
         await anna.Browser.CreateFolderAsync("Projekte", default);
         var share = new ShareViewModel(anna.Api, WebTexts.English, TimeProvider.System);
-        var link = (await share.EnsureLinkAsync(anna.Browser.Space!, anna.Browser.Items.Single(), default))!;
+        var link = await WebPage.CreateLinkAsync(share, anna.Browser.Space!, anna.Browser.Items.Single());
 
         await policies.SaveAsync(new SharingPolicies(PublicLinks: false, FileRequests: false), default);
         await anna.Browser.RefreshPoliciesAsync(default);

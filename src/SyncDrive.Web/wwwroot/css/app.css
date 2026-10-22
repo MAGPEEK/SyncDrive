@@ -275,6 +275,8 @@ button:disabled { cursor: default; opacity: .45; }
 .dialog .indented { margin-left: 26px; max-width: calc(100% - 26px); }
 .link-field { display: flex; gap: 6px; margin-top: 4px; }
 .link-field input { flex: 1; min-width: 0; background: var(--nav); }
+.copy-icon { flex: none; width: 32px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text-sub); font-size: 16px; line-height: 1; cursor: pointer; }
+.copy-icon:hover { color: var(--accent); border-color: var(--accent); }
 .row.shared { grid-template-columns: minmax(0, 1fr) minmax(0, 200px) 140px; }
 .row.requests { grid-template-columns: minmax(0, 1fr) minmax(0, 200px) 140px 110px 90px; }
 .badge.muted { background: #EEF0F2; color: var(--text-sub); }

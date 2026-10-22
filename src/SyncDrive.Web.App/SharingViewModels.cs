@@ -156,19 +156,6 @@ public sealed class ShareViewModel(IDriveApi api, WebTexts texts, TimeProvider c
         return ok;
     }
 
-    /// <summary>Nach „Get link“: kopiert, oder (wenn der Browser die Zwischenablage verweigert) der Link zum Abschreiben.</summary>
-    public void ShowLinkCopied(string url, bool copied) =>
-        Inform(copied ? string.Format(CultureInfo.CurrentCulture, Texts.LinkCopied, url) : url);
-
-    /// <summary>„Get link“: der vorhandene öffentliche Link oder ein neuer ohne Passwort und Ablauf.</summary>
-    public async Task<LinkInfo?> EnsureLinkAsync(SpaceSummary space, DriveItem item, CancellationToken ct)
-    {
-        LinkInfo? link = null;
-        await RunAsync(async () => link = (await api.GetSharingAsync(space.Id, item.Path, ct)).Link
-            ?? await api.SetLinkAsync(space.Id, item.Path, LinkKinds.Share, new LinkRequest(null), ct), Explain);
-        return link;
-    }
-
     private async Task<bool> ChangeAsync(Func<Task> change, CancellationToken ct)
     {
         IsBusy = true;

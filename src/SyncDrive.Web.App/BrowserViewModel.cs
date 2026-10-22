@@ -93,7 +93,7 @@ public sealed class BrowserViewModel(IDriveApi api, WebTexts texts) : ViewModel(
         ? Texts.MyDrive
         : space.Name;
 
-    /// <summary>Freigabe-Richtlinien: „Link holen“ und „Dateien anfordern“ erscheinen nur, wenn der Server sie erlaubt.</summary>
+    /// <summary>Freigabe-Richtlinien: der Reiter „Öffentlicher Link“ und „Dateien anfordern“ erscheinen nur, wenn der Server sie erlaubt.</summary>
     public SharingPolicies Policies { get; private set; } = new();
 
     /// <summary>Liest die Richtlinien neu (beim Start und nach dem Ändern in der Verwaltung); ohne Antwort bleiben die Vorgaben.</summary>
