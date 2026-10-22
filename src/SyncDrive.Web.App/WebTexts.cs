@@ -60,10 +60,9 @@ public sealed record WebTexts
     public required string SavedBy { get; init; }
     public required string Close { get; init; }
     public required string VersionRestored { get; init; }
-    public required string WelcomeBack { get; init; }
-    public required string SignInHeading { get; init; }
-    public required string Next { get; init; }
-    public required string OtherAccount { get; init; }
+    public required string SignInTo { get; init; }
+    public required string SignInButton { get; init; }
+    public required string SignInTagline { get; init; }
     public required string LoginPortal { get; init; }
     public required string ServerName { get; init; }
     public required string LoginMessage { get; init; }
@@ -276,10 +275,9 @@ public sealed record WebTexts
         SavedBy = "Saved by",
         Close = "Close",
         VersionRestored = "The selected version is now the current one.",
-        WelcomeBack = "Welcome back by SyncDrive!",
-        SignInHeading = "Sign In",
-        Next = "Next",
-        OtherAccount = "Use another account",
+        SignInTo = "Log in to {0}",
+        SignInButton = "Log in",
+        SignInTagline = "SyncDrive – your files on your own server",
         LoginPortal = "Login portal",
         ServerName = "Server name",
         LoginMessage = "Text below the name",
@@ -491,10 +489,9 @@ public sealed record WebTexts
         SavedBy = "Gespeichert von",
         Close = "Schließen",
         VersionRestored = "Die gewählte Version ist jetzt die aktuelle.",
-        WelcomeBack = "Willkommen zurück bei SyncDrive!",
-        SignInHeading = "Anmelden",
-        Next = "Weiter",
-        OtherAccount = "Anderes Konto verwenden",
+        SignInTo = "Bei {0} anmelden",
+        SignInButton = "Anmelden",
+        SignInTagline = "SyncDrive – Ihre Dateien auf Ihrem eigenen Server",
         LoginPortal = "Anmeldeseite",
         ServerName = "Servername",
         LoginMessage = "Text unter dem Namen",

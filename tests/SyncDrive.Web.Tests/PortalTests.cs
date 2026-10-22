@@ -12,21 +12,19 @@ public sealed class PortalTests(HostFactory factory) : IClassFixture<HostFactory
         new(new HttpDriveApi(factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = true })), WebTexts.English);
 
     [Fact]
-    public async Task Signing_in_takes_the_name_first_and_then_the_password()
+    public async Task Signing_in_takes_name_and_password_together()
     {
         var session = NewSession();
         await session.CheckAsync(default);
 
-        var empty = session.Continue("   ");
-        var named = session.Continue(" admin ");
-        var stepAfterName = session.Step;
-        var wrong = await session.SignInAsync("falsch", default);
-        var stepAfterWrong = session.Step;
-        var right = await session.SignInAsync(HostFactory.AdminPassword, default);
+        var empty = await session.SignInAsync("   ", HostFactory.AdminPassword, default);
+        var wrong = await session.SignInAsync("admin", "falsch", default);
+        var wrongError = session.Error;
+        var right = await session.SignInAsync(" admin ", HostFactory.AdminPassword, default);
 
-        Assert.Equal((false, true, SignInStep.Password, "admin"), (empty, named, stepAfterName, session.UserName));
-        Assert.Equal((false, SignInStep.Password), (wrong, stepAfterWrong)); // falsches Passwort: der Name bleibt
+        Assert.Equal((false, false, WebTexts.English.SignInFailed), (empty, wrong, wrongError));
         Assert.True(right);
+        Assert.Null(session.Error);
         Assert.Equal("admin", session.Session!.UserName);
     }
 

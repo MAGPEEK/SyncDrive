@@ -5,6 +5,14 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.24.0] – 2026-10-22 – Neue Anmeldeseite
+
+### Geändert
+- Anmeldeseite der Weboberfläche nach dem Aufbau von Nextcloud (eigene Gestaltung): mittig das Logo, darunter eine halbtransparente Karte
+  „Bei <Servername> anmelden“ mit Name **und** Passwort auf einer Seite und einer breiten Schaltfläche „Anmelden →“; der Text des
+  Administrators steht unter der Karte, unten eine kurze Fußzeile. Hintergrundbild bzw. Verlauf bleiben einstellbar.
+- Der zweistufige Ablauf (erst Name, dann Passwort) entfällt samt `SignInStep`; der Test prüft die Anmeldung in einem Schritt.
+
 ## [0.23.0] – 2026-10-22 – „Link erhalten“ im Explorer
 
 ### Hinzugefügt
