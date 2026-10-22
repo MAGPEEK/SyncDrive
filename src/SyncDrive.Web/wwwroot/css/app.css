@@ -134,6 +134,8 @@ button:disabled { cursor: default; opacity: .45; }
 .context-menu { position: fixed; }
 .create-menu { top: calc(100% + 4px); left: 0; min-width: 300px; }
 .account-menu { left: 50px; bottom: 10px; }
+.admin-menu { left: 50px; bottom: 56px; width: 280px; max-width: calc(100vw - 60px); }
+.rail-button.open { background: rgba(255,255,255,.12); color: var(--on-accent); }
 .menu-head { padding: 8px 14px; font-weight: 600; border-bottom: 1px solid var(--line); margin-bottom: 4px; }
 .menu-item { display: flex; align-items: center; gap: 8px; width: 100%; border: none; background: none; padding: 7px 14px; text-align: left; text-decoration: none; color: var(--text); }
 .menu-item:hover:not(:disabled) { background: var(--nav); }

@@ -67,6 +67,8 @@ public sealed record WebTexts
     public required string SignInButton { get; init; }
     public required string SignInTagline { get; init; }
     public required string LoginPortal { get; init; }
+    public required string OrganisationSettings { get; init; }
+    public required string ManageUsersGroups { get; init; }
     public required string ServerName { get; init; }
     public required string LoginMessage { get; init; }
     public required string Background { get; init; }
@@ -284,7 +286,9 @@ public sealed record WebTexts
         SignInTo = "Log in to {0}",
         SignInButton = "Log in",
         SignInTagline = "SyncDrive – your files on your own server",
-        LoginPortal = "Login portal",
+        LoginPortal = "Sign-in page",
+        OrganisationSettings = "Organisation settings",
+        ManageUsersGroups = "Manage users & groups",
         ServerName = "Server name",
         LoginMessage = "Text below the name",
         Background = "Background image",
@@ -502,6 +506,8 @@ public sealed record WebTexts
         SignInButton = "Anmelden",
         SignInTagline = "SyncDrive – Ihre Dateien auf Ihrem eigenen Server",
         LoginPortal = "Anmeldeseite",
+        OrganisationSettings = "Organisationseinstellungen",
+        ManageUsersGroups = "Benutzer & Gruppen verwalten",
         ServerName = "Servername",
         LoginMessage = "Text unter dem Namen",
         Background = "Hintergrundbild",

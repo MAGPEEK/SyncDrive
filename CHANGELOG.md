@@ -5,6 +5,13 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.29.0] – 2026-10-22 – Zahnrad für die Verwaltung
+
+### Geändert
+- Weboberfläche: Administratoren haben in der linken Leiste über dem Profil ein **Zahnrad** mit „Organisationseinstellungen“ (Reiter
+  Richtlinien, Team-Ordner), „Benutzer & Gruppen verwalten“ (Reiter Benutzer, Gruppen) und „Anmeldeseite“. Das Profilmenü enthält nur noch
+  Persönliches (Geräte, Abmelden). Das Zahnrad sehen nur Administratoren; auf schmalen Bildschirmen passt sich das Menü der Breite an.
+
 ## [0.28.0] – 2026-10-22 – Menü „Neu“ mit Ordner-Upload
 
 ### Hinzugefügt

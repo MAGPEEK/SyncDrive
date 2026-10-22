@@ -29,6 +29,31 @@
             <NotificationPanel SpaceName="SpaceName" Token="Token" OnOpen="OpenNotificationAsync" />
         }
         <div class="rail-fill"></div>
+        @if (Session.Session?.IsAdmin == true)
+        {
+            @* Verwaltung nur für Administratoren: eigenes Zahnrad über dem Profil, getrennt von den persönlichen Einstellungen. *@
+            <button class="rail-button @(_adminOpen ? "open" : "")" title="@T.Administration" aria-label="@T.Administration" aria-expanded="@_adminOpen"
+                    @onclick="ToggleAdmin" @onclick:stopPropagation>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M10.3 2h3.4l.5 2.6 1.6.9 2.5-.9 1.7 2.9-2 1.7v1.8l2 1.7-1.7 2.9-2.5-.9-1.6.9-.5 2.6h-3.4l-.5-2.6-1.6-.9-2.5.9-1.7-2.9 2-1.7V9.2l-2-1.7 1.7-2.9 2.5.9 1.6-.9zM12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z" transform="translate(0 1.5)" /></svg>
+            </button>
+            @if (_adminOpen)
+            {
+                <div class="menu admin-menu" role="menu" @onclick:stopPropagation>
+                    <button class="menu-item" role="menuitem" @onclick="() => OpenAdmin(AdminPage.Section.Organisation)">
+                        <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9.2a2.5 2.5 0 0 1 4.6 0H20v2h-2.2a2.5 2.5 0 0 1-4.6 0H4zm0 10h2.2a2.5 2.5 0 0 1 4.6 0H20v2h-9.2a2.5 2.5 0 0 1-4.6 0H4zm0-5h9.2a2.5 2.5 0 0 1 4.6 0H20v2h-2.2a2.5 2.5 0 0 1-4.6 0H4z" /></svg>
+                        <span class="menu-label">@T.OrganisationSettings</span>
+                    </button>
+                    <button class="menu-item" role="menuitem" @onclick="() => OpenAdmin(AdminPage.Section.People)">
+                        <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8zm0 9.5c3.6 0 6.5 1.8 6.5 4V20h-13v-2.5c0-2.2 2.9-4 6.5-4zM16.5 5a3.5 3.5 0 0 1 0 7c-.4 0-.8-.1-1.2-.2a5.5 5.5 0 0 0 0-6.6c.4-.1.8-.2 1.2-.2zm1 9c2.6.4 4.5 1.8 4.5 3.5V20h-4.5v-2.5c0-1.4-.7-2.6-1.8-3.5z" /></svg>
+                        <span class="menu-label">@T.ManageUsersGroups</span>
+                    </button>
+                    <button class="menu-item" role="menuitem" @onclick="() => { _adminOpen = false; _portalOpen = true; }">
+                        <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm1 2v12h14V6zm4 3h6v1.5H9zm-1 3h8v2.5H8z" /></svg>
+                        <span class="menu-label">@T.LoginPortal</span>
+                    </button>
+                </div>
+            }
+        }
         <button class="avatar" title="@Session.Session?.UserName" @onclick="ToggleAccountAsync" @onclick:stopPropagation>
             @Initial
         </button>
@@ -47,11 +72,6 @@
                     }
                 </div>
                 <button class="menu-item" @onclick="() => { _accountOpen = false; _devicesOpen = true; }">@T.ClientList</button>
-                @if (Session.Session?.IsAdmin == true)
-                {
-                    <button class="menu-item" @onclick="() => { _accountOpen = false; Show(View.Admin); }">@T.Administration</button>
-                    <button class="menu-item" @onclick="() => { _accountOpen = false; _portalOpen = true; }">@T.LoginPortal</button>
-                }
                 <div class="menu-line"></div>
                 <button class="menu-item" @onclick="SignOutAsync">@T.SignOut</button>
             </div>
@@ -145,7 +165,7 @@
                         <span class="crumb">@T.FileRequests</span>
                         break;
                     case View.Admin:
-                        <span class="crumb">@T.Administration</span>
+                        <span class="crumb">@(_adminArea == AdminPage.Section.Organisation ? T.OrganisationSettings : T.ManageUsersGroups)</span>
                         break;
                     case View.Search:
                         <span class="crumb">@string.Format(CultureInfo.CurrentCulture, T.SearchResults, Search.Query)</span>
@@ -197,7 +217,7 @@
                 <Toast Model="Search" />
                 break;
             case View.Admin:
-                <AdminPage Me="@Session.Session?.UserName" Token="Token" />
+                <AdminPage Area="_adminArea" Me="@Session.Session?.UserName" Token="Token" />
                 break;
             case View.Trash:
                 <TrashView Spaces="Browser.Spaces" SpaceLabel="Browser.SpaceLabel" Token="Token" />
@@ -276,6 +296,8 @@
     private LabelInfo? _label;
     private bool _navOpen;
     private bool _accountOpen;
+    private bool _adminOpen;
+    private AdminPage.Section _adminArea;
     private bool _notificationsOpen;
     private bool _versionsOpen;
     private bool _portalOpen;
@@ -338,7 +360,22 @@
     private void CloseMenus()
     {
         _accountOpen = false;
+        _adminOpen = false;
         _notificationsOpen = false;
+    }
+
+    private void ToggleAdmin()
+    {
+        var open = !_adminOpen;
+        CloseMenus();
+        _adminOpen = open;
+    }
+
+    private void OpenAdmin(AdminPage.Section area)
+    {
+        _adminOpen = false;
+        _adminArea = area;
+        Show(View.Admin);
     }
 
     /// <summary>Wechselt die Ansicht; auf schmalen Bildschirmen klappen die Kategorien danach wieder zu.</summary>
@@ -426,7 +463,7 @@
 
     private async Task ToggleAccountAsync()
     {
-        _notificationsOpen = false;
+        _notificationsOpen = _adminOpen = false;
         _accountOpen = !_accountOpen;
         if (_accountOpen)
         {
@@ -437,7 +474,7 @@
     /// <summary>Beim Öffnen frisch: neue Benachrichtigungen und Spaces, die inzwischen jemand geteilt hat.</summary>
     private async Task ToggleNotificationsAsync()
     {
-        _accountOpen = false;
+        _accountOpen = _adminOpen = false;
         _notificationsOpen = !_notificationsOpen;
         if (_notificationsOpen)
         {
