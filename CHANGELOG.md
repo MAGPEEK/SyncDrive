@@ -5,6 +5,18 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.18.3] – 2026-10-22 – Betriebsanleitung Docker
+
+### Geändert
+- `docs/server.md` als Schritt-für-Schritt-Anleitung: Docker Compose mit TLS aus dem fertigen Image (ohne Quellcode), `docker run` hinter
+  eigenem Proxy, Bau aus dem Quellcode, Aktualisieren, Fehlersuche. README mit Schnelltest per `docker run` und Docker-Hub-Badge.
+- `deploy/docker-compose.yml` nimmt standardmäßig das Image `magpeek/syncdrive-server:${SYNCDRIVE_VERSION:-latest}`; `--build` baut weiterhin
+  aus dem Quellcode.
+
+### Behoben
+- Die Anleitung legte die Passwortdatei mit `chmod 600` für den eigenen Benutzer an; der Server (UID 1654) konnte sie unter Linux nicht lesen
+  und startete nicht. Jetzt `chown 1654` und `chmod 400`.
+
 ## [0.18.2] – 2026-10-22 – Docker Hub
 
 ### Geändert

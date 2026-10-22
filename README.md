@@ -11,6 +11,7 @@
 <p align="center">
   <a href="https://github.com/MAGPEEK/SyncDrive/actions/workflows/ci.yml"><img src="https://github.com/MAGPEEK/SyncDrive/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/MAGPEEK/SyncDrive/releases"><img src="https://img.shields.io/github/v/release/MAGPEEK/SyncDrive?include_prereleases&label=release" alt="Release"></a>
+  <a href="https://hub.docker.com/r/magpeek/syncdrive-server"><img src="https://img.shields.io/docker/v/magpeek/syncdrive-server?sort=semver&label=docker" alt="Docker Hub"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
 </p>
 
@@ -65,29 +66,37 @@ With SyncDrive you can
 
 ### 1. Set up the server with Docker
 
-You need Docker with the Compose plugin on a Linux machine (or a NAS with Docker support).
+You need Docker with the Compose plugin on a Linux machine (or a NAS with Docker support). The server image is published on
+Docker Hub as **[`magpeek/syncdrive-server`](https://hub.docker.com/r/magpeek/syncdrive-server)** (`linux/amd64`, `linux/arm64`;
+tags `latest` and `<version>`).
+
+**Try it in one minute** (local test without TLS):
 
 ```bash
-git clone https://github.com/MAGPEEK/SyncDrive.git
-cd SyncDrive/deploy
-
-# choose the administrator password (the file is read once and never checked in)
-printf '%s' 'a-long-admin-password' > admin-password.txt
-
-# the name clients use to reach the server
-export SYNCDRIVE_HOST=drive.example.lan
-
-docker compose up -d --build
+docker run -d --name syncdrive -p 127.0.0.1:8080:8080 -v syncdrive-data:/data \
+  -e SYNCDRIVE_Server__RequireTls=false \
+  -e SYNCDRIVE_Server__AdminUserName=admin -e SYNCDRIVE_Server__AdminPassword='change-me-now' \
+  magpeek/syncdrive-server:latest
 ```
 
-The stack consists of the SyncDrive server and a [Caddy](https://caddyserver.com/) reverse proxy that terminates TLS on port **8443**.
-Open `https://drive.example.lan:8443/` and sign in as `admin`.
+Open `http://localhost:8080/` and sign in as `admin`.
 
-By default Caddy issues a certificate from its own internal CA. The client shows its fingerprint on first connect and asks you to
-trust it. For a publicly trusted certificate, point a DNS name at the server and remove `tls internal` from `deploy/Caddyfile`.
+**Production setup with Docker Compose:** the server plus a [Caddy](https://caddyserver.com/) reverse proxy that terminates TLS on
+port **8443**. Create a folder with the `docker-compose.yml` and `Caddyfile` from
+**[docs/server.md → Option A](docs/server.md#option-a-docker-compose-with-tls-recommended)**, then:
 
-Data lives in the Docker volume `syncdrive-data`, nightly backups in `syncdrive-backup`. All configuration variables, a plain
-`docker run` example, reverse-proxy and backup notes are in **[docs/server.md](docs/server.md)**.
+```bash
+echo "SYNCDRIVE_HOST=drive.example.lan" > .env                 # the name clients use to reach the server
+printf '%s' 'a-long-admin-password' > admin-password.txt       # read once on the first start
+sudo chown 1654:1654 admin-password.txt && sudo chmod 400 admin-password.txt
+docker compose up -d
+```
+
+Open `https://drive.example.lan:8443/` and sign in as `admin`. By default Caddy issues a certificate from its own internal CA; the
+client shows its fingerprint on first connect and asks you to trust it.
+
+Data lives in the Docker volume `syncdrive-data`, nightly backups in `syncdrive-backup`. The full guide, with `docker run` behind
+your own reverse proxy, all configuration variables, backup, updates and troubleshooting, is in **[docs/server.md](docs/server.md)**.
 
 ### 2. Install the Windows client
 

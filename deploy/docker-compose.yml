@@ -1,6 +1,7 @@
 # Betrieb: SyncDrive-Server hinter Caddy (TLS). Start aus diesem Ordner:
 #   echo -n 'ein-langes-admin-passwort' > admin-password.txt
-#   docker compose up -d --build
+#   docker compose up -d            # fertiges Image von Docker Hub (SYNCDRIVE_VERSION, Standard latest)
+#   docker compose up -d --build    # stattdessen aus dem Quellcode bauen
 # Die Server-API ist nur im internen Netz erreichbar; von außen nur Caddy auf 8443 (HTTPS).
 #
 # Datenbank: SQLite im Volume syncdrive-data, im Serverprozess (gemessen schneller als ein eigener Datenbank-Container; ein Server-Prozess,
@@ -12,6 +13,7 @@
 # (der Ordner muss für UID 1654 beschreibbar sein: sudo chown 1654 /mnt/usb/syncdrive-backup).
 services:
   server:
+    image: magpeek/syncdrive-server:${SYNCDRIVE_VERSION:-latest}
     build:
       context: ..
     restart: unless-stopped
