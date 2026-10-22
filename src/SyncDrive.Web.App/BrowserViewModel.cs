@@ -398,30 +398,92 @@ public sealed class BrowserViewModel(IDriveApi api, WebTexts texts) : ViewModel(
                 continue;
             }
 
-            var entry = new UploadProgress(file.Name, file.Size, 0);
-            _uploads.Add(entry);
-            OnChanged();
             var existing = _items.FirstOrDefault(i => !i.IsFolder && string.Equals(i.Path, path, StringComparison.OrdinalIgnoreCase));
-            var progress = new ImmediateProgress(sent =>
-            {
-                var index = _uploads.IndexOf(entry);
-                if (index >= 0)
-                {
-                    _uploads[index] = entry = entry with { Sent = sent };
-                    OnChanged();
-                }
-            });
-            await RunAsync(async () =>
-            {
-                await using var content = file.Open();
-                await api.UploadAsync(space.Id, path, content, file.Modified, existing, progress, ct);
-            });
-            _uploads.Remove(entry);
+            await UploadOneAsync(space, path, file, existing, ct);
             if (Space == space && Path == folder)
             {
                 await LoadAsync(ct);
             }
         }
+    }
+
+    /// <summary>
+    /// „Ordner hochladen“: Namen sind Pfade relativ zum aktuellen Ordner („Fotos/2026/a.jpg“). Erst entstehen alle Ordner (von oben nach
+    /// unten; vorhandene nimmt der Server hin), dann kommen die Dateien.
+    /// </summary>
+    public async Task UploadFolderAsync(IReadOnlyList<UploadFile> files, CancellationToken ct)
+    {
+        if (Space is null || !CanWrite)
+        {
+            Fail(Texts.NoPermission);
+            return;
+        }
+
+        var space = Space;
+        var folder = Path;
+        var targets = new List<(UploadFile File, string Path)>();
+        foreach (var file in files)
+        {
+            var relative = file.Name.Replace('\\', '/').Trim('/');
+            if (relative.Length == 0 || !RelativePath.TryParse(folder.Length == 0 ? relative : folder + "/" + relative, out var parsed))
+            {
+                Fail(Texts.InvalidName);
+                continue;
+            }
+
+            targets.Add((file, parsed.Value));
+        }
+
+        var folders = targets
+            .SelectMany(t => Ancestors(t.Path, folder))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(p => p.Count(c => c == '/'))
+            .ToList();
+        foreach (var path in folders)
+        {
+            await RunAsync(() => api.CreateFolderAsync(space.Id, path, ct));
+        }
+
+        foreach (var (file, path) in targets)
+        {
+            await UploadOneAsync(space, path, file, existing: null, ct);
+        }
+
+        if (Space == space && Path == folder)
+        {
+            await LoadAsync(ct);
+        }
+    }
+
+    /// <summary>Die Ordner zwischen <paramref name="root"/> und der Datei, ohne <paramref name="root"/> selbst.</summary>
+    private static IEnumerable<string> Ancestors(string path, string root)
+    {
+        for (var slash = path.LastIndexOf('/'); slash > root.Length; slash = path.LastIndexOf('/', slash - 1))
+        {
+            yield return path[..slash];
+        }
+    }
+
+    private async Task UploadOneAsync(SpaceSummary space, string path, UploadFile file, DriveItem? existing, CancellationToken ct)
+    {
+        var entry = new UploadProgress(file.Name, file.Size, 0);
+        _uploads.Add(entry);
+        OnChanged();
+        var progress = new ImmediateProgress(sent =>
+        {
+            var index = _uploads.IndexOf(entry);
+            if (index >= 0)
+            {
+                _uploads[index] = entry = entry with { Sent = sent };
+                OnChanged();
+            }
+        });
+        await RunAsync(async () =>
+        {
+            await using var content = file.Open();
+            await api.UploadAsync(space.Id, path, content, file.Modified, existing, progress, ct);
+        });
+        _uploads.Remove(entry);
     }
 
     /// <summary>

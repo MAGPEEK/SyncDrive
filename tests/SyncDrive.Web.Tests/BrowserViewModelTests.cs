@@ -97,6 +97,26 @@ public sealed class BrowserViewModelTests(HostFactory factory) : IClassFixture<H
     }
 
     [Fact]
+    public async Task An_uploaded_folder_keeps_its_structure_inside_the_current_folder()
+    {
+        var page = await OpenPageAsync();
+        var browser = page.Browser;
+        await browser.CreateFolderAsync("Ablage", default);
+        await browser.NavigateAsync("Ablage", default);
+
+        await browser.UploadFolderAsync(
+            [File("Urlaub/liste.txt", "Packliste"), File("Urlaub/Fotos/2026/strand.txt", "Sand"), File(@"Urlaub\Fotos\meer.txt", "Wasser")], default);
+
+        Assert.Equal(("Urlaub", true), (Assert.Single(browser.Items).Name, browser.Items[0].IsFolder));
+        await browser.NavigateAsync("Ablage/Urlaub/Fotos", default);
+        Assert.Equal(["2026", "meer.txt"], browser.Items.Select(i => i.Name));
+        await browser.NavigateAsync("Ablage/Urlaub/Fotos/2026", default);
+        var sand = Assert.Single(browser.Items);
+        Assert.Equal("Sand", await page.Http.GetStringAsync(browser.DownloadUrl(sand)));
+        Assert.Null(browser.Message);
+    }
+
+    [Fact]
     public async Task Images_show_a_thumbnail_that_follows_the_revision_and_falls_back_to_the_icon()
     {
         var page = await OpenPageAsync();

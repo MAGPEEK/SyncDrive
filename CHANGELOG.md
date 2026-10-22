@@ -5,6 +5,14 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.28.0] – 2026-10-22 – Menü „Neu“ mit Ordner-Upload
+
+### Hinzugefügt
+- Weboberfläche, Menü **Neu**: „Neuer Ordner“, „Dateien hochladen“ und „Ordner hochladen“ mit Symbolen und Tastenkürzeln (Alt+C, dann F, U
+  oder I). „Ordner hochladen“ übernimmt die Struktur des gewählten Ordners samt Unterordnern (`BrowserViewModel.UploadFolderAsync`; die Pfade
+  liefert der Browser über `webkitRelativePath`, `wwwroot/js/syncdrive.js`).
+- Die Schaltfläche „Hochladen“ in der Werkzeugleiste bleibt; beide nutzen dasselbe Dateifeld.
+
 ## [0.27.0] – 2026-10-22 – Design-System überall, Drag & Drop
 
 ### Geändert

@@ -18,6 +18,9 @@ public sealed record WebTexts
     public required string Create { get; init; }
     public required string NewFolder { get; init; }
     public required string Upload { get; init; }
+    public required string UploadFiles { get; init; }
+    public required string UploadFolder { get; init; }
+    public required string CreateShortcut { get; init; }
     public required string Download { get; init; }
     public required string Rename { get; init; }
     public required string Delete { get; init; }
@@ -231,8 +234,11 @@ public sealed record WebTexts
         MyDrive = "My Drive",
         TeamFolders = "Team Folder",
         Create = "Create",
-        NewFolder = "Folder",
+        NewFolder = "New folder",
         Upload = "Upload",
+        UploadFiles = "Upload files",
+        UploadFolder = "Upload folder",
+        CreateShortcut = "Alt+C then {0}",
         Download = "Download",
         Rename = "Rename",
         Delete = "Delete",
@@ -446,8 +452,11 @@ public sealed record WebTexts
         MyDrive = "Meine Dateien",
         TeamFolders = "Team-Ordner",
         Create = "Erstellen",
-        NewFolder = "Ordner",
+        NewFolder = "Neuer Ordner",
         Upload = "Hochladen",
+        UploadFiles = "Dateien hochladen",
+        UploadFolder = "Ordner hochladen",
+        CreateShortcut = "Alt+C dann {0}",
         Download = "Herunterladen",
         Rename = "Umbenennen",
         Delete = "Löschen",
