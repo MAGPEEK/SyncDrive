@@ -56,7 +56,7 @@ The setup `.exe` accepts the usual switches as well: `/quiet`, `/passive`, `/log
 ## First start
 
 1. Enter the server address — `drive.example.lan`, `drive.example.lan:9443` or `https://drive.example.lan:8443/`.
-   Without a port the client uses **8443**.
+   Without a port the client uses **8443**, without a scheme HTTPS. For a server on plain HTTP enter e.g. `http://drive.example.lan:8080`.
 2. Enter user name and password. If the server uses a self-signed certificate, the client shows its SHA-256 fingerprint; compare it
    with the server and confirm. The client then pins this certificate.
 3. Choose a folder on the server and a local folder, the sync direction (two-way, upload only, download only) and whether files

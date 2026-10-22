@@ -5,6 +5,15 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.18.5] – 2026-10-22 – Reiner Dienst ohne Proxy
+
+### Geändert
+- Das Compose-Beispiel in `docker/` startet nur den SyncDrive-Dienst, ohne Caddy: Port 8080 (HTTP), Administrator-Passwort aus `.env`.
+- `docs/server.md` neu gegliedert: Docker Compose, `docker run`, HTTPS wahlweise direkt im Container (Zertifikat, Port 8443, ohne Proxy)
+  oder hinter einem Reverse-Proxy; Tabelle der Ports und der Kestrel-Variablen für Zertifikate.
+- „Building from source“ aus dem README nach `docs/development.md` verschoben (Bauen, Tests, lokaler Start, Projektstruktur, Releases).
+- README und `docs/client.md`: Serveradresse für HTTP mit `http://` und Port angeben (ohne Schema nimmt der Client HTTPS).
+
 ## [0.18.4] – 2026-10-22 – Compose-Beispiel
 
 ### Hinzugefügt

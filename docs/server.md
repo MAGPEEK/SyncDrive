@@ -1,20 +1,24 @@
 # SyncDrive Server
 
 The server is a single ASP.NET Core process in a Linux container. It stores metadata in an embedded SQLite database and file content
-as content-addressed blocks on disk, serves the REST API under `/api/v1` and the web interface under `/`.
+as content-addressed blocks on disk, and serves the REST API under `/api/v1` and the web interface under `/` — all on one port.
 
 Every release publishes a multi-arch image (`linux/amd64`, `linux/arm64`) on Docker Hub:
 
 | Image | Tags |
 |---|---|
-| [`magpeek/syncdrive-server`](https://hub.docker.com/r/magpeek/syncdrive-server) | `latest` (newest release), `<version>` (e.g. `0.18.2`) |
+| [`magpeek/syncdrive-server`](https://hub.docker.com/r/magpeek/syncdrive-server) | `latest` (newest release), `<version>` (e.g. `0.18.5`) |
+
+| Port in the container | Protocol | When |
+|---|---|---|
+| **8080** | HTTP | always (also used by the health check) |
+| **8443** | HTTPS | only when a certificate is configured, see [HTTPS](#https) |
 
 - [Requirements](#requirements)
-- [Option A: Docker Compose with TLS (recommended)](#option-a-docker-compose-with-tls-recommended)
-- [Option B: `docker run` behind your own reverse proxy](#option-b-docker-run-behind-your-own-reverse-proxy)
-- [Option C: Build the image from source](#option-c-build-the-image-from-source)
+- [Docker Compose](#docker-compose)
+- [docker run](#docker-run)
+- [HTTPS](#https)
 - [Configuration variables](#configuration-variables)
-- [Reverse proxy and TLS](#reverse-proxy-and-tls)
 - [Backup and restore](#backup-and-restore)
 - [Updating](#updating)
 - [Health and version](#health-and-version)
@@ -24,39 +28,27 @@ Every release publishes a multi-arch image (`linux/amd64`, `linux/arm64`) on Doc
 
 - Linux host (x64 or arm64) with Docker 24+ and the Compose plugin (`docker compose version`). A NAS with Docker works as well.
 - A **local** volume for `/data` (ext4, btrfs, xfs …). SQLite in WAL mode must not live on NFS or SMB shares.
-- Port **8443** reachable for the clients (Option A), or an existing TLS reverse proxy (Option B).
 
-## Option A: Docker Compose with TLS (recommended)
+## Docker Compose
 
-Two containers: the SyncDrive server, reachable only on an internal Docker network, and [Caddy](https://caddyserver.com/) as
-reverse proxy that terminates TLS on port 8443. No source code is needed.
-
-The ready-made files are in the folder **[`docker/`](../docker)** (`docker-compose.yml`, `Caddyfile`, `.env.example` and a short
-README): copy the folder to the server and continue with step 4. The steps below show the same files in full.
-
-**1. Create a folder**
-
-```bash
-mkdir -p /opt/syncdrive && cd /opt/syncdrive
-```
-
-**2. Create `docker-compose.yml`**
+The folder **[`docker/`](../docker)** contains a ready-to-run example. Copy `docker-compose.yml` and `.env.example` to the
+server, e.g. to `/opt/syncdrive`:
 
 ```yaml
 services:
-  server:
+  syncdrive:
     image: magpeek/syncdrive-server:${SYNCDRIVE_VERSION:-latest}
+    container_name: syncdrive
     restart: unless-stopped
+    ports:
+      - "${SYNCDRIVE_PORT:-8080}:8080"          # the application listens on 8080 (HTTP) inside the container
     environment:
       TZ: ${TZ:-Europe/Berlin}
-      SYNCDRIVE_Server__AdminUserName: admin
-      SYNCDRIVE_Server__AdminPasswordFile: /run/secrets/admin_password
-      SYNCDRIVE_Server__TrustForwardedHeaders: "true"   # only Caddy can reach the server
-      SYNCDRIVE_Server__RequireTls: "true"
+      SYNCDRIVE_Server__AdminUserName: ${SYNCDRIVE_ADMIN_USER:-admin}
+      SYNCDRIVE_Server__AdminPassword: ${SYNCDRIVE_ADMIN_PASSWORD:?set SYNCDRIVE_ADMIN_PASSWORD in .env}
+      SYNCDRIVE_Server__RequireTls: "false"     # plain HTTP; HTTPS: see docs/server.md
       SYNCDRIVE_Server__BackupDirectory: /backup
       SYNCDRIVE_Server__BackupTime: ${SYNCDRIVE_BACKUP_TIME:-02:30}
-    secrets:
-      - admin_password
     volumes:
       - syncdrive-data:/data
       - syncdrive-backup:/backup
@@ -66,178 +58,111 @@ services:
     security_opt:
       - no-new-privileges:true
     cap_drop: [ALL]
-    networks: [internal]
-
-  proxy:
-    image: caddy:2
-    restart: unless-stopped
-    environment:
-      SYNCDRIVE_HOST: ${SYNCDRIVE_HOST:-localhost}
-    ports:
-      - "8443:8443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
-    depends_on:
-      server:
-        condition: service_healthy
-    networks: [internal, default]
-
-secrets:
-  admin_password:
-    file: ./admin-password.txt
 
 volumes:
   syncdrive-data:
   syncdrive-backup:
-  caddy-data:
-
-networks:
-  internal:
-    internal: true
 ```
 
-**3. Create `Caddyfile`**
+Variables in `.env`:
 
-```
-{
-	auto_https disable_redirects
-}
-
-{$SYNCDRIVE_HOST:localhost}:8443 {
-	tls internal   # remove this line for a public certificate (needs a DNS name)
-	reverse_proxy server:8080 {
-		flush_interval -1   # do not buffer long-poll responses
-	}
-}
-```
-
-**4. Create `.env` and the administrator password**
-
-```bash
-cat > .env <<'EOF'
-SYNCDRIVE_HOST=drive.example.lan
-TZ=Europe/Berlin
-SYNCDRIVE_BACKUP_TIME=02:30
-SYNCDRIVE_VERSION=latest
-EOF
-
-printf '%s' 'a-long-admin-password' > admin-password.txt
-sudo chown 1654:1654 admin-password.txt && sudo chmod 400 admin-password.txt   # readable for the server user only
-```
-
-| Variable in `.env` | Default | Meaning |
+| Variable | Default | Meaning |
 |---|---|---|
-| `SYNCDRIVE_HOST` | `localhost` | Host name clients use; Caddy issues the certificate for it |
-| `TZ` | `Europe/Berlin` | Time zone of the server (backup time, log timestamps) |
+| `SYNCDRIVE_PORT` | `8080` | Port on the host |
+| `SYNCDRIVE_ADMIN_USER` | `admin` | Administrator created on the first start |
+| `SYNCDRIVE_ADMIN_PASSWORD` | — (required) | Its password; only read on the first start |
+| `TZ` | `Europe/Berlin` | Time zone (backup time, log timestamps) |
 | `SYNCDRIVE_BACKUP_TIME` | `02:30` | Time of the nightly backup (`HH:mm`, in `TZ`) |
-| `SYNCDRIVE_VERSION` | `latest` | Image tag; pin a version such as `0.18.2` for controlled updates |
+| `SYNCDRIVE_VERSION` | `latest` | Image tag; pin a version for controlled updates |
 
-**5. Start**
+Start:
 
 ```bash
+cd /opt/syncdrive
+cp .env.example .env
+nano .env                       # set SYNCDRIVE_ADMIN_PASSWORD
 docker compose up -d
-docker compose ps          # server "healthy", proxy "running"
-docker compose logs -f server
+docker compose ps               # STATUS shows "healthy" after a few seconds
 ```
 
-**6. Sign in**
+Open `http://<server>:8080/` and sign in as `admin`. The administrator is created on the first start only (when no user exists
+yet); afterwards you can remove the password from `.env` and change it in the web interface. Further users, groups and team folders
+are created in the account menu → *Administration*.
 
-Open `https://drive.example.lan:8443/` and sign in as `admin` with the password from step 4. The administrator is created on the
-first start only (when no user exists yet); afterwards you can delete `admin-password.txt` and change the password in the web
-interface. Further users, groups and team folders are created in the account menu → *Administration*.
+In the Windows client enter the address with scheme and port, e.g. `http://drive.example.lan:8080` (without a scheme the client assumes
+HTTPS).
 
-About the certificate: with `tls internal` Caddy issues a certificate from its own CA. Browsers warn once; the Windows client shows
-the fingerprint on first connect and asks you to trust it. For a publicly trusted certificate point a DNS name at the server, make
-ports 80/443 reachable for the ACME challenge or adapt the Caddyfile, and remove `tls internal`.
+## docker run
 
-The repository contains the same stack in [`deploy/`](../deploy) (with resource limits and log rotation); there
-`docker compose up -d --build` builds the image from source instead of pulling it.
-
-## Option B: `docker run` behind your own reverse proxy
-
-Use this when a reverse proxy that already terminates TLS (nginx, Traefik, a NAS proxy) is in place. The server listens on plain
-HTTP port 8080; bind it to localhost only.
+The same without Compose:
 
 ```bash
-mkdir -p /opt/syncdrive && cd /opt/syncdrive
-printf '%s' 'a-long-admin-password' > admin-password.txt
-sudo chown 1654:1654 admin-password.txt && sudo chmod 400 admin-password.txt
-
-docker run -d --name syncdrive \
-  --restart unless-stopped \
-  -p 127.0.0.1:8080:8080 \
+docker run -d --name syncdrive --restart unless-stopped \
+  -p 8080:8080 \
   -v syncdrive-data:/data \
   -v syncdrive-backup:/backup \
-  -v "$PWD/admin-password.txt:/run/secrets/admin_password:ro" \
   -e TZ=Europe/Berlin \
+  -e SYNCDRIVE_Server__RequireTls=false \
   -e SYNCDRIVE_Server__AdminUserName=admin \
-  -e SYNCDRIVE_Server__AdminPasswordFile=/run/secrets/admin_password \
-  -e SYNCDRIVE_Server__TrustForwardedHeaders=true \
+  -e SYNCDRIVE_Server__AdminPassword='a-long-admin-password' \
   -e SYNCDRIVE_Server__BackupDirectory=/backup \
   --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges \
   magpeek/syncdrive-server:latest
 ```
 
-Then configure the proxy as described in [Reverse proxy and TLS](#reverse-proxy-and-tls).
+## HTTPS
 
-For a quick local test without TLS add `-e SYNCDRIVE_Server__RequireTls=false` and open `http://localhost:8080/`.
-Never run without TLS on a network you do not control.
+Plain HTTP transmits passwords and files unencrypted. It is acceptable on a trusted home network; anywhere else use one of the
+following.
 
-## Option C: Build the image from source
+### Certificate directly in the container
+
+The server can serve HTTPS itself on port 8443 — no proxy needed. Put the certificate and key (PEM) in a folder, readable for the
+server user (UID 1654):
 
 ```bash
-git clone https://github.com/MAGPEEK/SyncDrive.git
-cd SyncDrive
-docker build -t syncdrive-server .                 # image for the current platform
-cd deploy && docker compose up -d --build          # or: complete stack from source
+sudo mkdir -p /opt/syncdrive/certs
+sudo cp fullchain.pem /opt/syncdrive/certs/cert.pem
+sudo cp privkey.pem   /opt/syncdrive/certs/key.pem
+sudo chown -R 1654 /opt/syncdrive/certs && sudo chmod 400 /opt/syncdrive/certs/key.pem
 ```
 
-## Configuration variables
+No certificate yet? A self-signed one for a first test:
+`openssl req -x509 -newkey rsa:2048 -nodes -days 825 -subj /CN=drive.example.lan -keyout key.pem -out cert.pem`.
+The Windows client shows its fingerprint on first connect and asks you to trust it; browsers warn once.
 
-All settings are environment variables with the prefix `SYNCDRIVE_Server__` (two underscores). They can also be set in
-`appsettings.json` under the section `Server`.
+Change the service in `docker-compose.yml`:
 
-| Variable | Default | Description |
-|---|---|---|
-| `SYNCDRIVE_Server__DataDirectory` | `/data` (image) | Directory for `server.db`, `blocks/`, `thumbnails/` and the sign-in page assets. Must be a local volume. |
-| `SYNCDRIVE_Server__RequireTls` | `true` | Reject requests that did not arrive via HTTPS (`/healthz` is exempt). Behind a proxy combine with `TrustForwardedHeaders`. |
-| `SYNCDRIVE_Server__TrustForwardedHeaders` | `false` | Honour `X-Forwarded-Proto` and `X-Forwarded-For` from any sender. Only enable when the port is reachable by the proxy alone; also needed so the brute-force limiter sees real client addresses. |
-| `SYNCDRIVE_Server__AdminUserName` | — | Creates this administrator on the first start (only if no user exists yet). |
-| `SYNCDRIVE_Server__AdminPassword` | — | Password for that administrator. Prefer `AdminPasswordFile`. |
-| `SYNCDRIVE_Server__AdminPasswordFile` | — | File containing the administrator password (Docker or Kubernetes secret). |
-| `SYNCDRIVE_Server__BackupDirectory` | — (off) | Target of the nightly backup, ideally another disk. Empty disables the backup. |
-| `SYNCDRIVE_Server__BackupTime` | `02:30` | Time of day for the backup in the container time zone (`TZ`). |
-| `SYNCDRIVE_Server__BackupsToKeep` | `7` | Number of database snapshots to keep; blocks are only ever added. |
-| `SYNCDRIVE_Server__MaxBlockBytes` | `8388608` (8 MiB) | Largest accepted block upload. Clients send at most 4 MiB. |
-| `SYNCDRIVE_Server__MaxLongPollSeconds` | `60` | Longest wait of a change long-poll request. Keep it below your proxy's read timeout. |
-| `SYNCDRIVE_Server__MaxPublicUploadBytes` | `4294967296` (4 GiB) | Largest file anyone may upload through a file request link. |
-| `SYNCDRIVE_Server__Argon2MemoryKiB` | `65536` | Argon2id memory cost for password hashes. |
-| `SYNCDRIVE_Server__Argon2Iterations` | `3` | Argon2id time cost. |
-| `SYNCDRIVE_Server__Argon2Parallelism` | `4` | Argon2id lanes. The parameters are stored with each hash, so changing them later is safe. |
+```yaml
+    ports:
+      - "8443:8443"                             # HTTPS only; 8080 stays internal for the health check
+    environment:
+      # … as before, but:
+      SYNCDRIVE_Server__RequireTls: "true"
+      ASPNETCORE_HTTPS_PORTS: "8443"
+      ASPNETCORE_Kestrel__Certificates__Default__Path: /certs/cert.pem
+      ASPNETCORE_Kestrel__Certificates__Default__KeyPath: /certs/key.pem
+    volumes:
+      # … as before, plus:
+      - ./certs:/certs:ro
+```
 
-Variables of the base image that you may want to change:
+Then `docker compose up -d` and open `https://drive.example.lan:8443/`. Clients use port 8443 by default, so `drive.example.lan`
+is enough as address in the client. The certificate is read at start: after renewing it run `docker compose restart`.
 
-| Variable | Default | Description |
-|---|---|---|
-| `ASPNETCORE_HTTP_PORTS` | `8080` | HTTP port inside the container |
-| `TZ` | `UTC` | Time zone |
-| `DOTNET_gcServer` | `0` | Workstation GC keeps memory use low on small machines |
+### Behind a reverse proxy
 
-Volumes: `/data` (required) and `/backup` (optional). The process runs as the unprivileged user `app` (UID 1654); a bind-mounted
-directory must be writable for that UID (`sudo chown 1654 /path/to/dir`). To put the backup on another disk, replace the volume,
-e.g. `- /mnt/usb/syncdrive-backup:/backup`.
+If a reverse proxy (nginx, Traefik, Caddy, a NAS proxy) already terminates TLS, bind the port to localhost
+(`127.0.0.1:8080:8080`) and set:
 
-Settings that live in the database and are changed in the web interface (account menu → *Administration*): users, quotas,
-groups, team folders, sharing policies (public links, file requests, password requirement, maximum validity) and the sign-in page
-(server name, welcome text, background image).
+```yaml
+      SYNCDRIVE_Server__RequireTls: "true"
+      SYNCDRIVE_Server__TrustForwardedHeaders: "true"   # only when nothing but the proxy can reach port 8080
+```
 
-## Reverse proxy and TLS
+Requirements for the proxy:
 
-The server speaks plain HTTP on port 8080 and expects a TLS-terminating proxy in front of it (or `RequireTls=false` for tests only).
-Requirements for any proxy:
-
-- forward `X-Forwarded-Proto` (and `X-Forwarded-For`) and set `TrustForwardedHeaders=true` on the server;
+- forward `X-Forwarded-Proto` (and `X-Forwarded-For`);
 - **do not buffer responses** — clients hold long-poll requests open for up to `MaxLongPollSeconds`;
 - allow request bodies of at least `MaxBlockBytes` (8 MiB);
 - read timeout above `MaxLongPollSeconds` (e.g. 90 s).
@@ -263,7 +188,48 @@ server {
 }
 ```
 
-Clients default to port **8443** when the address has no port.
+## Configuration variables
+
+All settings are environment variables with the prefix `SYNCDRIVE_Server__` (two underscores). They can also be set in
+`appsettings.json` under the section `Server`.
+
+| Variable | Default | Description |
+|---|---|---|
+| `SYNCDRIVE_Server__DataDirectory` | `/data` (image) | Directory for `server.db`, `blocks/`, `thumbnails/` and the sign-in page assets. Must be a local volume. |
+| `SYNCDRIVE_Server__RequireTls` | `true` | Reject requests that did not arrive via HTTPS (`/healthz` is exempt). Set `false` for plain HTTP. |
+| `SYNCDRIVE_Server__TrustForwardedHeaders` | `false` | Honour `X-Forwarded-Proto` and `X-Forwarded-For` from any sender. Only enable behind a proxy that alone can reach the port; also needed so the brute-force limiter sees real client addresses. |
+| `SYNCDRIVE_Server__AdminUserName` | — | Creates this administrator on the first start (only if no user exists yet). |
+| `SYNCDRIVE_Server__AdminPassword` | — | Password for that administrator. |
+| `SYNCDRIVE_Server__AdminPasswordFile` | — | Alternative: file containing the password (Docker or Kubernetes secret; must be readable for UID 1654). |
+| `SYNCDRIVE_Server__BackupDirectory` | — (off) | Target of the nightly backup, ideally another disk. Empty disables the backup. |
+| `SYNCDRIVE_Server__BackupTime` | `02:30` | Time of day for the backup in the container time zone (`TZ`). |
+| `SYNCDRIVE_Server__BackupsToKeep` | `7` | Number of database snapshots to keep; blocks are only ever added. |
+| `SYNCDRIVE_Server__MaxBlockBytes` | `8388608` (8 MiB) | Largest accepted block upload. Clients send at most 4 MiB. |
+| `SYNCDRIVE_Server__MaxLongPollSeconds` | `60` | Longest wait of a change long-poll request. Keep it below a proxy's read timeout. |
+| `SYNCDRIVE_Server__MaxPublicUploadBytes` | `4294967296` (4 GiB) | Largest file anyone may upload through a file request link. |
+| `SYNCDRIVE_Server__Argon2MemoryKiB` | `65536` | Argon2id memory cost for password hashes. |
+| `SYNCDRIVE_Server__Argon2Iterations` | `3` | Argon2id time cost. |
+| `SYNCDRIVE_Server__Argon2Parallelism` | `4` | Argon2id lanes. The parameters are stored with each hash, so changing them later is safe. |
+
+Variables of the ASP.NET base image:
+
+| Variable | Default | Description |
+|---|---|---|
+| `ASPNETCORE_HTTP_PORTS` | `8080` | HTTP port inside the container (the health check uses 8080) |
+| `ASPNETCORE_HTTPS_PORTS` | — | HTTPS port inside the container, together with a certificate |
+| `ASPNETCORE_Kestrel__Certificates__Default__Path` | — | Certificate (PEM or PFX) |
+| `ASPNETCORE_Kestrel__Certificates__Default__KeyPath` | — | Private key (PEM) |
+| `ASPNETCORE_Kestrel__Certificates__Default__Password` | — | Password of a PFX or encrypted key |
+| `TZ` | `UTC` | Time zone |
+| `DOTNET_gcServer` | `0` | Workstation GC keeps memory use low on small machines |
+
+Volumes: `/data` (required) and `/backup` (optional). The process runs as the unprivileged user `app` (UID 1654); a bind-mounted
+directory must be writable for that UID (`sudo chown 1654 /path/to/dir`). To put the backup on another disk, replace the volume,
+e.g. `- /mnt/usb/syncdrive-backup:/backup`.
+
+Settings that live in the database and are changed in the web interface (account menu → *Administration*): users, quotas,
+groups, team folders, sharing policies (public links, file requests, password requirement, maximum validity) and the sign-in page
+(server name, welcome text, background image).
 
 ## Backup and restore
 
@@ -281,7 +247,7 @@ Restore: stop the server, copy the newest `db/server-*.db` to `/data/server.db`,
 
 ## Updating
 
-Docker Compose (Option A):
+Docker Compose:
 
 ```bash
 cd /opt/syncdrive
@@ -290,8 +256,8 @@ docker compose up -d
 docker image prune -f      # optional: remove the old image
 ```
 
-`docker run` (Option B): `docker pull magpeek/syncdrive-server:latest`, then remove the container (`docker rm -f syncdrive`) and
-start it again with the same command; the data stays in the volumes.
+`docker run`: `docker pull magpeek/syncdrive-server:latest`, then `docker rm -f syncdrive` and start it again with the same
+command; the data stays in the volumes.
 
 Database migrations run automatically on start. Clients and server of the same minor version always work together; before 1.0.0 a
 new minor version may require updating the clients as well (see [CHANGELOG.md](../CHANGELOG.md)).
@@ -301,18 +267,19 @@ new minor version may require updating the clients as well (see [CHANGELOG.md](.
 | Endpoint | Purpose |
 |---|---|
 | `GET /healthz` | `200` when the server is up (used by the Docker health check, works without TLS) |
-| `GET /api/v1/info` | Product name and version, e.g. `{"product":"SyncDrive","version":"0.18.2"}` |
+| `GET /api/v1/info` | Product name and version, e.g. `{"product":"SyncDrive","version":"0.18.5"}` |
 
 ```bash
-curl -k https://drive.example.lan:8443/api/v1/info
+curl http://localhost:8080/api/v1/info
 ```
 
 ## Troubleshooting
 
 | Symptom | Cause and fix |
 |---|---|
-| Server stays `unhealthy` / restarts | `docker compose logs server`. Most often `/data` or `/backup` is a bind mount not writable for UID 1654, or `admin-password.txt` is not readable for UID 1654. |
-| Sign-in as `admin` fails | The administrator is only created when the database has no users yet; changing the password file later has no effect. Another administrator can set a new password (*Administration → Users*); on a fresh installation, remove the stack with `docker compose down -v` and start again. |
-| Every request returns `400 invalid_request` (TLS) | Requests reach the server without `X-Forwarded-Proto: https`. Set `TrustForwardedHeaders=true` and forward the header. |
-| Clients disconnect every minute | The proxy buffers or times out long-poll requests: disable buffering, read timeout above 60 s. |
-| Caddy fails to start | `SYNCDRIVE_HOST` must be a host name (not empty); port 8443 must be free. |
+| Container stays `unhealthy` / restarts | `docker compose logs syncdrive`. Most often `/data` or `/backup` is a bind mount not writable for UID 1654, or the certificate is not readable for UID 1654. |
+| `docker compose up` says `SYNCDRIVE_ADMIN_PASSWORD` is missing | Create `.env` from `.env.example` and set the password. |
+| Sign-in as `admin` fails | The administrator is only created when the database has no users yet; changing the password in `.env` later has no effect. Another administrator can set a new password (*Administration → Users*); on a fresh installation run `docker compose down -v` and start again. |
+| Every request returns `400 invalid_request` (TLS) | `RequireTls` is `true`, but the request came via plain HTTP. Use HTTPS, set `RequireTls=false`, or behind a proxy set `TrustForwardedHeaders=true` and forward `X-Forwarded-Proto`. |
+| The client cannot connect to an HTTP server | Enter the address with `http://` and the port; without a scheme the client uses HTTPS on port 8443. |
+| Clients disconnect every minute | A proxy buffers or times out long-poll requests: disable buffering, read timeout above 60 s. |

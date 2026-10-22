@@ -70,33 +70,34 @@ You need Docker with the Compose plugin on a Linux machine (or a NAS with Docker
 Docker Hub as **[`magpeek/syncdrive-server`](https://hub.docker.com/r/magpeek/syncdrive-server)** (`linux/amd64`, `linux/arm64`;
 tags `latest` and `<version>`).
 
-**Try it in one minute** (local test without TLS):
+The application listens on port **8080** inside the container.
+
+**Docker Compose:** copy the example folder **[`docker/`](docker)** (`docker-compose.yml`, `.env.example`) to the server, then:
 
 ```bash
-docker run -d --name syncdrive -p 127.0.0.1:8080:8080 -v syncdrive-data:/data \
-  -e SYNCDRIVE_Server__RequireTls=false \
-  -e SYNCDRIVE_Server__AdminUserName=admin -e SYNCDRIVE_Server__AdminPassword='change-me-now' \
-  magpeek/syncdrive-server:latest
-```
-
-Open `http://localhost:8080/` and sign in as `admin`.
-
-**Production setup with Docker Compose:** the server plus a [Caddy](https://caddyserver.com/) reverse proxy that terminates TLS on
-port **8443**. Copy the example folder **[`docker/`](docker)** (`docker-compose.yml`, `Caddyfile`, `.env.example`) to the
-server, then:
-
-```bash
-cp .env.example .env && nano .env                              # SYNCDRIVE_HOST: the name clients use to reach the server
-printf '%s' 'a-long-admin-password' > admin-password.txt       # read once on the first start
-sudo chown 1654:1654 admin-password.txt && sudo chmod 400 admin-password.txt
+cp .env.example .env
+nano .env                  # set SYNCDRIVE_ADMIN_PASSWORD (and the port, if 8080 is taken)
 docker compose up -d
 ```
 
-Open `https://drive.example.lan:8443/` and sign in as `admin`. By default Caddy issues a certificate from its own internal CA; the
-client shows its fingerprint on first connect and asks you to trust it.
+**Or with `docker run`:**
 
-Data lives in the Docker volume `syncdrive-data`, nightly backups in `syncdrive-backup`. The full guide, with `docker run` behind
-your own reverse proxy, all configuration variables, backup, updates and troubleshooting, is in **[docs/server.md](docs/server.md)**.
+```bash
+docker run -d --name syncdrive --restart unless-stopped \
+  -p 8080:8080 \
+  -v syncdrive-data:/data -v syncdrive-backup:/backup \
+  -e SYNCDRIVE_Server__RequireTls=false \
+  -e SYNCDRIVE_Server__AdminUserName=admin \
+  -e SYNCDRIVE_Server__AdminPassword='a-long-admin-password' \
+  -e SYNCDRIVE_Server__BackupDirectory=/backup \
+  magpeek/syncdrive-server:latest
+```
+
+Open `http://<server>:8080/` and sign in as `admin`. The administrator is created on the first start only.
+
+Plain HTTP is fine on a trusted home network. Anywhere else, use HTTPS: either give the container a certificate (it then serves
+HTTPS itself on port 8443) or put it behind your reverse proxy. Both are described, together with all configuration variables,
+backup, updates and troubleshooting, in **[docs/server.md](docs/server.md)**.
 
 ### 2. Install the Windows client
 
@@ -109,8 +110,9 @@ Download the latest version from the **[Releases page](https://github.com/MAGPEE
 | `SyncDrive-Client-<version>-<build>-x64.sha256` | SHA-256 checksums of both files |
 
 The client installs per user into `%LOCALAPPDATA%\Programs\SyncDrive` and needs **no administrator rights**. It brings its own .NET
-runtime. After installation the setup wizard opens: enter the server address (e.g. `drive.example.lan:8443`), your user name and
-password, then choose a server folder and a local folder to sync.
+runtime. After installation the setup wizard opens: enter the server address, your user name and
+password, then choose a server folder and a local folder to sync. Enter the address with scheme and port as the server is
+reachable, e.g. `http://drive.example.lan:8080` or `https://drive.example.lan:8443`.
 
 Silent installation:
 
@@ -152,35 +154,14 @@ Exit codes: `0` success, `1` failure, `2` wrong usage — handy for scripts.
 
 **Security**
 - Passwords hashed with Argon2id; per-device tokens stored only as hashes and revocable from the web interface.
-- TLS required (directly or behind a proxy); clients can pin self-signed certificates.
+- HTTPS directly in the container or behind a reverse proxy; clients can pin self-signed certificates.
 - Brute-force protection for sign-in and link passwords (`429` with `Retry-After`).
 - Blocks are scoped per space: knowing a hash never gives access to someone else's file.
 
-## Building from source
+## Development
 
-Requirements: [.NET SDK 9](https://dotnet.microsoft.com/download), Docker for the server image, Windows for the client packages.
-
-```bash
-dotnet build
-dotnet test                              # ~2,500 tests, run on Linux and Windows in CI
-docker build -t syncdrive-server .       # server image incl. web interface
-pwsh installer/build-client.ps1          # Windows: client .msi and .exe into artifacts/client
-```
-
-| Project | Purpose |
-|---|---|
-| `src/SyncDrive.Core` | Domain logic without dependencies: paths, hashes, merge, filters, conflict names, FastCDC |
-| `src/SyncDrive.Contracts` | Protocol DTOs and error codes |
-| `src/SyncDrive.Server.*` | Server application services and ASP.NET Core host |
-| `src/SyncDrive.Client.*` | Sync engine, background service (daemon), tray UI (Avalonia), `syncdrive_cli` |
-| `src/SyncDrive.Web*` | Web interface (Blazor WebAssembly) and its view models |
-| `src/SyncDrive.Infra.*` | Adapters: SQLite, block files, Argon2, HTTP, named pipes, Windows Cloud Files, thumbnails |
-| `tests/` | Unit, contract, scenario, end-to-end and architecture tests |
-| `docker/` | Docker Compose example with the Docker Hub image (deploy without source code) |
-| `deploy/` | Same stack built from source, with resource limits and log rotation |
-| `installer/` | WiX 5 projects and build script for the Windows packages |
-
-The architecture is hexagonal: the core knows nothing about databases, HTTP or Windows; architecture tests enforce the dependency rules.
+You only need this to work on SyncDrive itself; for running it, the Docker image and the release downloads are enough.
+Building, tests and the project structure are described in **[docs/development.md](docs/development.md)**.
 
 ## Versioning
 
