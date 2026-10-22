@@ -70,7 +70,7 @@
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="ui:NotificationItemViewModel">
                   <Grid ColumnDefinitions="Auto,*" Margin="14,7">
-                    <Ellipse Width="8" Height="8" Fill="#D64541" Margin="0,6,8,0" VerticalAlignment="Top" IsVisible="{Binding Unread}" />
+                    <Ellipse Width="8" Height="8" Fill="{StaticResource ErrorText}" Margin="0,6,8,0" VerticalAlignment="Top" IsVisible="{Binding Unread}" />
                     <StackPanel Grid.Column="1">
                       <WrapPanel>
                         <TextBlock Text="{Binding Actor}" Foreground="{StaticResource Link}" Margin="0,0,4,0" />

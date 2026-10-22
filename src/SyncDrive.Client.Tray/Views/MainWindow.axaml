@@ -55,7 +55,7 @@
                   <Button Classes="primary" HorizontalAlignment="Center" Content="{Binding Texts.Create}" Command="{Binding CreateCommand}" />
                 </StackPanel>
                 <ListBox IsVisible="{Binding !IsEmpty}" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
-                         Background="White" Padding="0">
+                         Background="{StaticResource Bg}" Padding="0">
                   <ListBox.DataTemplates>
                     <DataTemplate DataType="ui:ServerGroupViewModel">
                       <Border Background="{StaticResource AccentLight}" Margin="-12,-9" Padding="12,8">
@@ -166,7 +166,7 @@
                       <DataTemplate x:DataType="ui:NotificationItemViewModel">
                         <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="4,8">
                           <Grid ColumnDefinitions="Auto,*,200">
-                            <Ellipse Width="8" Height="8" Fill="#D64541" Margin="0,0,8,0" IsVisible="{Binding Unread}" VerticalAlignment="Center" />
+                            <Ellipse Width="8" Height="8" Fill="{StaticResource ErrorText}" Margin="0,0,8,0" IsVisible="{Binding Unread}" VerticalAlignment="Center" />
                             <WrapPanel Grid.Column="1">
                               <TextBlock Text="{Binding Actor}" Foreground="{StaticResource Link}" Margin="0,0,4,0" />
                               <TextBlock Text="{Binding Verb}" Margin="0,0,4,0" />

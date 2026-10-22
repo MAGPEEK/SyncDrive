@@ -18,7 +18,7 @@
     </Grid>
     <Panel>
       <TextBlock Classes="sub" Text="{Binding Texts.NoVersions}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsEmpty}" />
-      <ListBox ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected, Mode=TwoWay}" IsVisible="{Binding !IsEmpty}" Background="White">
+      <ListBox ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected, Mode=TwoWay}" IsVisible="{Binding !IsEmpty}" Background="{StaticResource Bg}">
         <ListBox.ItemTemplate>
           <DataTemplate x:DataType="ui:VersionRow">
             <Grid ColumnDefinitions="*,90,*">

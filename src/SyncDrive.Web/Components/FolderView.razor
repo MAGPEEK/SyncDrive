@@ -49,7 +49,10 @@
         }
     </div>
 
-    <div class="list" tabindex="0" @ref="_list" @onkeydown="KeyAsync" @ondragenter="DragEnter" @ondragenter:preventDefault>
+    @* Ablegen: der Rahmen scrollt nicht, die Ablagefläche liegt daher immer über dem sichtbaren Teil der Liste. dragover/drop ohne Ziel
+       an der Liste abfangen (nicht am Rahmen: das Dateifeld darin muss den Drop bekommen), sonst öffnet der Browser die Datei selbst. *@
+    <div class="list-wrap" @ondragenter="DragEnter" @ondragenter:preventDefault>
+    <div class="list" tabindex="0" @ref="_list" @onkeydown="KeyAsync" @ondragover:preventDefault @ondrop:preventDefault>
         <div class="row head">
             <button class="col-title sort" @onclick="() => Browser.SortBy(SortColumn.Name)">@T.Title @Arrow(SortColumn.Name)</button>
             <span class="col-labels sort">@T.Labels</span>
@@ -100,13 +103,16 @@
                 break;
         }
 
-        @if (_dragging && Browser.CanWrite)
-        {
-            <div class="drop-zone" @ondragleave="() => _dragging = false">
-                <InputFile OnChange="UploadAsync" multiple class="drop-input" />
-                <div class="drop-text">⤒ @T.DropHere</div>
-            </div>
-        }
+    </div>
+    @if (_dragging && Browser.CanWrite)
+    {
+        @* Das unsichtbare Dateifeld liegt obenauf und nimmt die Dateien an; nur sein dragleave heißt „Fläche verlassen“ (das der Fläche
+           selbst käme schon beim Wechsel auf das Feld). *@
+        <div class="drop-zone">
+            <InputFile OnChange="UploadAsync" multiple class="drop-input" @ondragleave="() => _dragging = false" />
+            <div class="drop-text">⤒ @T.DropHere</div>
+        </div>
+    }
     </div>
 
     @if (_contextItem is { } context)

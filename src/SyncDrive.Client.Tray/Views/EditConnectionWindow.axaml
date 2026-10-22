@@ -24,8 +24,8 @@
       </StackPanel>
     </DockPanel>
 
-    <Border IsVisible="{Binding IsBusy}" Background="#66000000">
-      <Border Background="White" CornerRadius="4" Padding="24,18" HorizontalAlignment="Center" VerticalAlignment="Center">
+    <Border IsVisible="{Binding IsBusy}" Background="{StaticResource Scrim}">
+      <Border Background="{StaticResource Bg}" CornerRadius="4" Padding="24,18" HorizontalAlignment="Center" VerticalAlignment="Center">
         <StackPanel Orientation="Horizontal" Spacing="14">
           <ProgressBar IsIndeterminate="True" Width="60" VerticalAlignment="Center" />
           <TextBlock Text="{Binding Texts.Checking}" VerticalAlignment="Center" />
@@ -33,8 +33,8 @@
       </Border>
     </Border>
 
-    <Border IsVisible="{Binding CertificateFingerprint, Converter={x:Static ObjectConverters.IsNotNull}}" Background="#66000000">
-      <Border Background="White" CornerRadius="4" Padding="20" Width="420" HorizontalAlignment="Center" VerticalAlignment="Center">
+    <Border IsVisible="{Binding CertificateFingerprint, Converter={x:Static ObjectConverters.IsNotNull}}" Background="{StaticResource Scrim}">
+      <Border Background="{StaticResource Bg}" CornerRadius="4" Padding="20" Width="420" HorizontalAlignment="Center" VerticalAlignment="Center">
         <StackPanel Spacing="12">
           <TextBlock Text="{Binding Texts.CertificateQuestion}" TextWrapping="Wrap" />
           <SelectableTextBlock Text="{Binding FingerprintText}" FontFamily="Consolas,monospace" TextWrapping="Wrap" />

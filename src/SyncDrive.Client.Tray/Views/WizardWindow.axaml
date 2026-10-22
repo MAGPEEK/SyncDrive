@@ -10,7 +10,7 @@
     <DockPanel>
       <!-- Kopfband: Überschrift der aktuellen Seite -->
       <Border DockPanel.Dock="Top" Background="{StaticResource Accent}" Padding="24,18">
-        <TextBlock Text="{Binding Heading}" Foreground="White" FontSize="18" FontWeight="SemiBold" />
+        <TextBlock Text="{Binding Heading}" Foreground="{StaticResource OnAccent}" FontSize="18" FontWeight="SemiBold" />
       </Border>
 
       <!-- Navigationsknöpfe -->
@@ -47,13 +47,13 @@
         <StackPanel IsVisible="{Binding IsFoldersStep}" Spacing="14">
           <TextBlock Text="{Binding Texts.WizardFoldersQuestion}" TextWrapping="Wrap" />
           <Grid ColumnDefinitions="70,*" RowDefinitions="64,56,64" Margin="10,4,0,0">
-            <Ellipse Width="58" Height="58" Fill="#3A4047" />
-            <TextBlock Text="🖥" FontSize="24" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <Ellipse Width="58" Height="58" Fill="{StaticResource IconDisc}" />
+            <TextBlock Text="🖥" FontSize="24" Foreground="{StaticResource OnAccent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
             <Line Grid.Row="1" StartPoint="35,0" EndPoint="35,56" Stroke="{StaticResource Accent}" StrokeThickness="2" StrokeDashArray="2,3" />
             <Ellipse Grid.Row="1" Width="28" Height="28" Fill="{StaticResource Accent}" />
-            <TextBlock Grid.Row="1" Text="⇅" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
-            <Ellipse Grid.Row="2" Width="58" Height="58" Fill="#3A4047" />
-            <TextBlock Grid.Row="2" Text="💻" FontSize="24" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <TextBlock Grid.Row="1" Text="⇅" Foreground="{StaticResource OnAccent}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <Ellipse Grid.Row="2" Width="58" Height="58" Fill="{StaticResource IconDisc}" />
+            <TextBlock Grid.Row="2" Text="💻" FontSize="24" Foreground="{StaticResource OnAccent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
 
             <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="14,0,0,0" Spacing="4">
               <TextBlock Text="{Binding Texts.ServerSide}" FontWeight="SemiBold" />
@@ -89,8 +89,8 @@
     </DockPanel>
 
     <!-- Prüfen: Abdunklung mit Karte, Seite gesperrt -->
-    <Border IsVisible="{Binding IsBusy}" Background="#66000000">
-      <Border Background="White" CornerRadius="4" Padding="26,20" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 4 18 0 #40000000">
+    <Border IsVisible="{Binding IsBusy}" Background="{StaticResource Scrim}">
+      <Border Background="{StaticResource Bg}" CornerRadius="4" Padding="26,20" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 4 18 0 #40000000">
         <StackPanel Orientation="Horizontal" Spacing="14">
           <ProgressBar IsIndeterminate="True" Width="60" VerticalAlignment="Center" />
           <TextBlock Text="{Binding Texts.Checking}" VerticalAlignment="Center" />
@@ -99,8 +99,8 @@
     </Border>
 
     <!-- Unbekanntes Zertifikat: Fingerabdruck zeigen, Nutzer entscheidet -->
-    <Border IsVisible="{Binding CertificateFingerprint, Converter={x:Static ObjectConverters.IsNotNull}}" Background="#66000000">
-      <Border Background="White" CornerRadius="4" Padding="22" Width="440" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 4 18 0 #40000000">
+    <Border IsVisible="{Binding CertificateFingerprint, Converter={x:Static ObjectConverters.IsNotNull}}" Background="{StaticResource Scrim}">
+      <Border Background="{StaticResource Bg}" CornerRadius="4" Padding="22" Width="440" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 4 18 0 #40000000">
         <StackPanel Spacing="12">
           <TextBlock Text="{Binding Texts.CertificateQuestion}" TextWrapping="Wrap" />
           <SelectableTextBlock Text="{Binding FingerprintText}" FontFamily="Consolas,monospace" TextWrapping="Wrap" />

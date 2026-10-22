@@ -20,17 +20,20 @@ public enum BadgeKind
     Notification,
 }
 
-/// <summary>Eigene Farben und Zeichen (Prinzip „Grundzeichen + Abzeichen“).</summary>
+/// <summary>
+/// Eigene Farben und Zeichen (Prinzip „Grundzeichen + Abzeichen“), Werte aus dem Design-System „SyncDrive“ (Token in Klammern);
+/// die Statusfarben Grün, Grau und Blassgrau gibt es dort noch nicht (status-ok, status-idle, status-off).
+/// </summary>
 public static class Palette
 {
-    public static readonly Color Accent = Color.Parse("#0F8B8D");
-    public static readonly Color AccentLight = Color.Parse("#E4F2F2");
-    public static readonly Color Green = Color.Parse("#2E9B57");
-    public static readonly Color Blue = Color.Parse("#2F78D0");
-    public static readonly Color Grey = Color.Parse("#8C9199");
-    public static readonly Color Red = Color.Parse("#D64541");
-    public static readonly Color Pale = Color.Parse("#B8BDC3");
-    public static readonly Color Text = Color.Parse("#2B2F33");
+    public static readonly Color Accent = Color.Parse("#0F8B8D");      // accent
+    public static readonly Color AccentLight = Color.Parse("#E4F2F2"); // accent-light
+    public static readonly Color Green = Color.Parse("#2E9B57");       // status-ok
+    public static readonly Color Blue = Color.Parse("#2F78D0");        // link
+    public static readonly Color Grey = Color.Parse("#8C9199");        // status-idle
+    public static readonly Color Red = Color.Parse("#D64541");         // error
+    public static readonly Color Pale = Color.Parse("#B8BDC3");        // status-off
+    public static readonly Color Text = Color.Parse("#2B2F33");        // text
 
     public static Color Of(StatusColor color) => color switch
     {
@@ -41,6 +44,21 @@ public static class Palette
         StatusColor.Pale => Pale,
         _ => Accent,
     };
+}
+
+/// <summary>Dateiart-Farben wie in der Weboberfläche (Tokens filetype-*).</summary>
+public static class FileColors
+{
+    public const string Folder = "#F2B84B";  // filetype-folder
+    public const string Doc = "#3B7DDD";     // filetype-doc
+    public const string Sheet = "#2E9D57";   // filetype-sheet
+    public const string Slides = "#E0663A";  // filetype-slides
+    public const string Pdf = "#D64541";     // filetype-pdf
+    public const string Image = "#9B59B6";   // filetype-image
+    public const string Audio = "#E67E22";   // filetype-audio
+    public const string Video = "#C0392B";   // filetype-video
+    public const string Archive = "#7F8C8D"; // filetype-archive
+    public const string Other = "#95A0AA";   // filetype-other
 }
 
 public static class Badges
@@ -270,7 +288,7 @@ public sealed class FolderBadge : Control
             g.EndFigure(true);
         }
 
-        context.DrawGeometry(new SolidColorBrush(Color.Parse("#E8B64C")), null, folder);
+        context.DrawGeometry(new SolidColorBrush(Color.Parse(FileColors.Folder)), null, folder);
         Badges.Draw(context, new Rect(17 * s, 15 * s, 15 * s, 15 * s), Kind);
     }
 }
@@ -292,16 +310,16 @@ public sealed class FileKindIcon : Control
     {
         var (color, label) = Kind switch
         {
-            FileKind.Document => ("#2F6FC4", "DOC"),
-            FileKind.Spreadsheet => ("#2E8B57", "XLS"),
-            FileKind.Presentation => ("#D2662E", "PPT"),
-            FileKind.Pdf => ("#C9372C", "PDF"),
-            FileKind.Image => ("#8E5BC2", "IMG"),
-            FileKind.Audio => ("#C2558E", "AUD"),
-            FileKind.Video => ("#5B6BC2", "VID"),
-            FileKind.Archive => ("#8A6D3B", "ZIP"),
-            FileKind.Folder => ("#E8B64C", string.Empty),
-            _ => ("#8C9199", "FILE"),
+            FileKind.Document => (FileColors.Doc, "DOC"),
+            FileKind.Spreadsheet => (FileColors.Sheet, "XLS"),
+            FileKind.Presentation => (FileColors.Slides, "PPT"),
+            FileKind.Pdf => (FileColors.Pdf, "PDF"),
+            FileKind.Image => (FileColors.Image, "IMG"),
+            FileKind.Audio => (FileColors.Audio, "AUD"),
+            FileKind.Video => (FileColors.Video, "VID"),
+            FileKind.Archive => (FileColors.Archive, "ZIP"),
+            FileKind.Folder => (FileColors.Folder, string.Empty),
+            _ => (FileColors.Other, "FILE"),
         };
         var w = Bounds.Width;
         var h = Bounds.Height;

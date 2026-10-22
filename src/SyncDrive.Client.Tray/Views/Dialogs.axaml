@@ -5,8 +5,8 @@
         WindowStartupLocation="CenterOwner" Title="SyncDrive">
   <StackPanel Margin="24,20" Spacing="18">
     <Grid ColumnDefinitions="Auto,*">
-      <Border Width="34" Height="34" CornerRadius="17" Background="#2F78D0" VerticalAlignment="Top" Margin="0,0,14,0">
-        <TextBlock Text="i" Foreground="White" FontWeight="Bold" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" />
+      <Border Width="34" Height="34" CornerRadius="17" Background="{StaticResource Link}" VerticalAlignment="Top" Margin="0,0,14,0">
+        <TextBlock Text="i" Foreground="{StaticResource OnAccent}" FontWeight="Bold" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" />
       </Border>
       <TextBlock Grid.Column="1" x:Name="MessageText" TextWrapping="Wrap" VerticalAlignment="Center" />
     </Grid>

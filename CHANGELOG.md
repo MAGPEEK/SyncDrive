@@ -5,6 +5,21 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.27.0] – 2026-10-22 – Design-System überall, Drag & Drop
+
+### Geändert
+- Farben kommen überall aus den Tokens des Design-Systems „SyncDrive“: Weboberfläche nur über CSS-Variablen in `:root` (Namen wie im
+  Design-System, z. B. `--accent`, `--hover-surface`, `--filetype-pdf`), Desktop-Client nur über Ressourcen in `App.axaml`. Neu dazu, weil
+  das Design-System sie noch nicht kennt: `on-accent` (Schrift auf Teal und Dunkel; trennt sie von der Fläche `bg`, Grundlage für ein
+  dunkles Theme), `selected-row`, `selected-row-hover`, `icon-disc`, `scrim` sowie die Statusfarben `status-ok`, `status-idle`, `status-off`.
+- Dateisymbole im Desktop-Client haben jetzt dieselben Farben wie im Web (`filetype-*`; vorher eigene, leicht abweichende Töne).
+- Ein Architekturtest verhindert feste Farbwerte außerhalb der Token-Definitionen (CSS, Razor außer dem Logo, AXAML).
+
+### Behoben
+- Drag & Drop in der Weboberfläche: Die Ablagefläche schloss sich, sobald der Mauszeiger auf das (unsichtbare) Dateifeld darin wechselte,
+  die Datei fiel ins Leere; bei gescrollter Liste lag die Fläche zudem außerhalb des sichtbaren Bereichs. Die Fläche liegt jetzt über dem
+  sichtbaren Teil der Liste und schließt erst beim Verlassen; eine daneben fallengelassene Datei öffnet der Browser nicht mehr selbst.
+
 ## [0.26.0] – 2026-10-22 – Vollständige Deinstallation
 
 ### Geändert

@@ -2,16 +2,26 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="SyncDrive.Client.Tray.App"
              RequestedThemeVariant="Light">
+  <!-- Tokens des Design-Systems „SyncDrive“ (Name dort in Klammern); Farben in den Fenstern nur über diese Schlüssel, nie als festen Wert. -->
   <Application.Resources>
-    <SolidColorBrush x:Key="Accent" Color="#0F8B8D" />
-    <SolidColorBrush x:Key="AccentHover" Color="#0B7577" />
-    <SolidColorBrush x:Key="AccentLight" Color="#E4F2F2" />
-    <SolidColorBrush x:Key="TextMain" Color="#2B2F33" />
-    <SolidColorBrush x:Key="TextSub" Color="#7A8088" />
-    <SolidColorBrush x:Key="Line" Color="#E4E7EA" />
-    <SolidColorBrush x:Key="Link" Color="#2F78D0" />
-    <SolidColorBrush x:Key="NavBack" Color="#F7F8F9" />
-    <SolidColorBrush x:Key="ErrorText" Color="#D64541" />
+    <SolidColorBrush x:Key="Accent" Color="#0F8B8D" />            <!-- accent -->
+    <SolidColorBrush x:Key="AccentHover" Color="#0B7577" />       <!-- accent-hover -->
+    <SolidColorBrush x:Key="AccentLight" Color="#E4F2F2" />       <!-- accent-light -->
+    <SolidColorBrush x:Key="AccentDisabled" Color="#9CCFD0" />    <!-- accent-disabled -->
+    <SolidColorBrush x:Key="OnAccent" Color="#FFFFFF" />          <!-- on-accent: Schrift auf accent und Abdunklung -->
+    <SolidColorBrush x:Key="TextMain" Color="#2B2F33" />          <!-- text -->
+    <SolidColorBrush x:Key="TextSub" Color="#7A8088" />           <!-- text-sub -->
+    <SolidColorBrush x:Key="NavText" Color="#555B62" />           <!-- nav-text -->
+    <SolidColorBrush x:Key="Line" Color="#E4E7EA" />              <!-- line -->
+    <SolidColorBrush x:Key="OutlineBorder" Color="#C9CED3" />     <!-- outline-border -->
+    <SolidColorBrush x:Key="Link" Color="#2F78D0" />              <!-- link -->
+    <SolidColorBrush x:Key="Bg" Color="#FFFFFF" />                <!-- bg -->
+    <SolidColorBrush x:Key="NavBack" Color="#F7F8F9" />           <!-- nav -->
+    <SolidColorBrush x:Key="ErrorText" Color="#D64541" />         <!-- error -->
+    <SolidColorBrush x:Key="SelectedRow" Color="#D3EBEB" />       <!-- selected-row: gewählte Listenzeile -->
+    <SolidColorBrush x:Key="SelectedRowHover" Color="#C4E3E4" />  <!-- selected-row-hover -->
+    <SolidColorBrush x:Key="IconDisc" Color="#3A4047" />          <!-- icon-disc: Kreis hinter den Symbolen im Assistenten -->
+    <SolidColorBrush x:Key="Scrim" Color="#66000000" />           <!-- scrim: Abdunklung hinter Hinweisen über dem Fenster -->
     <!-- Fluent nutzt den Systemakzent für Optionsfelder, Kästchen, Fokus und Auswahl: auf die eigene Akzentfarbe legen -->
     <Color x:Key="SystemAccentColor">#0F8B8D</Color>
     <Color x:Key="SystemAccentColorDark1">#0D7B7D</Color>
@@ -28,29 +38,29 @@
     <Style Selector="Window">
       <Setter Property="FontSize" Value="13" />
       <Setter Property="Foreground" Value="{StaticResource TextMain}" />
-      <Setter Property="Background" Value="White" />
+      <Setter Property="Background" Value="{StaticResource Bg}" />
     </Style>
 
     <!-- Hauptknopf: Akzentfläche, weiße Schrift (Create, Weiter, OK) -->
     <Style Selector="Button.primary">
       <Setter Property="Background" Value="{StaticResource Accent}" />
-      <Setter Property="Foreground" Value="White" />
+      <Setter Property="Foreground" Value="{StaticResource OnAccent}" />
       <Setter Property="CornerRadius" Value="3" />
       <Setter Property="Padding" Value="16,6" />
     </Style>
     <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="{StaticResource AccentHover}" />
-      <Setter Property="Foreground" Value="White" />
+      <Setter Property="Foreground" Value="{StaticResource OnAccent}" />
     </Style>
     <Style Selector="Button.primary:disabled /template/ ContentPresenter">
-      <Setter Property="Background" Value="#9CCFD0" />
-      <Setter Property="Foreground" Value="White" />
+      <Setter Property="Background" Value="{StaticResource AccentDisabled}" />
+      <Setter Property="Foreground" Value="{StaticResource OnAccent}" />
     </Style>
 
     <!-- Nebenknöpfe: grau umrandet -->
     <Style Selector="Button.outline">
-      <Setter Property="Background" Value="White" />
-      <Setter Property="BorderBrush" Value="#C9CED3" />
+      <Setter Property="Background" Value="{StaticResource Bg}" />
+      <Setter Property="BorderBrush" Value="{StaticResource OutlineBorder}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="3" />
       <Setter Property="Padding" Value="12,5" />
@@ -61,17 +71,17 @@
       <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="HorizontalContentAlignment" Value="Left" />
       <Setter Property="Background" Value="Transparent" />
-      <Setter Property="Foreground" Value="#555B62" />
+      <Setter Property="Foreground" Value="{StaticResource NavText}" />
       <Setter Property="CornerRadius" Value="0" />
       <Setter Property="Padding" Value="18,10" />
     </Style>
     <Style Selector="Button.nav.active">
       <Setter Property="Background" Value="{StaticResource Accent}" />
-      <Setter Property="Foreground" Value="White" />
+      <Setter Property="Foreground" Value="{StaticResource OnAccent}" />
     </Style>
     <Style Selector="Button.nav.active:pointerover /template/ ContentPresenter">
       <Setter Property="Background" Value="{StaticResource Accent}" />
-      <Setter Property="Foreground" Value="White" />
+      <Setter Property="Foreground" Value="{StaticResource OnAccent}" />
     </Style>
 
     <!-- Link: blau, ohne Rahmen (lokaler Pfad, Personen, Dateien) -->
@@ -139,10 +149,10 @@
 
     <!-- Auswahl in Listen: helle Akzenttönung statt kräftiger Fläche -->
     <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
-      <Setter Property="Background" Value="#D3EBEB" />
+      <Setter Property="Background" Value="{StaticResource SelectedRow}" />
     </Style>
     <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter">
-      <Setter Property="Background" Value="#C4E3E4" />
+      <Setter Property="Background" Value="{StaticResource SelectedRowHover}" />
     </Style>
 
     <Style Selector="CheckBox, RadioButton">
