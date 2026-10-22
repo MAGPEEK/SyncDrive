@@ -63,7 +63,6 @@ public static class IpcProtocol
         public const string Versions = "shell.versions";
         public const string SaveVersion = "shell.saveversion";
         public const string RestoreVersion = "shell.restoreversion";
-        public const string Lock = "shell.lock";
         public const string FolderSync = "shell.foldersync";
     }
 
@@ -117,8 +116,6 @@ internal sealed record PasswordParams(string? Password);
 internal sealed record PathParams(string Path);
 
 internal sealed record VersionParams(string Path, long Revision, string? Target = null);
-
-internal sealed record LockParams(string Path, LockAction Action);
 
 internal sealed record FolderSyncParams(string Path, bool Synced);
 

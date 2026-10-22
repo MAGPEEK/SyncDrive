@@ -199,7 +199,7 @@ public sealed class ClientSetupTests : IDisposable
     {
         var connection = (await _setup.SignInAsync(new SignInRequest("nas", "anna", "pw"), default)).ConnectionId!;
         _server.Notes.Add(new NotificationInfo("n1", "shared", DateTimeOffset.UnixEpoch.AddDays(2), "ben", "team", string.Empty, Read: false));
-        _server.Notes.Add(new NotificationInfo("n2", "unlock_request", DateTimeOffset.UnixEpoch.AddDays(1), "carla", "my", "a.txt", Read: true));
+        _server.Notes.Add(new NotificationInfo("n2", "shared", DateTimeOffset.UnixEpoch.AddDays(1), "carla", "my", string.Empty, Read: true));
         var daemon = new DaemonController();
         using var center = new NotificationCenter(_config, _secrets, _server, daemon);
         var setup = new ClientSetup(_config, _secrets, _server, _lifecycle, _ => new TaskEnvironment(_ => true, _root, [], true), "PC", notifications: center);
@@ -265,9 +265,6 @@ public sealed class ClientSetupTests : IDisposable
 
         public Task<Result<NodeInfo?>> GetNodeInfoAsync(ServerLogin login, string spaceId, RelativePath path, CancellationToken ct) =>
             Task.FromResult(Result.Ok<NodeInfo?>(null));
-
-        public Task<Result<bool>> LockAsync(ServerLogin login, string spaceId, RelativePath path, LockAction action, CancellationToken ct) =>
-            Task.FromResult(Result.Ok(true));
 
         public Task<Result<Stream>> DownloadBlockAsync(ServerLogin login, string spaceId, string hash, CancellationToken ct) =>
             Task.FromResult(Result.Ok<Stream>(new MemoryStream()));

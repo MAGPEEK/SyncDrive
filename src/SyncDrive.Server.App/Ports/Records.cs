@@ -8,9 +8,6 @@ public enum ChangeOp
     Upsert,
     Delete,
     Move,
-
-    /// <summary>Sperre gesetzt oder aufgehoben; Inhalt und Knoten-Revision bleiben unverändert.</summary>
-    Lock,
 }
 
 /// <summary>
@@ -18,8 +15,7 @@ public enum ChangeOp
 /// als Grabstein erhalten, damit Clients mit altem Stand den Konflikt erkennen.
 /// </summary>
 /// <param name="ParentId">Null: direkt unter der Wurzel des Space.</param>
-/// <param name="Revision">Revision der letzten Änderung an diesem Knoten (auch Löschen; nicht Sperren).</param>
-/// <param name="LockedBy">Benutzer, der die Datei gesperrt hat (A15); nur er darf sie ändern, verschieben oder löschen.</param>
+/// <param name="Revision">Revision der letzten Änderung an diesem Knoten (auch Löschen).</param>
 /// <param name="DeletedAt">Server-Zeit des Löschens (Papierkorb).</param>
 public sealed record NodeRecord(
     string Id,
@@ -32,8 +28,6 @@ public sealed record NodeRecord(
     DateTimeOffset MTime,
     ContentHash? Hash,
     IReadOnlyList<ContentHash> Blocks,
-    string? LockedBy = null,
-    DateTimeOffset? LockedAt = null,
     DateTimeOffset? DeletedAt = null);
 
 public sealed record ChangeRecord(

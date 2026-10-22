@@ -153,6 +153,44 @@ public sealed class SqliteSpaceStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task File_locks_of_an_existing_database_are_removed_on_start()
+    {
+        var service = ServiceOver(new SyncDrive.Infra.Sqlite.SqliteSpaceStore(DbPath));
+        await new SyncDrive.Infra.Sqlite.SqliteSpaceStore(DbPath).CreateSpaceAsync("s", Ct);
+        await service.CommitAsync("s", new SyncDrive.Contracts.CommitRequest(SyncDrive.Contracts.CommitOps.Mkdir, "Ordner", 0, MTime: T0), null, Ct);
+        await using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DbPath};Pooling=False"))
+        {
+            await connection.OpenAsync();
+            await using var old = connection.CreateCommand();
+            old.CommandText = """
+                ALTER TABLE node ADD COLUMN locked_by TEXT;
+                ALTER TABLE node ADD COLUMN locked_at TEXT;
+                UPDATE node SET locked_by = 'u_x', locked_at = '2026-10-19T12:00:00.0000000+00:00';
+                UPDATE space SET last_revision = 2 WHERE id = 's';
+                INSERT INTO change (space_id, revision, node_id, op, path, old_path, kind, size, mtime, hash)
+                    SELECT 's', 2, node_id, 3, path, NULL, kind, size, mtime, hash FROM change WHERE space_id = 's' AND revision = 1;
+                INSERT INTO notification VALUES ('nt_1', 'u_x', 'unlock_request', '2026-10-19T12:00:00Z', 'u_y', 's', NULL, 'Ordner', 0);
+                INSERT INTO notification VALUES ('nt_2', 'u_x', 'shared', '2026-10-19T12:00:00Z', 'u_y', 's', NULL, NULL, 0);
+                """; // Stand vor 0.19.0: Sperrspalten, Feed-Eintrag „lock“, Bitte um Entsperren
+            await old.ExecuteNonQueryAsync();
+        }
+
+        var reopened = ServiceOver(new SyncDrive.Infra.Sqlite.SqliteSpaceStore(DbPath));
+        var feed = (await reopened.GetChangesAsync("s", 0, 10, Ct)).Value!.Changes;
+        await using var check = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={DbPath};Pooling=False");
+        await check.OpenAsync();
+        await using var query = check.CreateCommand();
+        query.CommandText = """
+            SELECT (SELECT COUNT(*) FROM pragma_table_info('node') WHERE name LIKE 'locked%') || ',' ||
+                   (SELECT group_concat(type) FROM notification)
+            """;
+
+        Assert.Equal([(1L, "upsert"), (2L, "upsert")], feed.Select(c => (c.Revision, c.Op)));
+        Assert.Equal("0,shared", (string?)await query.ExecuteScalarAsync());
+        Assert.True((await reopened.GetNodeAsync("s", "Ordner", Ct)).IsSuccess);
+    }
+
+    [Fact]
     public async Task State_survives_reopening_the_database()
     {
         var first = new SyncDrive.Infra.Sqlite.SqliteSpaceStore(DbPath);

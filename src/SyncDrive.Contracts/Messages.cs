@@ -24,8 +24,7 @@ public sealed record NodeInfo(
     DateTimeOffset MTime,
     string? Hash,
     long Revision,
-    bool Deleted,
-    string? LockedBy = null);
+    bool Deleted);
 
 /// <summary>Knoten samt Blockliste (<c>GET /spaces/{s}/node?path=</c>); Grundlage für Download und Dreiwege-Vergleich.</summary>
 /// <param name="Blocks">Geordnete Blockhashes der aktuellen Fassung; leer bei Ordnern, gelöschten Knoten und leeren Dateien.</param>
@@ -98,9 +97,6 @@ public sealed record TrashResponse(IReadOnlyList<TrashEntry> Entries);
 
 public sealed record RestoreTrashRequest(string NodeId);
 
-/// <summary>Body für Sperren, Entsperren und Entsperren-Anfrage (A15).</summary>
-public sealed record LockRequest(string Path);
-
 /// <summary>Ein angemeldetes Gerät (Web „Client list“: Gerätename, Typ, Version, letzte Verbindung).</summary>
 public sealed record DeviceInfo(
     string DeviceId, string Name, string? ClientType, string? ClientVersion, DateTimeOffset CreatedAt, DateTimeOffset? LastSeen, bool IsCurrent);
@@ -123,7 +119,7 @@ public sealed record LabelsResponse(IReadOnlyList<LabelInfo> Labels);
 
 public sealed record CreateLabelRequest(string Name, string Color);
 
-/// <param name="Type"><c>unlock_request</c>, später <c>shared</c>.</param>
+/// <param name="Type">Art der Benachrichtigung, z. B. <c>shared</c>.</param>
 public sealed record NotificationInfo(
     string Id, string Type, DateTimeOffset CreatedAt, string? Actor, string? SpaceId, string? Path, bool Read);
 

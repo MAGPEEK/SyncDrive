@@ -330,24 +330,6 @@ public sealed class SyncScenarioTests : IDisposable
     }
 
     [Fact]
-    public async Task Editing_a_file_someone_else_locked_keeps_the_edit_as_a_new_file()
-    {
-        var a = _cluster.AddClient("A");
-        a.Write("vertrag.docx", "Fassung der Kollegin", Earlier);
-        await a.SyncOkAsync();
-        await _cluster.Service.LockAsync(Cluster.Space, "vertrag.docx", "u_kollegin", CancellationToken.None);
-
-        a.Write("vertrag.docx", "meine Änderung", Later);
-        var report = await a.SyncOkAsync();
-
-        Assert.Contains(report.Outcomes, o => o.Kind == OutcomeKind.ConflictResolved);
-        Assert.Equal("Fassung der Kollegin", a.Read("vertrag.docx"));
-        var copy = Assert.Single(a.Files(), f => f.Value == "meine Änderung").Key;
-        Assert.NotNull((await _cluster.Service.GetNodeAsync(Cluster.Space, copy, CancellationToken.None)).Value); // Kopie ist auf dem Server
-        Assert.Equal("u_kollegin", (await _cluster.Service.GetNodeAsync(Cluster.Space, "vertrag.docx", CancellationToken.None)).Value!.Node.LockedBy);
-    }
-
-    [Fact]
     public async Task Empty_files_and_empty_folders_are_synced()
     {
         var a = _cluster.AddClient("A");

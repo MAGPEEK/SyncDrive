@@ -171,14 +171,6 @@ public sealed class SpaceView
         return MapError(await _spaces.RestoreFromTrashAsync(SpaceId, nodeId, actorUserId, ct));
     }
 
-    public async Task<ServiceResult<NodeInfo>> LockAsync(string path, string actorUserId, CancellationToken ct) =>
-        Inner(path, allowRoot: false) is { } inner ? MapNode(await _spaces.LockAsync(SpaceId, inner, actorUserId, ct)) : InvalidPath<NodeInfo>();
-
-    public async Task<ServiceResult<NodeInfo>> UnlockAsync(string path, string actorUserId, bool canOverride, CancellationToken ct) =>
-        Inner(path, allowRoot: false) is { } inner
-            ? MapNode(await _spaces.UnlockAsync(SpaceId, inner, actorUserId, canOverride, ct))
-            : InvalidPath<NodeInfo>();
-
     /// <summary>Ein lebender Knoten über seine Id (Favoriten, Labels); außerhalb des Teilbaums gibt es ihn für diesen View nicht.</summary>
     public async Task<ServiceResult<NodeInfo>> GetNodeByIdAsync(string nodeId, CancellationToken ct)
     {

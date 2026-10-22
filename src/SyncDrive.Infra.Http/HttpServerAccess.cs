@@ -155,22 +155,6 @@ public sealed class HttpServerAccess(
         }, ct);
     }
 
-    public async Task<Result<bool>> LockAsync(ServerLogin login, string spaceId, RelativePath path, LockAction action, CancellationToken ct)
-    {
-        using var http = await ClientAsync(login.Server, login.DeviceToken, login.PinnedCertificateSha256, ct);
-        return await SendAsync(async () =>
-        {
-            var space = Uri.EscapeDataString(spaceId);
-            using var response = action switch
-            {
-                LockAction.Lock => await http.PostAsJsonAsync($"spaces/{space}/locks", new LockRequest(path.Value), Json, ct),
-                LockAction.Unlock => await http.DeleteAsync($"spaces/{space}/locks?path={Uri.EscapeDataString(path.Value)}", ct),
-                _ => await http.PostAsJsonAsync($"spaces/{space}/locks/request", new LockRequest(path.Value), Json, ct),
-            };
-            return response.IsSuccessStatusCode ? Result.Ok(true) : await ReadAsync<object, bool>(response, _ => true, ct);
-        }, ct);
-    }
-
     public async Task<Result<Stream>> DownloadBlockAsync(ServerLogin login, string spaceId, string hash, CancellationToken ct)
     {
         var http = await ClientAsync(login.Server, login.DeviceToken, login.PinnedCertificateSha256, ct);

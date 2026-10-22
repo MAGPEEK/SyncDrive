@@ -5,6 +5,19 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.19.0] – 2026-10-22 – Dateisperren entfernt
+
+### Entfernt
+- Dateisperren vollständig (Stefan: kein Nutzen): Explorer-Menü „Datei sperren“, „Entsperren“, „Entsperren anfragen“; Server-Endpunkte
+  `/spaces/{s}/locks` und `/locks/request`; Fehlercode `locked` (423), Feed-Eintrag `lock`, Feld `lockedBy` in Knoten; Benachrichtigung
+  `unlock_request` in Client und Web; die Sonderbehandlung im Client (Änderung an fremd gesperrter Datei als Konfliktkopie).
+
+### Geändert
+- Protokoll: Clients dieser Version sprechen nur mit Servern ab 0.19.0 vollständig (Sperr-Aufrufe gibt es nicht mehr).
+- Bestehende Datenbanken werden beim Start bereinigt: Feed-Einträge `lock` werden zu `upsert`, Bitten um Entsperren verschwinden, die Spalten
+  `locked_by`/`locked_at` fallen weg. Ein Test prüft die Migration an einer Datenbank im alten Stand.
+- Der Test für Benachrichtigungen prüft jetzt die Freigabe-Meldung samt „als gelesen markieren“.
+
 ## [0.18.7] – 2026-10-22 – Compose ohne .env
 
 ### Behoben

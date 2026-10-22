@@ -92,49 +92,6 @@ public class CollaborationApiTests(HostFactory factory) : IClassFixture<HostFact
     }
 
     [Fact]
-    public async Task Locks_block_others_who_can_ask_for_unlock_and_the_owner_is_notified()
-    {
-        var (anna, ben, space) = await TeamAsync("editor");
-        var path = Unique("vertrag") + ".docx";
-        var created = await PutAsync(anna, space, path, "Entwurf");
-
-        var lockResponse = await anna.Http.PostAsJsonAsync($"/api/v1/spaces/{space}/locks", new LockRequest(path));
-        var bensEdit = await CommitAsync(ben, space, new CommitRequest(CommitOps.Delete, path, created.Revision));
-        var ask = await ben.Http.PostAsJsonAsync($"/api/v1/spaces/{space}/locks/request", new LockRequest(path));
-        var bensUnlock = await ben.Http.DeleteAsync($"/api/v1/spaces/{space}/locks?path={path}");
-
-        Assert.Equal(HttpStatusCode.OK, lockResponse.StatusCode);
-        Assert.Equal(HttpStatusCode.Locked, bensEdit.StatusCode);
-        Assert.Equal(ErrorCode.Locked, (await bensEdit.Content.ReadFromJsonAsync<ProblemDetail>())!.Code);
-        Assert.Equal(HttpStatusCode.NoContent, ask.StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden, bensUnlock.StatusCode);
-
-        var notes = (await anna.Http.GetFromJsonAsync<NotificationsResponse>("/api/v1/notifications"))!.Notifications;
-        var request = Assert.Single(notes, n => n.Path == path);
-        Assert.Equal(("unlock_request", false), (request.Type, request.Read));
-        Assert.StartsWith("ben-", request.Actor, StringComparison.Ordinal);
-        Assert.Equal(HttpStatusCode.NoContent, (await anna.Http.PostAsync($"/api/v1/notifications/{request.Id}/read", null)).StatusCode);
-        Assert.True((await anna.Http.GetFromJsonAsync<NotificationsResponse>("/api/v1/notifications"))!.Notifications.Single(n => n.Id == request.Id).Read);
-
-        Assert.Equal(HttpStatusCode.OK, (await anna.Http.DeleteAsync($"/api/v1/spaces/{space}/locks?path={path}")).StatusCode);
-        Assert.True((await CommitAsync(ben, space, new CommitRequest(CommitOps.Delete, path, created.Revision))).IsSuccessStatusCode);
-    }
-
-    [Fact]
-    public async Task A_manager_may_release_someone_elses_lock()
-    {
-        var (anna, ben, space) = await TeamAsync("manager");
-        var path = Unique("plan") + ".xlsx";
-        await PutAsync(anna, space, path, "p");
-        await anna.Http.PostAsJsonAsync($"/api/v1/spaces/{space}/locks", new LockRequest(path));
-
-        var released = await ben.Http.DeleteAsync($"/api/v1/spaces/{space}/locks?path={path}");
-
-        Assert.Equal(HttpStatusCode.OK, released.StatusCode);
-        Assert.Null((await NodeAsync(anna, space, path)).Node.LockedBy);
-    }
-
-    [Fact]
     public async Task Versions_can_be_listed_and_restored_over_http()
     {
         var api = await factory.LoginAsync();

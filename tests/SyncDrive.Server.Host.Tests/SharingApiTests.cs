@@ -274,20 +274,20 @@ public class SharingApiTests(HostFactory factory) : IClassFixture<HostFactory>
     }
 
     [Fact]
-    public async Task An_unlock_request_reaches_the_owner_under_the_path_the_owner_sees()
+    public async Task The_invitee_is_notified_under_the_share_id_and_can_mark_it_read()
     {
-        var (anna, _, space) = await AnnaWithProjectAsync();
+        var (anna, annaName, space) = await AnnaWithProjectAsync();
         var (ben, benName, _) = await UserAsync("ben");
         var shareId = (await (await InviteAsync(anna, space, "Projekte", benName, "editor")).Content.ReadFromJsonAsync<InviteeInfo>())!.ShareId;
-        (await anna.Http.PostAsJsonAsync($"/api/v1/spaces/{space}/locks", new LockRequest("Projekte/plan.txt"))).EnsureSuccessStatusCode();
 
-        using var asked = await ben.Http.PostAsJsonAsync($"/api/v1/spaces/{shareId}/locks/request", new LockRequest("plan.txt"));
-        var note = Assert.Single((await anna.Http.GetFromJsonAsync<NotificationsResponse>("/api/v1/notifications"))!.Notifications);
-        var locked = (await ben.Http.GetFromJsonAsync<NodeDetail>($"/api/v1/spaces/{shareId}/node?path=plan.txt"))!;
+        var note = Assert.Single((await ben.Http.GetFromJsonAsync<NotificationsResponse>("/api/v1/notifications"))!.Notifications);
+        using var read = await ben.Http.PostAsync($"/api/v1/notifications/{note.Id}/read", null);
+        var after = Assert.Single((await ben.Http.GetFromJsonAsync<NotificationsResponse>("/api/v1/notifications"))!.Notifications);
 
-        Assert.Equal(HttpStatusCode.NoContent, asked.StatusCode);
-        Assert.Equal(("unlock_request", space, "Projekte/plan.txt"), (note.Type, note.SpaceId, note.Path));
-        Assert.Equal("plan.txt", locked.Node.Path);
-        Assert.NotNull(locked.Node.LockedBy);
+        Assert.Equal(("shared", shareId, false), (note.Type, note.SpaceId, note.Read));
+        Assert.Equal(annaName, note.Actor);
+        Assert.Equal(HttpStatusCode.NoContent, read.StatusCode);
+        Assert.True(after.Read);
+        Assert.Empty((await anna.Http.GetFromJsonAsync<NotificationsResponse>("/api/v1/notifications"))!.Notifications);
     }
 }

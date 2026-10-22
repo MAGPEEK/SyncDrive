@@ -157,7 +157,7 @@ public interface IUserItemStore
     Task<IReadOnlyList<NodeReference>> ListLabeledAsync(string labelId, CancellationToken ct);
 }
 
-/// <param name="Type">Art, z. B. <c>unlock_request</c>, später <c>shared</c>.</param>
+/// <param name="Type">Art, z. B. <c>shared</c>.</param>
 public sealed record NotificationRecord(
     string Id,
     string UserId,

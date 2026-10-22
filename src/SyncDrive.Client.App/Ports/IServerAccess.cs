@@ -40,22 +40,12 @@ public interface IServerAccess
     Task<Result<CommitResponse>> RestoreVersionAsync(
         ServerLogin login, string spaceId, RelativePath path, long revision, long baseRevision, CancellationToken ct);
 
-    /// <summary>Knoten mit Revision und Sperre; null, wenn es ihn nicht gibt.</summary>
+    /// <summary>Knoten mit Revision; null, wenn es ihn nicht gibt.</summary>
     Task<Result<NodeInfo?>> GetNodeInfoAsync(ServerLogin login, string spaceId, RelativePath path, CancellationToken ct);
-
-    Task<Result<bool>> LockAsync(ServerLogin login, string spaceId, RelativePath path, LockAction action, CancellationToken ct);
 
     /// <summary>Inhalt eines Blocks; der Aufrufer gibt den Strom frei.</summary>
     Task<Result<Stream>> DownloadBlockAsync(ServerLogin login, string spaceId, string hash, CancellationToken ct);
 
     /// <summary>Direkter Inhalt eines Ordners (eine Ebene).</summary>
     Task<Result<IReadOnlyList<SnapshotEntry>>> ListChildrenAsync(ServerLogin login, string spaceId, RelativePath path, CancellationToken ct);
-}
-
-/// <summary>Sperren (A15): selbst sperren, entsperren (Sperrender oder Manager), beim Sperrenden um Entsperren bitten.</summary>
-public enum LockAction
-{
-    Lock,
-    Unlock,
-    RequestUnlock,
 }

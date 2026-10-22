@@ -132,7 +132,7 @@ internal sealed class DemoDaemon : IDaemonClient
         System.Threading.Tasks.Task.FromResult<IReadOnlyList<ServerNotification>>(
         [
             new("n1", "c1", "Heim-NAS", "shared", Now.AddMinutes(-20), "ben", "Familie", string.Empty, false),
-            new("n2", "c2", "Büro", "unlock_request", Now.AddHours(-3), "carla", "Projekte", "Plan/Zeitplan.xlsx", true),
+            new("n2", "c2", "Büro", "shared", Now.AddHours(-3), "carla", "Projekte", string.Empty, true),
         ]);
 
     public Task MarkNotificationsReadAsync(CancellationToken ct) => System.Threading.Tasks.Task.CompletedTask;
@@ -152,9 +152,6 @@ internal sealed class DemoDaemon : IDaemonClient
         System.Threading.Tasks.Task.FromResult(ShellResult.Ok);
 
     public Task<ShellResult> RestoreVersionAsync(string localPath, long revision, CancellationToken ct) =>
-        System.Threading.Tasks.Task.FromResult(ShellResult.Ok);
-
-    public Task<ShellResult> LockAsync(string localPath, LockAction action, CancellationToken ct) =>
         System.Threading.Tasks.Task.FromResult(ShellResult.Ok);
 
     public Task<ShellResult> SetFolderSyncedAsync(string localPath, bool synced, CancellationToken ct) =>

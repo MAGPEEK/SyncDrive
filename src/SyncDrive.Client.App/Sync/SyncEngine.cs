@@ -277,11 +277,6 @@ public sealed class SyncEngine(
             MTime: w.LocalEntry!.MTime,
             FileHash: chunked.FileHash.Value);
         var committed = await CommitAsync(request, ct);
-        if (committed.Error is { Code: ErrorCode.Locked } && w.Remote?.State is not null)
-        {
-            return await KeepEditOfLockedFileAsync(w, ct);
-        }
-
         if (!committed.IsSuccess)
         {
             return Result.Fail<PathOutcome>(committed.Error!);
@@ -291,24 +286,6 @@ public sealed class SyncEngine(
         await SaveBaseAsync(w.Path, committed.Value!.NodeId, uploaded, committed.Value.Revision, ct);
         await LogAsync(ActivityAction.Upload, w.Path, NodeKind.File, ActivityResult.Done, null, ct);
         return Done(w.Path, OutcomeKind.Uploaded);
-    }
-
-    /// <summary>
-    /// Die Datei ist auf dem Server von jemand anderem gesperrt (A15). „Als neue Datei speichern“: Die lokale Änderung wird
-    /// zur Konfliktkopie (die als neue Datei hochgeladen wird), am Originalpfad kommt die gesperrte Serverfassung zurück. Nichts geht verloren.
-    /// </summary>
-    private async Task<Result<PathOutcome>> KeepEditOfLockedFileAsync(Work w, CancellationToken ct)
-    {
-        var copy = await FreeConflictPathAsync(w.Path, ct);
-        await local.MoveAsync(w.Path, copy, ct);
-        var restored = await DownloadAsync(w with { LocalEntry = null, LocalState = null }, ct);
-        if (!restored.IsSuccess)
-        {
-            return restored;
-        }
-
-        await LogAsync(ActivityAction.Conflict, w.Path, NodeKind.File, ActivityResult.Done, ErrorCode.Locked, ct);
-        return Result.Ok(new PathOutcome(w.Path, OutcomeKind.ConflictResolved, ConflictCopy: copy));
     }
 
     /// <summary>Sendet nur die Blöcke, die der Server noch nicht hat (Delta, Deduplizierung, Fortsetzen nach Abbruch).</summary>

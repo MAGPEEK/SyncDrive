@@ -5,7 +5,7 @@ using SyncDrive.Server.App.Ports;
 
 namespace SyncDrive.Server.App.Spaces;
 
-/// <summary>Versionen (B3), Server-Papierkorb und Dateisperren (A15).</summary>
+/// <summary>Versionen (B3) und Server-Papierkorb.</summary>
 public sealed partial class SpaceService
 {
     public async Task<ServiceResult<VersionsResponse>> ListVersionsAsync(string spaceId, string path, CancellationToken ct)
@@ -115,76 +115,6 @@ public sealed partial class SpaceService
             return Done(revision, node.Id);
         }, ct);
         NotifyOnSuccess(spaceId, result.IsSuccess);
-        return result;
-    }
-
-    /// <summary>Sperrt eine Datei für andere (A15). Wer sie gesperrt hat, darf weiter bearbeiten; die Knoten-Revision ändert sich nicht.</summary>
-    public async Task<ServiceResult<NodeInfo>> LockAsync(string spaceId, string path, string actorUserId, CancellationToken ct) =>
-        await ChangeLockAsync(spaceId, path, actorUserId, lockIt: true, canOverride: false, ct);
-
-    /// <param name="canOverride">Manager und Besitzer dürfen fremde Sperren lösen.</param>
-    public async Task<ServiceResult<NodeInfo>> UnlockAsync(
-        string spaceId, string path, string actorUserId, bool canOverride, CancellationToken ct) =>
-        await ChangeLockAsync(spaceId, path, actorUserId, lockIt: false, canOverride, ct);
-
-    private async Task<ServiceResult<NodeInfo>> ChangeLockAsync(
-        string spaceId, string path, string actor, bool lockIt, bool canOverride, CancellationToken ct)
-    {
-        if (await CheckAsync(spaceId, path, ct) is { } invalid)
-        {
-            return ServiceResult.Fail<NodeInfo>(invalid);
-        }
-
-        var parsed = RelativePath.Parse(path);
-        var now = _clock.GetUtcNow();
-        var changed = false;
-        var result = await store.InTransactionAsync(spaceId, async tx =>
-        {
-            if (await ResolveAsync(tx, parsed) is not { Leaf: { Deleted: false } node })
-            {
-                return Fail<NodeInfo>(ErrorCode.NotFound, "Datei existiert nicht.");
-            }
-
-            if (node.Kind != NodeKind.File)
-            {
-                return Fail<NodeInfo>(ErrorCode.InvalidRequest, "Nur Dateien lassen sich sperren.");
-            }
-
-            NodeRecord updated;
-            if (lockIt)
-            {
-                if (node.LockedBy is { } owner)
-                {
-                    return owner == actor
-                        ? ServiceResult.Ok(ToInfo(node, parsed))
-                        : ServiceResult.Fail<NodeInfo>(new ServiceError(ErrorCode.Locked, "Bereits von jemand anderem gesperrt.", ToInfo(node, parsed)));
-                }
-
-                updated = node with { LockedBy = actor, LockedAt = now };
-            }
-            else
-            {
-                if (node.LockedBy is null)
-                {
-                    return ServiceResult.Ok(ToInfo(node, parsed));
-                }
-
-                if (node.LockedBy != actor && !canOverride)
-                {
-                    return Fail<NodeInfo>(ErrorCode.Forbidden, "Nur wer gesperrt hat oder ein Manager darf entsperren.");
-                }
-
-                updated = node with { LockedBy = null, LockedAt = null };
-            }
-
-            await tx.SaveAsync(updated);
-            var feedRevision = await tx.AllocateRevisionAsync();
-            await tx.AppendChangeAsync(new ChangeRecord(
-                feedRevision, node.Id, ChangeOp.Lock, parsed.Parent.Combine(node.Name), null, node.Kind, node.Size, node.MTime, node.Hash));
-            changed = true;
-            return ServiceResult.Ok(ToInfo(updated, parsed));
-        }, ct);
-        NotifyOnSuccess(spaceId, changed);
         return result;
     }
 

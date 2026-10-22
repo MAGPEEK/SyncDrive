@@ -282,8 +282,6 @@ public sealed record Texts
 
     public required string NotificationShared { get; init; }
 
-    public required string NotificationUnlock { get; init; }
-
     public required string Save { get; init; }
 
     public required string SavePassword { get; init; }
@@ -300,12 +298,6 @@ public sealed record Texts
     public required string ConnectionUpdated { get; init; }
 
     public required string ShellVersions { get; init; }
-
-    public required string ShellLock { get; init; }
-
-    public required string ShellUnlock { get; init; }
-
-    public required string ShellRequestUnlock { get; init; }
 
     public required string ShellStopSync { get; init; }
 
@@ -330,14 +322,6 @@ public sealed record Texts
     public required string VersionSaved { get; init; }
 
     public required string VersionRestored { get; init; }
-
-    public required string LockDone { get; init; }
-
-    public required string UnlockDone { get; init; }
-
-    public required string UnlockRequested { get; init; }
-
-    public required string LockedByOther { get; init; }
 
     public required string NotAllowed { get; init; }
 
@@ -516,7 +500,6 @@ public sealed record Texts
         ErrorChooseFolders = "Please choose a folder on the server and one on this computer.",
         AboutText = "SyncDrive keeps folders on this computer in sync with your server.",
         NotificationShared = "shared",
-        NotificationUnlock = "asks you to unlock",
         Save = "Save",
         SavePassword = "Save password",
         UsedFormat = "{0} used",
@@ -525,9 +508,6 @@ public sealed record Texts
         ExcludedNamesLabel = "Skip file names (e.g. Thumbs.db)",
         ConnectionUpdated = "Signed in again.",
         ShellVersions = "Browse previous versions",
-        ShellLock = "Lock file",
-        ShellUnlock = "Unlock",
-        ShellRequestUnlock = "Request unlock",
         ShellStopSync = "Stop syncing this folder",
         ShellResumeSync = "Sync this folder again",
         VersionsTitle = "Previous versions",
@@ -540,10 +520,6 @@ public sealed record Texts
         ConfirmRestore = "Make this version the current one? The newer version stays in the version list.",
         VersionSaved = "The version was saved.",
         VersionRestored = "The version is the current one again and will be synced.",
-        LockDone = "The file is locked. Others can view it but not change it.",
-        UnlockDone = "The file is unlocked.",
-        UnlockRequested = "The person who locked the file has been asked to unlock it.",
-        LockedByOther = "Someone else locked this file. You can ask them to unlock it.",
         NotAllowed = "You are not allowed to do this.",
         FolderExcluded = "This folder is no longer synced. Its files stay on this computer.",
         FolderIncluded = "This folder is synced again.",
@@ -685,7 +661,6 @@ public sealed record Texts
         ErrorChooseFolders = "Bitte einen Ordner auf dem Server und einen auf diesem Computer wählen.",
         AboutText = "SyncDrive hält Ordner dieses Computers mit Ihrem Server abgeglichen.",
         NotificationShared = "hat geteilt:",
-        NotificationUnlock = "bittet um Entsperren von",
         Save = "Speichern",
         SavePassword = "Passwort speichern",
         UsedFormat = "{0} belegt",
@@ -694,9 +669,6 @@ public sealed record Texts
         ExcludedNamesLabel = "Dateinamen auslassen (z. B. Thumbs.db)",
         ConnectionUpdated = "Erneut angemeldet.",
         ShellVersions = "Frühere Versionen durchsuchen",
-        ShellLock = "Datei sperren",
-        ShellUnlock = "Entsperren",
-        ShellRequestUnlock = "Entsperren anfragen",
         ShellStopSync = "Diesen Ordner nicht mehr synchronisieren",
         ShellResumeSync = "Diesen Ordner wieder synchronisieren",
         VersionsTitle = "Frühere Versionen",
@@ -709,10 +681,6 @@ public sealed record Texts
         ConfirmRestore = "Diese Version wieder zur aktuellen machen? Die neuere bleibt in der Versionsliste.",
         VersionSaved = "Die Version wurde gespeichert.",
         VersionRestored = "Die Version ist wieder die aktuelle und wird synchronisiert.",
-        LockDone = "Die Datei ist gesperrt. Andere können sie ansehen, aber nicht ändern.",
-        UnlockDone = "Die Datei ist entsperrt.",
-        UnlockRequested = "Wer die Datei gesperrt hat, wurde um Entsperren gebeten.",
-        LockedByOther = "Jemand anderes hat diese Datei gesperrt. Sie können um Entsperren bitten.",
         NotAllowed = "Dazu fehlt Ihnen die Berechtigung.",
         FolderExcluded = "Dieser Ordner wird nicht mehr synchronisiert. Seine Dateien bleiben auf diesem Computer.",
         FolderIncluded = "Dieser Ordner wird wieder synchronisiert.",

@@ -175,12 +175,6 @@ internal sealed class FakeDaemon : IDaemonClient
         return Next();
     }
 
-    public async Task<ShellResult> LockAsync(string localPath, LockAction action, CancellationToken ct)
-    {
-        await Record($"{action} {localPath}");
-        return Next();
-    }
-
     public async Task<ShellResult> SetFolderSyncedAsync(string localPath, bool synced, CancellationToken ct)
     {
         await Record($"synced={synced} {localPath}");

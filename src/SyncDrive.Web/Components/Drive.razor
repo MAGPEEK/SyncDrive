@@ -463,7 +463,7 @@
         }
     }
 
-    /// <summary>„hat mit Ihnen geteilt“ öffnet den Space, „bittet um Entsperren“ zeigt die Datei.</summary>
+    /// <summary>„hat mit Ihnen geteilt“ öffnet den Space.</summary>
     private async Task OpenNotificationAsync(NotificationInfo note)
     {
         _notificationsOpen = false;
@@ -473,14 +473,7 @@
         }
 
         Show(View.Folder);
-        if (note.Type == NotificationsViewModel.UnlockRequest && !string.IsNullOrEmpty(note.Path))
-        {
-            await Browser.RevealAsync(space, note.Path, Token);
-        }
-        else
-        {
-            await Browser.OpenSpaceAsync(space, Token);
-        }
+        await Browser.OpenSpaceAsync(space, Token);
     }
 
     private async Task SearchAsync()

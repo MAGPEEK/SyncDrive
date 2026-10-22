@@ -55,8 +55,6 @@ public interface IShellActions
     /// <summary>Macht die Version auf dem Server wieder zur aktuellen; der Sync holt sie dann wie jede Änderung.</summary>
     Task<ShellResult> RestoreVersionAsync(string localPath, long revision, CancellationToken ct);
 
-    Task<ShellResult> LockAsync(string localPath, LockAction action, CancellationToken ct);
-
     /// <summary>„Diesen Ordner nicht mehr synchronisieren“ bzw. wieder synchronisieren (Sync Rules → Folder).</summary>
     Task<ShellResult> SetFolderSyncedAsync(string localPath, bool synced, CancellationToken ct);
 }
@@ -165,17 +163,6 @@ public sealed class ShellService(
 
         var restored = await server.RestoreVersionAsync(remote.Login, remote.Task.SpaceId, remote.Path, revision, current.Revision, ct);
         return restored.IsSuccess ? ShellResult.Ok : Failed(restored.Error!);
-    }
-
-    public async Task<ShellResult> LockAsync(string localPath, LockAction action, CancellationToken ct)
-    {
-        if (await RemoteAsync(localPath, ct) is not { } remote)
-        {
-            return new ShellResult(false, ShellErrors.NotInSyncFolder);
-        }
-
-        var result = await server.LockAsync(remote.Login, remote.Task.SpaceId, remote.Path, action, ct);
-        return result.IsSuccess ? ShellResult.Ok : Failed(result.Error!);
     }
 
     public async Task<ShellResult> SetFolderSyncedAsync(string localPath, bool synced, CancellationToken ct)

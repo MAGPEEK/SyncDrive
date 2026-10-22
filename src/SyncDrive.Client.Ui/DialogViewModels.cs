@@ -351,7 +351,7 @@ public sealed record NotificationItemViewModel(string Actor, string Verb, string
     public static NotificationItemViewModel From(ServerNotification n, Texts texts, DateTimeOffset now)
     {
         var target = n.Path is { Length: > 0 } path ? RelativePath.Parse(path).Name : n.SpaceName ?? string.Empty;
-        var verb = n.Type == "shared" ? texts.NotificationShared : n.Type == "unlock_request" ? texts.NotificationUnlock : n.Type;
+        var verb = n.Type == "shared" ? texts.NotificationShared : n.Type;
         return new(n.Actor ?? "?", verb, target, n.ServerName, Presentation.RelativeTime(n.CreatedAt, now, texts), !n.Read);
     }
 }

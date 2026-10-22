@@ -45,7 +45,7 @@ public sealed class ShellMenuTests : IDisposable
             _registry.Get(file, "AppliesTo"));
         Assert.Equal("Browse previous versions", _registry.Get(file + @"\shell\01versions", "MUIVerb"));
         Assert.Equal($"\"{Exe}\" --shell versions \"%1\"", _registry.Get(file + @"\shell\01versions\command", null));
-        Assert.Equal(["01versions", "02lock", "03unlock", "04requestunlock"], _registry.Children(file + @"\shell"));
+        Assert.Equal(["01versions"], _registry.Children(file + @"\shell"));
         Assert.Equal(["01stopsync", "02resumesync"], _registry.Children(ShellMenuRegistrar.FolderKey + @"\shell"));
     }
 

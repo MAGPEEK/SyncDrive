@@ -266,11 +266,6 @@ public sealed class DaemonEndToEndTests(HostFactory factory) : IClassFixture<Hos
         Assert.True((await ui.RestoreVersionAsync(file, first.Revision, default)).Succeeded);
         await EventuallyAsync(() => Task.FromResult(File.ReadAllText(file) == "erste Fassung"), "wiederhergestellte Version kommt lokal an");
 
-        // Sperren
-        Assert.True((await ui.LockAsync(file, LockAction.Lock, default)).Succeeded);
-        Assert.True((await ui.LockAsync(file, LockAction.Unlock, default)).Succeeded);
-        Assert.False((await ui.LockAsync(file, LockAction.RequestUnlock, default)).Succeeded); // nicht fremd gesperrt
-
         // Ordner ab- und wieder anwählen
         Directory.CreateDirectory(Path.Combine(local, "Archiv"));
         Assert.True((await ui.SetFolderSyncedAsync(Path.Combine(local, "Archiv"), synced: false, default)).Succeeded);

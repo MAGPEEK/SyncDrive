@@ -421,9 +421,6 @@ public sealed class ViewModelTests : IAsyncDisposable
     }
 
     [Theory]
-    [InlineData("lock", null, "The file is locked. Others can view it but not change it.")]
-    [InlineData("unlock", "locked", "Someone else locked this file. You can ask them to unlock it.")]
-    [InlineData("requestunlock", null, "The person who locked the file has been asked to unlock it.")]
     [InlineData("stopsync", "not_possible", "The sync folder itself can only be removed as a whole task.")]
     [InlineData("resumesync", "forbidden", "You are not allowed to do this.")]
     public async Task Explorer_actions_explain_their_result(string verb, string? error, string message)
@@ -443,7 +440,7 @@ public sealed class ViewModelTests : IAsyncDisposable
     {
         _daemon.PathInfo = null;
 
-        await new ShellCommand(_daemon, _ui, En).RunAsync("lock", @"C:\Anderes\a.txt", CancellationToken.None);
+        await new ShellCommand(_daemon, _ui, En).RunAsync("versions", @"C:\Anderes\a.txt", CancellationToken.None);
 
         Assert.Equal(En.NotInSyncFolder, Assert.Single(_ui.Messages));
         Assert.Empty(_daemon.Calls);

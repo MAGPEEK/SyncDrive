@@ -112,7 +112,7 @@ public interface IClientSetup
 
 public sealed record TaskUsage(string TaskId, long? Bytes, long? Files);
 
-/// <summary>Benachrichtigung mit Server: „anna shared Familie“ (Typ <c>shared</c>) oder Bitte um Entsperren (<c>unlock_request</c>).</summary>
+/// <summary>Benachrichtigung mit Server: „anna shared Familie“ (Typ <c>shared</c>).</summary>
 public sealed record ServerNotification(
     string Id, string ConnectionId, string ServerName, string Type, DateTimeOffset CreatedAt, string? Actor, string? SpaceName, string? Path, bool Read);
 

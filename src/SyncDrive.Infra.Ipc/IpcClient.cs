@@ -129,9 +129,6 @@ public sealed class IpcClient : IDaemonClient
     public async Task<ShellResult> RestoreVersionAsync(string localPath, long revision, CancellationToken ct) =>
         Result<ShellResult>(await CallAsync(IpcProtocol.Methods.RestoreVersion, new VersionParams(localPath, revision), ct));
 
-    public async Task<ShellResult> LockAsync(string localPath, LockAction action, CancellationToken ct) =>
-        Result<ShellResult>(await CallAsync(IpcProtocol.Methods.Lock, new LockParams(localPath, action), ct));
-
     public async Task<ShellResult> SetFolderSyncedAsync(string localPath, bool synced, CancellationToken ct) =>
         Result<ShellResult>(await CallAsync(IpcProtocol.Methods.FolderSync, new FolderSyncParams(localPath, synced), ct));
 

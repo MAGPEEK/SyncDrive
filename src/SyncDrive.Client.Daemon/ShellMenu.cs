@@ -64,9 +64,6 @@ public sealed class ShellMenuRegistrar(IRegistryWriter registry, IClientConfigSt
         Register(FileKey, appliesTo, texts.AppName,
         [
             ("01versions", texts.ShellVersions, "versions"),
-            ("02lock", texts.ShellLock, "lock"),
-            ("03unlock", texts.ShellUnlock, "unlock"),
-            ("04requestunlock", texts.ShellRequestUnlock, "requestunlock"),
         ]);
         Register(FolderKey, appliesTo, texts.AppName,
         [

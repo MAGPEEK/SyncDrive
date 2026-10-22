@@ -252,7 +252,7 @@ public sealed partial class SpaceService(
             CommitOp.Mkdir => await MkdirAsync(tx, command),
             CommitOp.Delete => await DeleteAsync(tx, command, ctx),
             CommitOp.Copy => await CopyAsync(tx, command, ctx),
-            _ => await MoveAsync(tx, command, ctx),
+            _ => await MoveAsync(tx, command),
         };
 
         if (result.IsSuccess && idempotencyKey is not null)
@@ -309,11 +309,6 @@ public sealed partial class SpaceService(
             return Done(leaf.Revision, leaf.Id);
         }
 
-        if (LockedForOthers(leaf, ctx))
-        {
-            return Conflict(ErrorCode.Locked, "Datei ist von jemand anderem gesperrt; bitte als neue Datei speichern.", leaf!, c.Path);
-        }
-
         if ((leaf?.Revision ?? 0) > c.BaseRevision)
         {
             return Conflict(ErrorCode.RevisionConflict, "Knoten wurde inzwischen geändert.", leaf!, c.Path);
@@ -322,7 +317,7 @@ public sealed partial class SpaceService(
         var revision = await tx.AllocateRevisionAsync();
         var node = new NodeRecord(
             leaf?.Id ?? NewId(), at.ParentId, leaf?.Name ?? at.Name, NodeKind.File, false, revision,
-            c.Size, c.MTime, c.FileHash, c.Blocks, LockedBy: leaf?.LockedBy, LockedAt: leaf?.LockedAt);
+            c.Size, c.MTime, c.FileHash, c.Blocks);
         await tx.SaveAsync(node);
         await AddVersionAsync(tx, node, ctx);
         await tx.AppendChangeAsync(new ChangeRecord(
@@ -389,11 +384,6 @@ public sealed partial class SpaceService(
             return Conflict(ErrorCode.RevisionConflict, "Knoten wurde inzwischen geändert.", leaf, c.Path);
         }
 
-        if (await FindForeignLockAsync(tx, leaf, ctx) is { } locked)
-        {
-            return Conflict(ErrorCode.Locked, "Enthält eine von jemand anderem gesperrte Datei.", locked, c.Path);
-        }
-
         var revision = await tx.AllocateRevisionAsync();
         await MarkSubtreeDeletedAsync(tx, leaf, revision, ctx.Now);
         await tx.AppendChangeAsync(new ChangeRecord(
@@ -402,7 +392,7 @@ public sealed partial class SpaceService(
         return Done(revision, leaf.Id);
     }
 
-    private static async Task<ServiceResult<CommitResponse>> MoveAsync(ISpaceTransaction tx, CommitCommand c, CommitContext ctx)
+    private static async Task<ServiceResult<CommitResponse>> MoveAsync(ISpaceTransaction tx, CommitCommand c)
     {
         var target = c.NewPath!.Value;
         if (await ResolveAsync(tx, c.Path) is not { Leaf: { Deleted: false } source })
@@ -413,11 +403,6 @@ public sealed partial class SpaceService(
         if (source.Revision > c.BaseRevision)
         {
             return Conflict(ErrorCode.RevisionConflict, "Knoten wurde inzwischen geändert.", source, c.Path);
-        }
-
-        if (LockedForOthers(source, ctx))
-        {
-            return Conflict(ErrorCode.Locked, "Nur wer die Datei gesperrt hat, darf sie verschieben oder umbenennen.", source, c.Path);
         }
 
         if (c.Path.Value == target.Value)
@@ -453,7 +438,7 @@ public sealed partial class SpaceService(
         return Done(revision, moved.Id);
     }
 
-    /// <summary>Kopiert einen Knoten samt Teilbaum (B2 „Make a copy“/„Copy to“). Neue Knoten, dieselben Blöcke, keine Datenübertragung; Sperren werden nicht kopiert.</summary>
+    /// <summary>Kopiert einen Knoten samt Teilbaum (B2 „Make a copy“/„Copy to“). Neue Knoten, dieselben Blöcke, keine Datenübertragung.</summary>
     private async Task<ServiceResult<CommitResponse>> CopyAsync(ISpaceTransaction tx, CommitCommand c, CommitContext ctx)
     {
         var target = c.NewPath!.Value;
@@ -490,7 +475,7 @@ public sealed partial class SpaceService(
         ISpaceTransaction tx, NodeRecord source, string? parentId, string name, RelativePath path, CommitContext ctx)
     {
         var revision = await tx.AllocateRevisionAsync();
-        var copy = source with { Id = NewId(), ParentId = parentId, Name = name, Revision = revision, LockedBy = null, LockedAt = null };
+        var copy = source with { Id = NewId(), ParentId = parentId, Name = name, Revision = revision };
         await tx.SaveAsync(copy);
         if (copy.Kind == NodeKind.File)
         {
@@ -511,7 +496,7 @@ public sealed partial class SpaceService(
 
     private static async Task MarkSubtreeDeletedAsync(ISpaceTransaction tx, NodeRecord node, long revision, DateTimeOffset now)
     {
-        await tx.SaveAsync(node with { Deleted = true, Revision = revision, DeletedAt = now, LockedBy = null, LockedAt = null });
+        await tx.SaveAsync(node with { Deleted = true, Revision = revision, DeletedAt = now });
         if (node.Kind != NodeKind.Directory)
         {
             return;
@@ -521,31 +506,6 @@ public sealed partial class SpaceService(
         {
             await MarkSubtreeDeletedAsync(tx, child, revision, now);
         }
-    }
-
-    private static bool LockedForOthers(NodeRecord? node, CommitContext ctx) =>
-        node is { Deleted: false, LockedBy: { } owner } && owner != ctx.Actor;
-
-    /// <summary>Erste Datei im Teilbaum, die jemand anderes gesperrt hat.</summary>
-    private static async Task<NodeRecord?> FindForeignLockAsync(ISpaceTransaction tx, NodeRecord node, CommitContext ctx)
-    {
-        if (LockedForOthers(node, ctx))
-        {
-            return node;
-        }
-
-        if (node.Kind == NodeKind.Directory)
-        {
-            foreach (var child in await tx.ListLiveChildrenAsync(node.Id))
-            {
-                if (await FindForeignLockAsync(tx, child, ctx) is { } found)
-                {
-                    return found;
-                }
-            }
-        }
-
-        return null;
     }
 
     /// <summary>Läuft den Pfad ab. Null, wenn ein Vorfahre fehlt, gelöscht oder kein Ordner ist.</summary>
@@ -577,7 +537,7 @@ public sealed partial class SpaceService(
         ServiceResult.Fail<CommitResponse>(new ServiceError(code, message, ToInfo(current, path)));
 
     private static NodeInfo ToInfo(NodeRecord n, RelativePath path) => new(
-        n.Id, path.Value, KindText(n.Kind), n.Size, n.MTime, n.Hash?.Value, n.Revision, n.Deleted, n.LockedBy);
+        n.Id, path.Value, KindText(n.Kind), n.Size, n.MTime, n.Hash?.Value, n.Revision, n.Deleted);
 
     private static ChangeEntry ToEntry(ChangeRecord c) => new(
         c.Revision, c.NodeId,
@@ -585,7 +545,6 @@ public sealed partial class SpaceService(
         {
             ChangeOp.Upsert => ChangeOps.Upsert,
             ChangeOp.Delete => ChangeOps.Delete,
-            ChangeOp.Lock => ChangeOps.Lock,
             _ => ChangeOps.Move,
         },
         c.Path.Value, c.OldPath?.Value, KindText(c.Kind), c.Size, c.MTime, c.Hash?.Value);

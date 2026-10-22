@@ -25,8 +25,6 @@ internal static class SqliteDatabase
             mtime TEXT NOT NULL,
             hash TEXT,
             blocks TEXT NOT NULL,
-            locked_by TEXT,
-            locked_at TEXT,
             deleted_at TEXT,
             PRIMARY KEY (space_id, id));
         CREATE UNIQUE INDEX IF NOT EXISTS ux_node_name ON node (space_id, parent_key, name_key);
@@ -167,6 +165,7 @@ internal static class SqliteDatabase
             AddColumnIfMissing(connection, "user", "quota_bytes", "INTEGER");
             AddColumnIfMissing(connection, "user", "created_at", "TEXT");
             AddColumnIfMissing(connection, "space", "kind", "TEXT NOT NULL DEFAULT 'personal'");
+            RemoveFileLocks(connection);
         }
 
         return connectionString;
@@ -199,12 +198,36 @@ internal static class SqliteDatabase
     /// <summary>Spalten, die nach der ersten Fassung dazukamen; bestehende Datenbanken bekommen sie beim Start (M7: Kontingent, Anlagedatum).</summary>
     private static void AddColumnIfMissing(SqliteConnection connection, string table, string column, string type)
     {
-        using var info = connection.CreateCommand();
-        info.CommandText = $"SELECT COUNT(*) FROM pragma_table_info('{table}') WHERE name = '{column}'";
-        if ((long)info.ExecuteScalar()! == 0)
+        if (!HasColumn(connection, table, column))
         {
             Run(connection, $"ALTER TABLE {table} ADD COLUMN {column} {type};");
         }
+    }
+
+    /// <summary>
+    /// Dateisperren gibt es seit 0.19.0 nicht mehr: Feed-Einträge der Sperre (op 3) werden zu Aktualisierungen (op 0, Clients behandeln sie
+    /// als unveränderte Datei), Bitten um Entsperren verschwinden, die Sperrspalten fallen weg.
+    /// </summary>
+    private static void RemoveFileLocks(SqliteConnection connection)
+    {
+        if (HasColumn(connection, "node", "locked_by"))
+        {
+            Run(connection, """
+                BEGIN;
+                UPDATE change SET op = 0 WHERE op = 3;
+                DELETE FROM notification WHERE type = 'unlock_request';
+                ALTER TABLE node DROP COLUMN locked_by;
+                ALTER TABLE node DROP COLUMN locked_at;
+                COMMIT;
+                """);
+        }
+    }
+
+    private static bool HasColumn(SqliteConnection connection, string table, string column)
+    {
+        using var info = connection.CreateCommand();
+        info.CommandText = $"SELECT COUNT(*) FROM pragma_table_info('{table}') WHERE name = '{column}'";
+        return (long)info.ExecuteScalar()! > 0;
     }
 
     public static async Task<SqliteConnection> OpenAsync(string connectionString, CancellationToken ct)

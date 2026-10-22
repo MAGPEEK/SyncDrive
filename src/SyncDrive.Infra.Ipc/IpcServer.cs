@@ -140,7 +140,6 @@ public sealed class IpcServer(string pipeName, IDaemonControl control, IClientSe
                 IpcProtocol.Methods.Versions => await Shell().ListVersionsAsync(Required<PathParams>(request).Path, ct),
                 IpcProtocol.Methods.SaveVersion => await SaveVersion(Required<VersionParams>(request), ct),
                 IpcProtocol.Methods.RestoreVersion => await RestoreVersion(Required<VersionParams>(request), ct),
-                IpcProtocol.Methods.Lock => await LockPath(Required<LockParams>(request), ct),
                 IpcProtocol.Methods.FolderSync => await FolderSync(Required<FolderSyncParams>(request), ct),
                 _ => throw new IpcException(IpcProtocol.Errors.UnknownMethod, request.Method),
             };
@@ -179,8 +178,6 @@ public sealed class IpcServer(string pipeName, IDaemonControl control, IClientSe
         Shell().SaveVersionAsAsync(p.Path, p.Revision, p.Target ?? throw new IpcException(IpcProtocol.Errors.BadRequest, "Ziel fehlt."), ct);
 
     private Task<ShellResult> RestoreVersion(VersionParams p, CancellationToken ct) => Shell().RestoreVersionAsync(p.Path, p.Revision, ct);
-
-    private Task<ShellResult> LockPath(LockParams p, CancellationToken ct) => Shell().LockAsync(p.Path, p.Action, ct);
 
     private Task<ShellResult> FolderSync(FolderSyncParams p, CancellationToken ct) => Shell().SetFolderSyncedAsync(p.Path, p.Synced, ct);
 

@@ -16,7 +16,6 @@ public static class ErrorCode
     public const string CursorExpired = "cursor_expired";
     public const string Unauthorized = "unauthorized";
     public const string Forbidden = "forbidden";
-    public const string Locked = "locked";
 
     /// <summary>Öffentlicher Link abgelaufen (M6b).</summary>
     public const string LinkExpired = "link_expired";

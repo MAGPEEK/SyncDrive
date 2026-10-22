@@ -5,12 +5,11 @@ namespace SyncDrive.Web.App;
 
 /// <summary>
 /// „Notification Center“ (Glocke in der linken Leiste): neueste zuerst, ungelesene hervorgehoben und gezählt. Ein Klick markiert gelesen;
-/// wohin er führt (geteilter Space, Datei zum Entsperren), entscheidet die Oberfläche. Neue Einträge holt ein ruhiges Abfragen nach.
+/// wohin er führt (geteilter Space), entscheidet die Oberfläche. Neue Einträge holt ein ruhiges Abfragen nach.
 /// </summary>
 public sealed class NotificationsViewModel(IDriveApi api, WebTexts texts) : ViewModel(texts)
 {
     public const string Shared = "shared";
-    public const string UnlockRequest = "unlock_request";
 
     public IReadOnlyList<NotificationInfo> Items { get; private set; } = [];
 
@@ -32,8 +31,6 @@ public sealed class NotificationsViewModel(IDriveApi api, WebTexts texts) : View
         return notification.Type switch
         {
             Shared => string.Format(CultureInfo.CurrentCulture, Texts.NotifyShared, actor, spaceName(notification.SpaceId)),
-            UnlockRequest => string.Format(
-                CultureInfo.CurrentCulture, Texts.NotifyUnlock, actor, notification.Path?[(notification.Path.LastIndexOf('/') + 1)..]),
             _ => notification.Type,
         };
     }

@@ -147,9 +147,7 @@ public sealed class SqliteSpaceStore : ISpaceStore
         r.GetInt32(4) != 0, r.GetInt64(5), r.GetInt64(6), ParseTime(r.GetString(7)),
         r.IsDBNull(8) ? null : ContentHash.Parse(r.GetString(8)),
         Blocks(r.GetString(9)),
-        r.IsDBNull(10) ? null : r.GetString(10),
-        r.IsDBNull(11) ? null : ParseTime(r.GetString(11)),
-        r.IsDBNull(12) ? null : ParseTime(r.GetString(12)));
+        r.IsDBNull(10) ? null : ParseTime(r.GetString(10)));
 
     private static ContentHash[] Blocks(string text) =>
         [.. text.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(ContentHash.Parse)];
@@ -199,7 +197,7 @@ public sealed class SqliteSpaceStore : ISpaceStore
     private sealed class Transaction(SqliteConnection connection, SqliteTransaction transaction, string spaceId)
         : ISpaceTransaction
     {
-        private const string NodeColumns = "id, parent_id, name, kind, deleted, revision, size, mtime, hash, blocks, locked_by, locked_at, deleted_at";
+        private const string NodeColumns = "id, parent_id, name, kind, deleted, revision, size, mtime, hash, blocks, deleted_at";
 
         public Task<NodeRecord?> FindChildAsync(string? parentId, string name) => QueryNodeAsync(
             $"SELECT {NodeColumns} FROM node WHERE space_id = $s AND parent_key = $p AND name_key = $k",
@@ -263,18 +261,16 @@ public sealed class SqliteSpaceStore : ISpaceStore
         }
 
         private Task UpsertNodeAsync(NodeRecord node) => ExecuteAsync("""
-            INSERT INTO node (space_id, id, parent_id, parent_key, name, name_key, kind, deleted, revision, size, mtime, hash, blocks, locked_by, locked_at, deleted_at)
-            VALUES ($s, $id, $parent, $pk, $name, $nk, $kind, $deleted, $rev, $size, $mtime, $hash, $blocks, $lby, $lat, $dat)
+            INSERT INTO node (space_id, id, parent_id, parent_key, name, name_key, kind, deleted, revision, size, mtime, hash, blocks, deleted_at)
+            VALUES ($s, $id, $parent, $pk, $name, $nk, $kind, $deleted, $rev, $size, $mtime, $hash, $blocks, $dat)
             ON CONFLICT (space_id, id) DO UPDATE SET
                 parent_id = $parent, parent_key = $pk, name = $name, name_key = $nk, kind = $kind, deleted = $deleted,
-                revision = $rev, size = $size, mtime = $mtime, hash = $hash, blocks = $blocks,
-                locked_by = $lby, locked_at = $lat, deleted_at = $dat
+                revision = $rev, size = $size, mtime = $mtime, hash = $hash, blocks = $blocks, deleted_at = $dat
             """,
             ("$id", node.Id), ("$parent", node.ParentId), ("$pk", node.ParentId ?? string.Empty),
             ("$name", node.Name), ("$nk", Key(node.Name)), ("$kind", (int)node.Kind), ("$deleted", node.Deleted ? 1 : 0),
             ("$rev", node.Revision), ("$size", node.Size), ("$mtime", FormatTime(node.MTime)),
             ("$hash", node.Hash?.Value), ("$blocks", string.Join(',', node.Blocks.Select(b => b.Value))),
-            ("$lby", node.LockedBy), ("$lat", node.LockedAt is { } la ? FormatTime(la) : null),
             ("$dat", node.DeletedAt is { } da ? FormatTime(da) : null));
 
         public Task RemoveAsync(string nodeId) =>

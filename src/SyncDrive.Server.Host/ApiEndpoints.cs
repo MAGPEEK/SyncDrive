@@ -54,12 +54,6 @@ public static partial class ApiEndpoints
             WithView(http, spaceId, SpaceRole.Viewer, async v => Respond(await v.ListTrashAsync(ct)), ct));
         secured.MapPost("/spaces/{spaceId}/trash/restore", (string spaceId, RestoreTrashRequest request, HttpContext http, CancellationToken ct) =>
             WithView(http, spaceId, SpaceRole.Editor, async v => Respond(await v.RestoreFromTrashAsync(request.NodeId, Caller(http).UserId, ct)), ct));
-        secured.MapPost("/spaces/{spaceId}/locks", (string spaceId, LockRequest request, HttpContext http, CancellationToken ct) =>
-            WithView(http, spaceId, SpaceRole.Editor, async v => Respond(await v.LockAsync(request.Path, Caller(http).UserId, ct)), ct));
-        secured.MapDelete("/spaces/{spaceId}/locks", (string spaceId, string? path, HttpContext http, CancellationToken ct) =>
-            WithView(http, spaceId, SpaceRole.Editor, async v =>
-                Respond(await v.UnlockAsync(path ?? string.Empty, Caller(http).UserId, canOverride: v.Role >= SpaceRole.Manager, ct)), ct));
-        secured.MapPost("/spaces/{spaceId}/locks/request", RequestUnlock);
         secured.MapPut("/spaces/{spaceId}/star", (string spaceId, string? path, HttpContext http, ItemService items, CancellationToken ct) =>
             Star(spaceId, path, starred: true, http, items, ct));
         secured.MapDelete("/spaces/{spaceId}/star", (string spaceId, string? path, HttpContext http, ItemService items, CancellationToken ct) =>
@@ -241,10 +235,6 @@ public static partial class ApiEndpoints
             return Results.Ok(new VersionsResponse(versions));
         }, ct);
 
-    private static async Task<IResult> RequestUnlock(
-        string spaceId, LockRequest request, HttpContext http, NotificationService notes, CancellationToken ct) =>
-        await notes.RequestUnlockAsync(Caller(http), spaceId, request.Path, ct) is { } error ? Problem(error) : Results.NoContent();
-
     private static async Task<IResult> Star(
         string spaceId, string? path, bool starred, HttpContext http, ItemService items, CancellationToken ct) =>
         await items.SetStarAsync(Caller(http), spaceId, path ?? string.Empty, starred, ct) is { } error ? Problem(error) : Results.NoContent();
@@ -301,7 +291,6 @@ public static partial class ApiEndpoints
         ErrorCode.RevisionConflict or ErrorCode.TypeMismatch or ErrorCode.AlreadyExists
             or ErrorCode.ParentMissing or ErrorCode.BlockHashMismatch => StatusCodes.Status409Conflict,
         ErrorCode.BlocksMissing => StatusCodes.Status422UnprocessableEntity,
-        ErrorCode.Locked => StatusCodes.Status423Locked,
         ErrorCode.CursorExpired or ErrorCode.LinkExpired => StatusCodes.Status410Gone,
         ErrorCode.QuotaExceeded => StatusCodes.Status507InsufficientStorage,
         ErrorCode.TooManyAttempts => StatusCodes.Status429TooManyRequests,

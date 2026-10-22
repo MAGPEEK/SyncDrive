@@ -92,7 +92,6 @@ public sealed record WebTexts
     public required string NoNotifications { get; init; }
     public required string MarkAllRead { get; init; }
     public required string NotifyShared { get; init; }
-    public required string NotifyUnlock { get; init; }
     public required string StorageUsed { get; init; }
     public required string ClientList { get; init; }
     public required string DeviceName { get; init; }
@@ -309,7 +308,6 @@ public sealed record WebTexts
         NoNotifications = "No notifications.",
         MarkAllRead = "Mark all as read",
         NotifyShared = "{0} shared “{1}” with you",
-        NotifyUnlock = "{0} asks you to unlock “{1}”",
         StorageUsed = "{0} used",
         ClientList = "Client list",
         DeviceName = "Device name",
@@ -525,7 +523,6 @@ public sealed record WebTexts
         NoNotifications = "Keine Benachrichtigungen.",
         MarkAllRead = "Alle als gelesen markieren",
         NotifyShared = "{0} hat „{1}“ mit Ihnen geteilt",
-        NotifyUnlock = "{0} bittet Sie, „{1}“ zu entsperren",
         StorageUsed = "{0} belegt",
         ClientList = "Geräteliste",
         DeviceName = "Gerätename",

@@ -18,9 +18,6 @@ public static class ChangeOps
     public const string Upsert = "upsert";
     public const string Delete = "delete";
     public const string Move = "move";
-
-    /// <summary>Sperre gesetzt oder aufgehoben (A15). Inhalt unverändert; Clients aktualisieren nur den Sperrstatus.</summary>
-    public const string Lock = "lock";
 }
 
 /// <summary>Werte für <c>kind</c> in Knoten und Feed-Einträgen.</summary>

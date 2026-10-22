@@ -10,12 +10,11 @@ namespace SyncDrive.Client.Ui;
 
 /// <summary>
 /// Aktion aus dem Explorer-Menü („syncdrive.exe --shell &lt;aktion&gt; &lt;pfad&gt;“): führt sie über den Daemon aus und meldet das Ergebnis.
-/// Die Einträge sind statisch (ADR-10); passt eine Aktion nicht zum Zustand (z. B. Entsperren einer fremden Sperre), erklärt die Meldung,
-/// was stattdessen geht.
+/// Die Einträge sind statisch (ADR-10); passt eine Aktion nicht zum Zustand, erklärt die Meldung, was stattdessen geht.
 /// </summary>
 public sealed class ShellCommand(IShellActions shell, IUiServices ui, Texts texts)
 {
-    public static readonly IReadOnlyList<string> Verbs = ["versions", "lock", "unlock", "requestunlock", "stopsync", "resumesync"];
+    public static readonly IReadOnlyList<string> Verbs = ["versions", "stopsync", "resumesync"];
 
     public async Task RunAsync(string verb, string path, CancellationToken ct)
     {
@@ -31,15 +30,6 @@ public sealed class ShellCommand(IShellActions shell, IUiServices ui, Texts text
                 var versions = new VersionsViewModel(shell, ui, texts, path);
                 await versions.LoadAsync(ct);
                 await ui.ShowVersionsAsync(versions);
-                break;
-            case "lock":
-                await ReportAsync(await shell.LockAsync(path, LockAction.Lock, ct), texts.LockDone);
-                break;
-            case "unlock":
-                await ReportAsync(await shell.LockAsync(path, LockAction.Unlock, ct), texts.UnlockDone);
-                break;
-            case "requestunlock":
-                await ReportAsync(await shell.LockAsync(path, LockAction.RequestUnlock, ct), texts.UnlockRequested);
                 break;
             case "stopsync":
                 await ReportAsync(await shell.SetFolderSyncedAsync(path, synced: false, ct), texts.FolderExcluded);
@@ -57,7 +47,6 @@ public sealed class ShellCommand(IShellActions shell, IUiServices ui, Texts text
 
     public static string Explain(ShellResult result, Texts texts) => result.ErrorCode switch
     {
-        ErrorCode.Locked => texts.LockedByOther,
         ErrorCode.Forbidden => texts.NotAllowed,
         ShellErrors.NotInSyncFolder => texts.NotInSyncFolder,
         ShellErrors.NotPossible => texts.NotPossibleForRoot,
