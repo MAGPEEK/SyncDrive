@@ -14,7 +14,7 @@ namespace SyncDrive.Client.Ui;
 /// </summary>
 public sealed class ShellCommand(IShellActions shell, IUiServices ui, Texts texts)
 {
-    public static readonly IReadOnlyList<string> Verbs = ["versions", "stopsync", "resumesync"];
+    public static readonly IReadOnlyList<string> Verbs = ["versions", "keep", "freeup", "stopsync", "resumesync"];
 
     public async Task RunAsync(string verb, string path, CancellationToken ct)
     {
@@ -30,6 +30,13 @@ public sealed class ShellCommand(IShellActions shell, IUiServices ui, Texts text
                 var versions = new VersionsViewModel(shell, ui, texts, path);
                 await versions.LoadAsync(ct);
                 await ui.ShowVersionsAsync(versions);
+                break;
+            case "keep" or "freeup":
+                if (await shell.SetPinnedAsync(path, keep: verb == "keep", ct) is { Succeeded: false } pinned)
+                {
+                    await ui.ShowMessageAsync(Explain(pinned, texts)); // Erfolg zeigt der Explorer am Statussymbol
+                }
+
                 break;
             case "stopsync":
                 await ReportAsync(await shell.SetFolderSyncedAsync(path, synced: false, ct), texts.FolderExcluded);
@@ -50,6 +57,7 @@ public sealed class ShellCommand(IShellActions shell, IUiServices ui, Texts text
         ErrorCode.Forbidden => texts.NotAllowed,
         ShellErrors.NotInSyncFolder => texts.NotInSyncFolder,
         ShellErrors.NotPossible => texts.NotPossibleForRoot,
+        ShellErrors.NotOnDemand => texts.NotOnDemand,
         ShellErrors.Unreachable => texts.ErrorUnreachable,
         _ => $"{texts.ActionFailed} {result.Message ?? result.ErrorCode}",
     };

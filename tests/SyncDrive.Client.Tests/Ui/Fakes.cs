@@ -181,6 +181,12 @@ internal sealed class FakeDaemon : IDaemonClient
         return Next();
     }
 
+    public async Task<ShellResult> SetPinnedAsync(string localPath, bool keep, CancellationToken ct)
+    {
+        await Record($"keep={keep} {localPath}");
+        return Next();
+    }
+
     private ShellResult Next() => ShellResults.Count > 0 ? ShellResults.Dequeue() : ShellResult.Ok;
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;

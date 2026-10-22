@@ -50,6 +50,26 @@ public sealed class ShellMenuTests : IDisposable
     }
 
     [Fact]
+    public async Task Keep_and_free_up_sit_in_the_submenu_only_for_tasks_with_files_on_demand()
+    {
+        await _config.SaveTaskAsync(new SyncTaskDefinition("t1", "c1", "s1", RelativePath.Root, @"C:\Sync"), default);
+        await _config.SaveTaskAsync(new SyncTaskDefinition("t2", "c1", "s2", RelativePath.Root, @"D:\Abruf", OnDemand: true), default);
+        await _config.SaveSettingsAsync(new ClientSettings { Language = "de" }, default);
+
+        await Registrar().RefreshAsync(default);
+
+        var file = ShellMenuRegistrar.FileKey + @"\shell";
+        var folder = ShellMenuRegistrar.FolderKey + @"\shell";
+        Assert.Equal(["01versions", "02keep", "03freeup"], _registry.Children(file));
+        Assert.Equal(["01keep", "02freeup", "03stopsync", "04resumesync"], _registry.Children(folder));
+        Assert.Equal("Immer auf diesem Gerät behalten", _registry.Get(file + @"\02keep", "MUIVerb"));
+        Assert.Equal("Speicherplatz freigeben", _registry.Get(folder + @"\02freeup", "MUIVerb"));
+        Assert.Equal("System.ItemPathDisplay:~<\"D:\\Abruf\\\"", _registry.Get(file + @"\03freeup", "AppliesTo"));
+        Assert.Null(_registry.Get(file + @"\01versions", "AppliesTo"));
+        Assert.Equal($"\"{Exe}\" --shell keep \"%1\"", _registry.Get(folder + @"\01keep\command", null));
+    }
+
+    [Fact]
     public async Task The_menu_follows_the_language_and_disappears_when_switched_off_or_without_tasks()
     {
         await _config.SaveTaskAsync(new SyncTaskDefinition("t1", "c1", "s1", RelativePath.Root, @"C:\Sync"), default);

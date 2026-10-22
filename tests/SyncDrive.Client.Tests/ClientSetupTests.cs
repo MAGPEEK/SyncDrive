@@ -195,6 +195,26 @@ public sealed class ClientSetupTests : IDisposable
     }
 
     [Fact]
+    public async Task Keep_and_free_up_only_work_in_tasks_with_files_on_demand()
+    {
+        var cloud = new CloudFolders(_lifecycle);
+        var onDemand = Path.Combine(_root, "Abruf");
+        var normal = Path.Combine(_root, "Normal");
+        await _config.SaveTaskAsync(new SyncTaskDefinition("t1", "c1", "s1", RelativePath.Root, onDemand, OnDemand: true), default);
+        await _config.SaveTaskAsync(new SyncTaskDefinition("t2", "c1", "s2", RelativePath.Root, normal), default);
+        var shell = new ShellService(_config, _secrets, _server, new DaemonController(), _setup, cloud);
+
+        var kept = await shell.SetPinnedAsync(Path.Combine(onDemand, "Fotos"), keep: true, default);
+        var freed = await shell.SetPinnedAsync(Path.Combine(onDemand, "a.txt"), keep: false, default);
+        var notOnDemand = await shell.SetPinnedAsync(Path.Combine(normal, "a.txt"), keep: true, default);
+        var outside = await shell.SetPinnedAsync(Path.Combine(_root, "fremd.txt"), keep: true, default);
+
+        Assert.True(kept.Succeeded && freed.Succeeded);
+        Assert.Equal([(Path.Combine(onDemand, "Fotos"), true), (Path.Combine(onDemand, "a.txt"), false)], cloud.Pinned);
+        Assert.Equal((ShellErrors.NotOnDemand, ShellErrors.NotInSyncFolder), (notOnDemand.ErrorCode, outside.ErrorCode));
+    }
+
+    [Fact]
     public async Task The_notification_center_collects_all_servers_sets_the_red_dot_and_marks_read()
     {
         var connection = (await _setup.SignInAsync(new SignInRequest("nas", "anna", "pw"), default)).ConnectionId!;
@@ -290,6 +310,14 @@ public sealed class ClientSetupTests : IDisposable
         public Task DetachAsync(SyncTaskDefinition task, CancellationToken ct)
         {
             Detached.Add($"{task.Id} angehalten={lifecycle.Stopped.Contains(task.Id)}");
+            return Task.CompletedTask;
+        }
+
+        public List<(string Path, bool Keep)> Pinned { get; } = [];
+
+        public Task SetPinnedAsync(string localPath, bool keep, CancellationToken ct)
+        {
+            Pinned.Add((localPath, keep));
             return Task.CompletedTask;
         }
     }

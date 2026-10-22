@@ -32,4 +32,10 @@ public interface ICloudFolders
     /// die Registrierung wird entfernt. Nur nach dem Anhalten der Aufgabe aufrufen, sonst hielte der Sync das Entfernen für Löschungen.
     /// </summary>
     Task DetachAsync(SyncTaskDefinition task, CancellationToken ct);
+
+    /// <summary>
+    /// „Immer auf diesem Gerät behalten“ (<paramref name="keep"/>) oder „Speicherplatz freigeben“ für eine Datei oder einen Ordner samt Inhalt.
+    /// Gesetzt wird nur der Wunsch; Holen und Freigeben übernimmt die verbundene Aufgabe.
+    /// </summary>
+    Task SetPinnedAsync(string localPath, bool keep, CancellationToken ct);
 }

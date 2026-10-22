@@ -39,7 +39,7 @@ public sealed class DaemonHost(
         var setup = new ClientSetup(
             config, credentials, server, supervisor, environment ?? LocalEnvironment.For, deviceName, autostart, notifications, shellIntegration,
             cloudFolders);
-        var shell = new ShellService(config, credentials, server, Controller, setup);
+        var shell = new ShellService(config, credentials, server, Controller, setup, cloudFolders);
         var ipc = new IpcServer(pipeName, Controller, setup, shell);
         if (shellIntegration is not null)
         {

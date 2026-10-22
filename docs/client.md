@@ -65,6 +65,17 @@ The setup `.exe` accepts the usual switches as well: `/quiet`, `/passive`, `/log
 The password is not stored: the client registers itself as a device and keeps only a device token, protected with Windows DPAPI.
 You can revoke the device at any time in the web interface (account menu → *Client list* → *Unlink*).
 
+## Explorer menu
+
+Right-click a file or folder inside a sync folder → **SyncDrive**:
+
+| Entry | For | What it does |
+|---|---|---|
+| Browse previous versions | files | List, save or restore earlier versions |
+| Always keep on this device | files, folders (files on demand only) | Download now and keep the content locally |
+| Free up space | files, folders (files on demand only) | Remove the local content; the file stays visible and is fetched again when opened |
+| Stop syncing this folder / Sync this folder again | folders | Exclude a subfolder from syncing or include it again |
+
 ## Where the client keeps its data
 
 | Path | Content |
@@ -126,4 +137,4 @@ while ((syncdrive_cli status) -match 'Syncing') { Start-Sleep 5 }
 The uninstaller closes SyncDrive and removes the programs, the Start menu entry, the `PATH` entry, the autostart entry and the
 Explorer context menu. Your synced files and `%LOCALAPPDATA%\SyncDrive` stay; delete that folder to remove all settings.
 Online-only placeholders that were never downloaded cannot be opened without the client — make them available offline
-(*Always keep on this device*) before uninstalling if you need them.
+(right-click → *SyncDrive* → *Always keep on this device*) before uninstalling if you need them.

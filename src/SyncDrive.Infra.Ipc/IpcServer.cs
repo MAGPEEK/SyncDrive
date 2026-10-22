@@ -141,6 +141,7 @@ public sealed class IpcServer(string pipeName, IDaemonControl control, IClientSe
                 IpcProtocol.Methods.SaveVersion => await SaveVersion(Required<VersionParams>(request), ct),
                 IpcProtocol.Methods.RestoreVersion => await RestoreVersion(Required<VersionParams>(request), ct),
                 IpcProtocol.Methods.FolderSync => await FolderSync(Required<FolderSyncParams>(request), ct),
+                IpcProtocol.Methods.Pin => await Pin(Required<PinParams>(request), ct),
                 _ => throw new IpcException(IpcProtocol.Errors.UnknownMethod, request.Method),
             };
             return new IpcMessage(request.Id, Ok: true, Result: result is null ? null : JsonSerializer.SerializeToElement(result, IpcProtocol.Json));
@@ -180,6 +181,8 @@ public sealed class IpcServer(string pipeName, IDaemonControl control, IClientSe
     private Task<ShellResult> RestoreVersion(VersionParams p, CancellationToken ct) => Shell().RestoreVersionAsync(p.Path, p.Revision, ct);
 
     private Task<ShellResult> FolderSync(FolderSyncParams p, CancellationToken ct) => Shell().SetFolderSyncedAsync(p.Path, p.Synced, ct);
+
+    private Task<ShellResult> Pin(PinParams p, CancellationToken ct) => Shell().SetPinnedAsync(p.Path, p.Keep, ct);
 
     private static T Required<T>(IpcRequest request) =>
         Params<T>(request) ?? throw new IpcException(IpcProtocol.Errors.BadRequest, "Parameter fehlen.");

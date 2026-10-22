@@ -1,6 +1,7 @@
 using Microsoft.Win32;
 using SyncDrive.Client.App.Control;
 using SyncDrive.Client.App.Ports;
+using SyncDrive.Client.App.Tasks;
 using SyncDrive.Client.Ui;
 
 namespace SyncDrive.Client.Daemon;
@@ -60,17 +61,22 @@ public sealed class ShellMenuRegistrar(IRegistryWriter registry, IClientConfigSt
         }
 
         var texts = Texts.For(settings.Language);
-        var appliesTo = string.Join(" OR ", tasks.Select(t => $"System.ItemPathDisplay:~<\"{t.LocalPath.TrimEnd('\\', '/')}\\\""));
-        Register(FileKey, appliesTo, texts.AppName,
-        [
-            ("01versions", texts.ShellVersions, "versions"),
-        ]);
+        var appliesTo = AppliesTo(tasks);
+        var onDemand = tasks.Where(t => t.OnDemand).ToList();
+        IReadOnlyList<MenuEntry> pins = onDemand.Count == 0
+            ? []
+            : [new("keep", texts.ShellKeep, "keep", AppliesTo(onDemand)), new("freeup", texts.ShellFreeUp, "freeup", AppliesTo(onDemand))];
+        Register(FileKey, appliesTo, texts.AppName, [new("versions", texts.ShellVersions, "versions"), .. pins]);
         Register(FolderKey, appliesTo, texts.AppName,
-        [
-            ("01stopsync", texts.ShellStopSync, "stopsync"),
-            ("02resumesync", texts.ShellResumeSync, "resumesync"),
-        ]);
+            [.. pins, new("stopsync", texts.ShellStopSync, "stopsync"), new("resumesync", texts.ShellResumeSync, "resumesync")]);
     }
+
+    /// <summary>Nur innerhalb der Sync-Ordner dieser Aufgaben.</summary>
+    private static string AppliesTo(IEnumerable<SyncTaskDefinition> tasks) =>
+        string.Join(" OR ", tasks.Select(t => $"System.ItemPathDisplay:~<\"{t.LocalPath.TrimEnd('\\', '/')}\\\""));
+
+    /// <param name="AppliesTo">Engere Einschränkung für diesen Eintrag (z. B. nur Aufgaben mit Dateien auf Abruf); sonst gilt die des Menüs.</param>
+    private sealed record MenuEntry(string Name, string Text, string Verb, string? AppliesTo = null);
 
     /// <summary>Beim Deinstallieren oder wenn der Daemon ohne Aufgaben endet: alles entfernen.</summary>
     public void Remove()
@@ -79,16 +85,24 @@ public sealed class ShellMenuRegistrar(IRegistryWriter registry, IClientConfigSt
         registry.DeleteTree(FolderKey);
     }
 
-    private void Register(string key, string appliesTo, string title, IReadOnlyList<(string Key, string Text, string Verb)> entries)
+    /// <summary>Einträge in dieser Reihenfolge (Schlüssel <c>01name</c>, <c>02name</c> …; der Explorer sortiert nach Schlüssel).</summary>
+    private void Register(string key, string appliesTo, string title, IReadOnlyList<MenuEntry> entries)
     {
         registry.SetValue(key, "MUIVerb", title);
         registry.SetValue(key, "Icon", $"\"{trayExecutable}\",0");
         registry.SetValue(key, "SubCommands", string.Empty); // Untermenü aus dem eigenen shell-Unterschlüssel
         registry.SetValue(key, "AppliesTo", appliesTo);
-        foreach (var (entryKey, text, verb) in entries)
+        for (var i = 0; i < entries.Count; i++)
         {
-            registry.SetValue($@"{key}\shell\{entryKey}", "MUIVerb", text);
-            registry.SetValue($@"{key}\shell\{entryKey}\command", null, $"\"{trayExecutable}\" --shell {verb} \"%1\"");
+            var entry = entries[i];
+            var entryKey = $@"{key}\shell\{i + 1:00}{entry.Name}";
+            registry.SetValue(entryKey, "MUIVerb", entry.Text);
+            if (entry.AppliesTo is { } narrower)
+            {
+                registry.SetValue(entryKey, "AppliesTo", narrower);
+            }
+
+            registry.SetValue($@"{entryKey}\command", null, $"\"{trayExecutable}\" --shell {entry.Verb} \"%1\"");
         }
     }
 }

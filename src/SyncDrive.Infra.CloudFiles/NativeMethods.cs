@@ -219,6 +219,14 @@ internal static unsafe class NativeMethods
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     public static extern int CfRevertPlaceholder(SafeFileHandle file, uint flags, IntPtr overlapped);
 
+    public const uint PinStatePinned = 1;
+    public const uint PinStateUnpinned = 2;
+    public const uint SetPinRecurse = 0x1;
+
+    [DllImport(CldApi, ExactSpelling = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    public static extern int CfSetPinState(SafeFileHandle file, uint pinState, uint flags, IntPtr overlapped);
+
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, ExactSpelling = true, SetLastError = true)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     public static extern SafeFileHandle CreateFileW(

@@ -273,6 +273,9 @@ public sealed class DaemonEndToEndTests(HostFactory factory) : IClassFixture<Hos
         Assert.Equal(ShellErrors.NotPossible, (await ui.SetFolderSyncedAsync(local, synced: false, default)).ErrorCode);
         Assert.True((await ui.SetFolderSyncedAsync(Path.Combine(local, "Archiv"), synced: true, default)).Succeeded);
         Assert.NotEqual(PathStatus.Excluded, (await ui.GetPathInfoAsync(Path.Combine(local, "Archiv"), default))!.Status);
+
+        // Anheften gibt es nur mit Dateien auf Abruf (diese Aufgabe hält alles lokal)
+        Assert.Equal(ShellErrors.NotOnDemand, (await ui.SetPinnedAsync(file, keep: true, default)).ErrorCode);
     }
 
     [Fact]

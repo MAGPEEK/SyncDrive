@@ -64,6 +64,7 @@ public static class IpcProtocol
         public const string SaveVersion = "shell.saveversion";
         public const string RestoreVersion = "shell.restoreversion";
         public const string FolderSync = "shell.foldersync";
+        public const string Pin = "shell.pin";
     }
 
     internal static class Errors
@@ -118,6 +119,8 @@ internal sealed record PathParams(string Path);
 internal sealed record VersionParams(string Path, long Revision, string? Target = null);
 
 internal sealed record FolderSyncParams(string Path, bool Synced);
+
+internal sealed record PinParams(string Path, bool Keep);
 
 /// <summary>Der Daemon hat eine Anfrage abgelehnt oder ist nicht erreichbar.</summary>
 public sealed class IpcException(string code, string message) : Exception($"{code}: {message}")

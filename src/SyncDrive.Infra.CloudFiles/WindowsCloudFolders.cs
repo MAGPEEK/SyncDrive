@@ -10,8 +10,8 @@ using static SyncDrive.Infra.CloudFiles.NativeMethods;
 namespace SyncDrive.Infra.CloudFiles;
 
 /// <summary>
-/// Sync-Ordner als Sync-Root der Cloud-Files-API (ADR-10): Windows zeigt Statussymbole und die Spalte „Status“, legt „Immer auf diesem Gerät
-/// behalten“ und „Speicherplatz freigeben“ ins Menü und fragt beim Öffnen eines Platzhalters nach dem Inhalt. Inhalte werden vollständig
+/// Sync-Ordner als Sync-Root der Cloud-Files-API (ADR-10): Windows zeigt Statussymbole und die Spalte „Status“ und fragt beim Öffnen eines
+/// Platzhalters nach dem Inhalt; „Immer auf diesem Gerät behalten“ und „Speicherplatz freigeben“ stehen im SyncDrive-Menü (<see cref="SetPinnedAsync"/>). Inhalte werden vollständig
 /// geholt (<c>HYDRATION_FULL</c>), alle Platzhalter legt der Sync selbst an (<c>POPULATION_ALWAYS_FULL</c>), die Registrierung gilt nur für
 /// den angemeldeten Benutzer und braucht kein Adminrecht.
 /// Symbole, Statusspalte und Menüeinträge zeigt der Explorer nur für Ordner, die auch bei der Shell angemeldet sind
@@ -57,6 +57,15 @@ public sealed class WindowsCloudFolders(
                 log?.Invoke($"Sync-Root {root} abmelden: 0x{hr:X8}"); // war nie registriert oder ist schon weg
             }
         }
+    }
+
+    /// <summary>Setzt den Pin-Zustand (bei Ordnern rekursiv); die Attributänderung löst im <see cref="PinWatcher"/> Holen oder Freigeben aus.</summary>
+    public Task SetPinnedAsync(string localPath, bool keep, CancellationToken ct)
+    {
+        using var handle = OpenForCloudOperation(localPath);
+        var recurse = Directory.Exists(localPath) ? SetPinRecurse : 0;
+        Check(CfSetPinState(handle, keep ? PinStatePinned : PinStateUnpinned, recurse, IntPtr.Zero), $"{localPath} anheften");
+        return Task.CompletedTask;
     }
 
     /// <summary>Ruft <c>syncdrive-cloudreg</c> auf; false, wenn es fehlt oder scheitert (dann gilt der Weg über das Dateisystem).</summary>

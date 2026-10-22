@@ -157,6 +157,9 @@ internal sealed class DemoDaemon : IDaemonClient
     public Task<ShellResult> SetFolderSyncedAsync(string localPath, bool synced, CancellationToken ct) =>
         System.Threading.Tasks.Task.FromResult(ShellResult.Ok);
 
+    public Task<ShellResult> SetPinnedAsync(string localPath, bool keep, CancellationToken ct) =>
+        System.Threading.Tasks.Task.FromResult(ShellResult.Ok);
+
     public ValueTask DisposeAsync()
     {
         Disconnected?.Invoke();

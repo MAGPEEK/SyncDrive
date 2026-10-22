@@ -5,6 +5,21 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.20.0] – 2026-10-22 – Anheften im SyncDrive-Menü
+
+### Geändert
+- „Immer auf diesem Gerät behalten“ und „Speicherplatz freigeben“ stehen im Explorer-Untermenü **SyncDrive** (für Dateien und Ordner, nur in
+  Aufgaben mit Dateien auf Abruf) statt als Windows-Einträge oben im Kontextmenü. Die Sync-Ordner werden dafür mit `AllowPinning = false`
+  angemeldet; der Daemon setzt den Pin-Zustand (`CfSetPinState`, bei Ordnern rekursiv), Holen und Freigeben bleibt beim `PinWatcher`.
+  Erfolg zeigt der Explorer am Statussymbol; nur Fehler erscheinen als Meldung.
+- Bestehende Sync-Ordner übernehmen die Änderung beim nächsten Start des Clients (die Anmeldung wird bei jedem Start erneuert).
+- `docs/client.md`: Abschnitt „Explorer menu“.
+
+### Geprüft
+- Echter Cloud-Files-Test unter Windows (mit Stefans OK): Anheften eines Ordners holt den Inhalt, Freigeben macht die Datei wieder „nur
+  online“, und das Kontextmenü enthält die Windows-Einträge nicht mehr. Gegenprobe ohne `AllowPinning = false`: Windows zeigt „Always keep
+  on this device“ und „Free up space“.
+
 ## [0.19.0] – 2026-10-22 – Dateisperren entfernt
 
 ### Entfernt

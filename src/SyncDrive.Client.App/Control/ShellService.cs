@@ -39,6 +39,9 @@ public static class ShellErrors
     public const string NotPossible = "not_possible";
     public const string Unreachable = "unreachable";
     public const string Corrupt = "corrupt";
+
+    /// <summary>Anheften und Freigeben gibt es nur in Aufgaben mit Dateien auf Abruf.</summary>
+    public const string NotOnDemand = "not_on_demand";
 }
 
 /// <summary>Was das Explorer-Menü „SyncDrive“ anbietet; der Daemon setzt es um, die Oberfläche ruft es über die Pipe auf.</summary>
@@ -57,6 +60,9 @@ public interface IShellActions
 
     /// <summary>„Diesen Ordner nicht mehr synchronisieren“ bzw. wieder synchronisieren (Sync Rules → Folder).</summary>
     Task<ShellResult> SetFolderSyncedAsync(string localPath, bool synced, CancellationToken ct);
+
+    /// <summary>„Immer auf diesem Gerät behalten“ (<paramref name="keep"/>) oder „Speicherplatz freigeben“; nur in Aufgaben mit Dateien auf Abruf.</summary>
+    Task<ShellResult> SetPinnedAsync(string localPath, bool keep, CancellationToken ct);
 }
 
 public sealed class ShellService(
@@ -64,8 +70,32 @@ public sealed class ShellService(
     ICredentialStore credentials,
     IServerAccess server,
     DaemonController controller,
-    IClientSetup setup) : IShellActions
+    IClientSetup setup,
+    ICloudFolders? cloudFolders = null) : IShellActions
 {
+    public async Task<ShellResult> SetPinnedAsync(string localPath, bool keep, CancellationToken ct)
+    {
+        if (await LocateAsync(localPath, ct) is not { } found)
+        {
+            return new ShellResult(false, ShellErrors.NotInSyncFolder);
+        }
+
+        if (!found.Task.OnDemand || cloudFolders is null)
+        {
+            return new ShellResult(false, ShellErrors.NotOnDemand);
+        }
+
+        try
+        {
+            await cloudFolders.SetPinnedAsync(localPath, keep, ct);
+            return ShellResult.Ok;
+        }
+        catch (IOException e)
+        {
+            return new ShellResult(false, "pin_failed", e.Message); // z. B. Datei noch nicht abgeglichen
+        }
+    }
+
     public async Task<PathInfo?> GetPathInfoAsync(string localPath, CancellationToken ct)
     {
         if (await LocateAsync(localPath, ct) is not { } found)

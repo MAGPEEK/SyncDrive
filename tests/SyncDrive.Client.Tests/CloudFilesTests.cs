@@ -58,6 +58,49 @@ public sealed class CloudFilesTests
     }
 
     [CloudFilesFact]
+    public async Task Keep_fetches_free_up_releases_and_windows_leaves_both_out_of_its_own_menu()
+    {
+        using var cluster = new Cluster();
+        var a = cluster.AddClient("A");
+        a.Write("docs/a.txt", "Inhalt vom Server");
+        await a.SyncOkAsync();
+        var node = (await a.Remote.GetNodeAsync(RelativePath.Parse("docs/a.txt"), default)).Value!;
+
+        var root = Path.Combine(Path.GetTempPath(), "syncdrive-cfapi-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        var task = new SyncTaskDefinition("cfapi-pin", "c", Cluster.Space, RelativePath.Root, root, OnDemand: true);
+        var log = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        var folders = Folders(log.Enqueue);
+        try
+        {
+            var folder = await folders.AttachAsync(task, new Hydrator(a.Remote), default);
+            await using (folder.Connection)
+            {
+                await folder.Placeholders.CreateAsync(RelativePath.Parse("docs/a.txt"), node.State!.Size, node.State.MTime, node.State.Hash!.Value, default);
+                var file = Path.Combine(root, "docs", "a.txt");
+                var menu = OperatingSystem.IsWindows() ? ContextMenuOf(file) : []; // das Attribut lässt den Test ohnehin nur unter Windows laufen
+
+                await folders.SetPinnedAsync(Path.Combine(root, "docs"), keep: true, default); // Ordner: wirkt auf den Inhalt
+                var kept = await WaitForAsync(() => !IsCloudOnly(file));
+                await folder.Placeholders.SetInSyncAsync(RelativePath.Parse("docs/a.txt"), true, default);
+                await folders.SetPinnedAsync(file, keep: false, default);
+                var freed = await WaitForAsync(() => IsCloudOnly(file));
+
+                Assert.Equal(
+                    (true, true, "", ""),
+                    (kept, freed, string.Join(" | ", menu.Where(v => v.Contains("Gerät", StringComparison.Ordinal)
+                        || v.Contains("device", StringComparison.OrdinalIgnoreCase) || v.Contains("freigeben", StringComparison.Ordinal)
+                        || v.Contains("Free up", StringComparison.OrdinalIgnoreCase))), string.Join(" | ", log)));
+            }
+        }
+        finally
+        {
+            await folders.DetachAsync(task, default);
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [CloudFilesFact]
     public async Task The_provider_process_itself_never_fetches_a_placeholder_implicitly()
     {
         var root = Path.Combine(Path.GetTempPath(), "syncdrive-cfapi-" + Guid.NewGuid().ToString("N"));
@@ -139,6 +182,35 @@ public sealed class CloudFilesTests
     private static WindowsCloudFolders Folders(Action<string>? log) => new(
         "0.0.0-test", log, Path.Combine(AppContext.BaseDirectory, "cloudreg", "syncdrive-cloudreg.exe"),
         Path.Combine(Environment.SystemDirectory, "imageres.dll") + ",0");
+
+    /// <summary>Einträge des Explorer-Kontextmenüs einer Datei (Shell.Application), ohne Zugriffstasten-Zeichen.</summary>
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    private static List<string> ContextMenuOf(string path)
+    {
+        dynamic shell = Activator.CreateInstance(Type.GetTypeFromProgID("Shell.Application")!)!;
+        var item = shell.NameSpace(Path.GetDirectoryName(path)).ParseName(Path.GetFileName(path));
+        var names = new List<string>();
+        foreach (var verb in item.Verbs())
+        {
+            names.Add(((string)verb.Name).Replace("&", string.Empty, StringComparison.Ordinal));
+        }
+
+        return names;
+    }
+
+    /// <summary>Nur online: Windows holt den Inhalt erst beim Zugriff (RECALL_ON_DATA_ACCESS, RECALL_ON_OPEN oder Offline).</summary>
+    private static bool IsCloudOnly(string path) =>
+        ((int)File.GetAttributes(path) & (0x00400000 | 0x00040000 | (int)FileAttributes.Offline)) != 0;
+
+    private static async Task<bool> WaitForAsync(Func<bool> condition)
+    {
+        for (var i = 0; i < 100 && !condition(); i++)
+        {
+            await Task.Delay(100);
+        }
+
+        return condition();
+    }
 
     private static string Describe(LocalEntry? entry, FileAttributes attributes) => entry switch
     {

@@ -3,8 +3,8 @@ using Windows.Security.Cryptography;
 using Windows.Storage;
 using Windows.Storage.Provider;
 
-// Meldet einen Sync-Ordner bei der Windows-Shell an oder ab (StorageProviderSyncRootManager). Erst damit zeigt der Explorer Statussymbole,
-// die Spalte „Status“ und die Einträge „Immer auf diesem Gerät beibehalten“ / „Speicherplatz freigeben“ (ADR-10). Der Daemon ruft dieses
+// Meldet einen Sync-Ordner bei der Windows-Shell an oder ab (StorageProviderSyncRootManager). Erst damit zeigt der Explorer Statussymbole
+// und die Spalte „Status“ (ADR-10); Anheften/Freigeben bietet das SyncDrive-Menü selbst (AllowPinning aus). Der Daemon ruft dieses
 // Programm auf, damit nur es die WinRT-Projektion braucht.
 //
 //   syncdrive-cloudreg register <aufgabe> <ordner> <anzeigename> <symbol> <version>
@@ -33,6 +33,7 @@ try
                     | StorageProviderInSyncPolicy.DirectorySystemAttribute | StorageProviderInSyncPolicy.DirectoryLastWriteTime,
                 HardlinkPolicy = StorageProviderHardlinkPolicy.None,
                 ShowSiblingsAsGroup = false,
+                AllowPinning = false, // „Immer behalten“ / „Speicherplatz freigeben“ stehen im SyncDrive-Untermenü statt oben im Explorer-Menü
                 Context = CryptographicBuffer.ConvertStringToBinary(task, BinaryStringEncoding.Utf8),
             };
             StorageProviderSyncRootManager.Register(info);

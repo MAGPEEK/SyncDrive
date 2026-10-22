@@ -420,7 +420,18 @@ public sealed class ViewModelTests : IAsyncDisposable
         Assert.Equal(("512 B", "1.0 KB", "40 GB"), (Sizes.Format(512), Sizes.Format(1024).Replace(',', '.'), Sizes.Format(40L * 1024 * 1024 * 1024)));
     }
 
+    [Fact]
+    public async Task Keep_and_free_up_run_quietly_because_the_explorer_shows_the_result()
+    {
+        await new ShellCommand(_daemon, _ui, En).RunAsync("keep", @"C:\Sync\Drive\Fotos", CancellationToken.None);
+        await new ShellCommand(_daemon, _ui, En).RunAsync("freeup", @"C:\Sync\Drive\a.txt", CancellationToken.None);
+
+        Assert.Equal([@"keep=True C:\Sync\Drive\Fotos", @"keep=False C:\Sync\Drive\a.txt"], _daemon.Calls);
+        Assert.Empty(_ui.Messages);
+    }
+
     [Theory]
+    [InlineData("keep", "not_on_demand", "Only available in sync tasks with files on demand.")]
     [InlineData("stopsync", "not_possible", "The sync folder itself can only be removed as a whole task.")]
     [InlineData("resumesync", "forbidden", "You are not allowed to do this.")]
     public async Task Explorer_actions_explain_their_result(string verb, string? error, string message)
