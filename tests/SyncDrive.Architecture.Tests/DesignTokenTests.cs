@@ -20,6 +20,18 @@ public sealed partial class DesignTokenTests
     }
 
     [Fact]
+    public void The_dark_theme_only_overrides_tokens_the_light_theme_defines()
+    {
+        var css = File.ReadAllText(Path.Combine(Src, "SyncDrive.Web", "wwwroot", "css", "app.css"));
+        var dark = css.IndexOf(":root[data-theme=\"dark\"]", StringComparison.Ordinal);
+        var light = TokenName().Matches(css[..dark]).Select(m => m.Value).ToHashSet();
+        var darkBlock = css[dark..css.IndexOf('}', dark)];
+
+        Assert.DoesNotContain(TokenName().Matches(darkBlock).Select(m => m.Value), t => !light.Contains(t));
+        Assert.Contains("--bg:", darkBlock, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Web_components_use_no_fixed_colours_except_the_logo()
     {
         var offenders = Directory.EnumerateFiles(Path.Combine(Src, "SyncDrive.Web"), "*.razor", SearchOption.AllDirectories)
@@ -53,6 +65,9 @@ public sealed partial class DesignTokenTests
 
         throw new FileNotFoundException(file);
     }
+
+    [GeneratedRegex(@"--[a-z0-9-]+(?=:)")]
+    private static partial Regex TokenName();
 
     [GeneratedRegex(@"#[0-9A-Fa-f]{6}\b|#[0-9A-Fa-f]{3}\b(?![0-9A-Fa-f])")]
     private static partial Regex HexColour();

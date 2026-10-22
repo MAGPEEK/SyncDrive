@@ -85,6 +85,8 @@
                 }
                 <button class="menu-item" @onclick="() => { _accountOpen = false; _devicesOpen = true; }">@T.ClientList</button>
                 <div class="menu-line"></div>
+                <ThemeSwitch Texts="T" />
+                <div class="menu-line"></div>
                 <button class="menu-item" @onclick="SignOutAsync">@T.SignOut</button>
             </div>
         }

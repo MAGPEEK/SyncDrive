@@ -69,6 +69,10 @@ public sealed record WebTexts
     public required string LoginPortal { get; init; }
     public required string ChangePicture { get; init; }
     public required string RemovePicture { get; init; }
+    public required string Theme { get; init; }
+    public required string ThemeSystem { get; init; }
+    public required string ThemeLight { get; init; }
+    public required string ThemeDark { get; init; }
     public required string OrganisationSettings { get; init; }
     public required string ManageUsersGroups { get; init; }
     public required string ServerName { get; init; }
@@ -291,6 +295,10 @@ public sealed record WebTexts
         LoginPortal = "Sign-in page",
         ChangePicture = "Change profile picture",
         RemovePicture = "Remove profile picture",
+        Theme = "Theme",
+        ThemeSystem = "System",
+        ThemeLight = "Light",
+        ThemeDark = "Dark",
         OrganisationSettings = "Organisation settings",
         ManageUsersGroups = "Manage users & groups",
         ServerName = "Server name",
@@ -512,6 +520,10 @@ public sealed record WebTexts
         LoginPortal = "Anmeldeseite",
         ChangePicture = "Profilbild ändern",
         RemovePicture = "Profilbild entfernen",
+        Theme = "Design",
+        ThemeSystem = "System",
+        ThemeLight = "Hell",
+        ThemeDark = "Dunkel",
         OrganisationSettings = "Organisationseinstellungen",
         ManageUsersGroups = "Benutzer & Gruppen verwalten",
         ServerName = "Servername",

@@ -1,0 +1,30 @@
+@* Hell, Dunkel oder wie das System: gilt für diesen Browser (localStorage), angewandt über data-theme am html-Element (wwwroot/js/syncdrive.js). *@
+@inject IJSRuntime Js
+
+<div class="theme-switch" role="radiogroup" aria-label="@Texts.Theme">
+    <span class="theme-label">@Texts.Theme</span>
+    <div class="segmented">
+        @foreach (var (value, text) in Choices)
+        {
+            <button role="radio" aria-checked="@(_choice == value ? "true" : "false")" class="@(_choice == value ? "active" : "")"
+                    @onclick="() => SetAsync(value)">@text</button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public WebTexts Texts { get; set; } = null!;
+
+    private string _choice = "system";
+
+    private (string Value, string Text)[] Choices => [("system", Texts.ThemeSystem), ("light", Texts.ThemeLight), ("dark", Texts.ThemeDark)];
+
+    protected override async Task OnInitializedAsync() => _choice = await Js.InvokeAsync<string>("syncDrive.theme.get");
+
+    private async Task SetAsync(string value)
+    {
+        _choice = value;
+        await Js.InvokeVoidAsync("syncDrive.theme.set", value);
+    }
+}
