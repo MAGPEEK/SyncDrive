@@ -1,0 +1,100 @@
+@inject SharedByMeViewModel Shared
+@inject BrowserViewModel Browser
+
+@* „Von mir geteilt“ (Element, Ort, Freigabe) oder „Dateianfragen“ (Name, Ziel, erstellt, läuft ab, Status). Doppelklick
+   zeigt den Ort; das Kontextmenü verwaltet die Freigabe. *@
+<div class="view" @onclick="() => _context = null">
+    <div class="list" tabindex="0">
+        @if (Requests)
+        {
+            <div class="row head requests">
+                <span class="col-title sort">@T.Name</span>
+                <span class="col-location sort">@T.Location</span>
+                <span class="col-time sort">@T.Created</span>
+                <span class="col-time sort">@T.Expires</span>
+                <span class="col-size sort">@T.Status</span>
+            </div>
+        }
+        else
+        {
+            <div class="row head located">
+                <span class="col-title sort">@T.Title</span>
+                <span class="col-location sort">@T.Location</span>
+                <span class="col-time sort">@T.Sharing</span>
+                <span class="col-size sort"></span>
+            </div>
+        }
+        @switch (Shared.State)
+        {
+            case ListState.Loading:
+                <div class="list-note">@T.Loading</div>
+                break;
+            case var _ when Rows.Count == 0:
+                <div class="list-empty"><p>@(Requests ? T.NoFileRequests : T.NothingShared)</p></div>
+                break;
+            default:
+                @foreach (var row in Rows)
+                {
+                    var entry = row.Located;
+                    <div class="row item @(Requests ? "requests" : "located") @(row == _selected ? "selected" : "")" @onclick="() => _selected = row"
+                         @ondblclick="() => OnReveal.InvokeAsync(entry)" @oncontextmenu="e => ShowMenu(e, row)" @oncontextmenu:preventDefault>
+                        <span class="col-title"><FileIcon Folder="entry.Item.IsFolder" Name="@entry.Item.Name" /> <span class="name">@entry.Item.Name</span></span>
+                        <span class="col-location">@Location(entry)</span>
+                        @if (Requests && row.Shared.Request is { } request)
+                        {
+                            <span class="col-time">@request.CreatedAt.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)</span>
+                            <span class="col-time">@(request.ExpiresAt?.ToLocalTime().ToString("d", CultureInfo.CurrentCulture) ?? T.Never)</span>
+                            <span class="col-size"><span class="badge @(Shared.IsExpired(request) ? "muted" : "")">@Shared.StatusOf(request)</span></span>
+                        }
+                        else
+                        {
+                            <span class="col-time">@Shared.Summary(row)</span>
+                            <span class="col-size"></span>
+                        }
+                    </div>
+                }
+                break;
+        }
+    </div>
+
+    @if (_context is { } context)
+    {
+        <div class="menu context-menu" style="left:@(_menuX)px;top:@(_menuY)px" @onclick:stopPropagation>
+            <button class="menu-item" @onclick="() => { _context = null; return OnReveal.InvokeAsync(context.Located); }">@T.OpenLocation</button>
+            <div class="menu-line"></div>
+            <button class="menu-item" @onclick="() => { _context = null; return OnManage.InvokeAsync(context); }">@T.ManageSharing</button>
+        </div>
+    }
+    <Toast Model="Shared" />
+</div>
+
+@code {
+    private SharedRow? _selected;
+    private SharedRow? _context;
+    private double _menuX;
+    private double _menuY;
+
+    /// <summary>Ansicht „Dateianfragen“ statt „Von mir geteilt“.</summary>
+    [Parameter]
+    public bool Requests { get; set; }
+
+    [Parameter]
+    public EventCallback<LocatedItem> OnReveal { get; set; }
+
+    /// <summary>Freigabedialog bzw. Dialog der Dateianfrage öffnen.</summary>
+    [Parameter]
+    public EventCallback<SharedRow> OnManage { get; set; }
+
+    private WebTexts T => Shared.Texts;
+
+    private IReadOnlyList<SharedRow> Rows => Requests ? Shared.Requests : Shared.Rows;
+
+    /// <summary>Ort ohne das Element selbst, z. B. „My Drive / Projekte“.</summary>
+    private string Location(LocatedItem entry) => entry.Location(Browser.SpaceLabel);
+
+    private void ShowMenu(MouseEventArgs e, SharedRow row)
+    {
+        _selected = _context = row;
+        (_menuX, _menuY) = (e.ClientX, e.ClientY);
+    }
+}

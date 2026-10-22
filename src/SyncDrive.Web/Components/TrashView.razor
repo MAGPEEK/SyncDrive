@@ -1,0 +1,92 @@
+@implements IDisposable
+@inject TrashViewModel Trash
+
+@* Papierkorb aller Spaces: Titel, gelöscht am, Größe, Ort; Wiederherstellen am ursprünglichen Ort. *@
+<div class="view" @onclick="() => _context = null">
+    <div class="toolbar">
+        <button class="primary" disabled="@(!Trash.CanRestore)" @onclick="RestoreAsync">↺ @T.Restore</button>
+        <div class="toolbar-fill"></div>
+        @if (Trash.Selected.Count > 0)
+        {
+            <span class="selected-count">@string.Format(CultureInfo.CurrentCulture, T.SelectedCount, Trash.Selected.Count)</span>
+        }
+    </div>
+    <div class="list" tabindex="0">
+        <div class="row head located">
+            <span class="col-title sort">@T.Title</span>
+            <span class="col-location sort">@T.Location</span>
+            <span class="col-time sort">@T.DeletedTime</span>
+            <span class="col-size sort">@T.Size</span>
+        </div>
+        @switch (Trash.State)
+        {
+            case ListState.Loading:
+                <div class="list-note">@T.Loading</div>
+                break;
+            case ListState.Empty:
+                <div class="list-empty"><p>@T.EmptyTrash</p></div>
+                break;
+            default:
+                @foreach (var row in Trash.Rows)
+                {
+                    <div class="row item located @(Trash.Selected.Contains(row.Key) ? "selected" : "")"
+                         @onclick="e => Trash.Select(row, e.CtrlKey || e.MetaKey)"
+                         @oncontextmenu="e => ShowMenu(e, row)" @oncontextmenu:preventDefault>
+                        <span class="col-title"><FileIcon Folder="row.IsFolder" Name="@row.Entry.Name" /> <span class="name">@row.Entry.Name</span></span>
+                        <span class="col-location">@row.Location(SpaceLabel)</span>
+                        <span class="col-time">@row.Entry.DeletedAt?.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)</span>
+                        <span class="col-size">@(row.IsFolder ? "—" : WebTexts.FormatSize(row.Entry.Size))</span>
+                    </div>
+                }
+                break;
+        }
+    </div>
+
+    @if (_context is not null)
+    {
+        <div class="menu context-menu" style="left:@(_menuX)px;top:@(_menuY)px" @onclick:stopPropagation>
+            <button class="menu-item" disabled="@(!Trash.CanRestore)" @onclick="RestoreAsync">@T.Restore</button>
+        </div>
+    }
+    <Toast Model="Trash" />
+</div>
+
+@code {
+    private TrashRow? _context;
+    private double _menuX;
+    private double _menuY;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<SpaceSummary> Spaces { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public Func<SpaceSummary, string> SpaceLabel { get; set; } = null!;
+
+    [Parameter]
+    public CancellationToken Token { get; set; }
+
+    private WebTexts T => Trash.Texts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Trash.Changed += Refresh;
+        await Trash.LoadAsync(Spaces, Token);
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private void ShowMenu(MouseEventArgs e, TrashRow row)
+    {
+        Trash.SelectForContextMenu(row);
+        _context = row;
+        (_menuX, _menuY) = (e.ClientX, e.ClientY);
+    }
+
+    private async Task RestoreAsync()
+    {
+        _context = null;
+        await Trash.RestoreSelectedAsync(Spaces, Token);
+    }
+
+    public void Dispose() => Trash.Changed -= Refresh;
+}

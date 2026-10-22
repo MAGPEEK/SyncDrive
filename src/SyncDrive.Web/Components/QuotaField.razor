@@ -1,0 +1,31 @@
+@* Speicherkontingent: Kästchen „begrenzen“, dann die Größe in GB; ohne Haken unbegrenzt. *@
+<label class="check-row">
+    <input type="checkbox" checked="@Limited" @onchange="e => LimitedChanged.InvokeAsync((bool)e.Value!)" />
+    <span>@Texts.QuotaGb</span>
+</label>
+<input type="number" class="indented" min="0" step="0.5" value="@Gb.ToString(CultureInfo.InvariantCulture)" disabled="@(!Limited)"
+       aria-label="@Texts.QuotaGb" @onchange="ChangeAsync" />
+@if (!Limited)
+{
+    <span class="sub indented">@Texts.Unlimited</span>
+}
+
+@code {
+    [Inject]
+    private WebTexts Texts { get; set; } = null!;
+
+    [Parameter]
+    public bool Limited { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> LimitedChanged { get; set; }
+
+    [Parameter]
+    public double Gb { get; set; }
+
+    [Parameter]
+    public EventCallback<double> GbChanged { get; set; }
+
+    private Task ChangeAsync(ChangeEventArgs e) =>
+        double.TryParse(e.Value?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var value) ? GbChanged.InvokeAsync(value) : Task.CompletedTask;
+}

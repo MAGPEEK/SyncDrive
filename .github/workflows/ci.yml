@@ -1,0 +1,36 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  build-test:
+    # Der Server läuft auf Linux, der Client auf Windows: beides wird getestet.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+      - run: dotnet format --verify-no-changes
+      - run: dotnet build -c Release
+      - run: dotnet test -c Release --no-build
+
+  server-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t syncdrive-server .
+      - name: Container startet und meldet sich gesund
+        run: |
+          docker run -d --name srv -e SYNCDRIVE_Server__RequireTls=false -p 8080:8080 syncdrive-server
+          for i in $(seq 1 30); do
+            curl -fs http://localhost:8080/healthz && exit 0
+            sleep 1
+          done
+          docker logs srv
+          exit 1

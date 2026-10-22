@@ -1,0 +1,197 @@
+@implements IDisposable
+@inject AdminViewModel Admin
+
+@* Verwaltung, Reiter „Benutzer“: Liste mit Rolle, Status, Speicher (Balken bei Kontingent), Geräten; anlegen, Einstellungen, Passwort, sperren. *@
+<div class="view">
+    <div class="toolbar">
+        <button class="primary" @onclick="() => Open(Dialog.New)">＋ @T.NewUser</button>
+        <button class="tool" disabled="@(Admin.Selected is null)" @onclick="() => Open(Dialog.Settings)">⚙ @T.UserSettings</button>
+        <button class="tool" disabled="@(Admin.Selected is null)" @onclick="() => Open(Dialog.Password)">🔑 @T.ResetPassword</button>
+        @if (Admin.Selected is { Disabled: true } locked)
+        {
+            <button class="tool" @onclick="() => Admin.SetDisabledAsync(locked, false, Token)">✓ @T.EnableUser</button>
+        }
+        else
+        {
+            <button class="tool" disabled="@(!Admin.CanToggle)" @onclick="() => Open(Dialog.Disable)">⛔ @T.DisableUser</button>
+        }
+    </div>
+    <div class="list" tabindex="0">
+        <div class="row head admin-users">
+            <span class="col-title sort">@T.UserName</span>
+            <span class="sort">@T.Status</span>
+            <span class="sort">@T.Storage</span>
+            <span class="sort">@T.DevicesColumn</span>
+            <span class="col-time sort">@T.Created</span>
+        </div>
+        @switch (Admin.State)
+        {
+            case ListState.Loading:
+                <div class="list-note">@T.Loading</div>
+                break;
+            default:
+                @foreach (var user in Admin.Users)
+                {
+                    <div class="row item admin-users @(user.Id == Admin.Selected?.Id ? "selected" : "")" @onclick="() => Admin.Select(user)"
+                         @ondblclick="() => { Admin.Select(user); Open(Dialog.Settings); }">
+                        <span class="col-title">
+                            <span class="portal-avatar">@user.Name[..1].ToUpperInvariant()</span>
+                            <span class="name">@user.Name</span>
+                            @if (user.IsAdmin)
+                            {
+                                <span class="badge">@T.Administrator</span>
+                            }
+                            @if (Admin.IsMe(user))
+                            {
+                                <span class="sub">(@T.You)</span>
+                            }
+                        </span>
+                        <span><span class="badge @(user.Disabled ? "muted" : "")">@(user.Disabled ? T.DisabledUser : T.Active)</span></span>
+                        <span class="storage">
+                            <span class="sub">@Admin.StorageText(user)</span>
+                            @if (AdminViewModel.StorageShare(user) is { } share)
+                            {
+                                <span class="meter"><span class="meter-fill @(share >= 0.9 ? "full" : "")" style="width:@((share * 100).ToString("0", CultureInfo.InvariantCulture))%"></span></span>
+                            }
+                        </span>
+                        <span class="sub">@user.Devices</span>
+                        <span class="col-time">@(user.CreatedAt?.ToLocalTime().ToString("d", CultureInfo.CurrentCulture) ?? "—")</span>
+                    </div>
+                }
+                break;
+        }
+    </div>
+
+    @if (_dialog != Dialog.None)
+    {
+        <div class="backdrop">
+            <form class="dialog" @onsubmit="SubmitAsync" @onsubmit:preventDefault @onclick:stopPropagation>
+                @switch (_dialog)
+                {
+                    case Dialog.New:
+                        <h2>@T.NewUser</h2>
+                        <label><span>@T.UserName</span><input @ref="_first" @bind="_name" @bind:event="oninput" autocomplete="off" /></label>
+                        <label><span>@T.Password</span><input type="password" @bind="_password" @bind:event="oninput" autocomplete="new-password" /></label>
+                        <label class="check-row"><input type="checkbox" @bind="_isAdmin" /><span>@T.Administrator</span></label>
+                        <QuotaField @bind-Limited="_limited" @bind-Gb="_quotaGb" />
+                        break;
+                    case Dialog.Settings when Admin.Selected is { } user:
+                        <h2>@T.UserSettings – @user.Name</h2>
+                        <label class="check-row">
+                            <input type="checkbox" @bind="_isAdmin" disabled="@Admin.IsMe(user)" /><span>@T.Administrator</span>
+                        </label>
+                        <QuotaField @bind-Limited="_limited" @bind-Gb="_quotaGb" />
+                        <p class="sub">@Admin.StorageText(user)</p>
+                        break;
+                    case Dialog.Password when Admin.Selected is { } user:
+                        <h2>@T.ResetPassword – @user.Name</h2>
+                        <label><span>@T.NewPassword</span><input type="password" @ref="_first" @bind="_password" @bind:event="oninput" autocomplete="new-password" /></label>
+                        break;
+                    case Dialog.Disable when Admin.Selected is { } user:
+                        <h2>@T.DisableUser – @user.Name</h2>
+                        break;
+                }
+                @if (Admin.Message is { } message)
+                {
+                    <div class="dialog-error" role="alert">@message</div>
+                }
+                <div class="dialog-buttons">
+                    <button type="button" disabled="@_busy" @onclick="Close">@T.Cancel</button>
+                    <button type="submit" class="primary @(_dialog == Dialog.Disable ? "danger" : "")" disabled="@_busy">
+                        @(_dialog == Dialog.Disable ? T.DisableUser : T.Ok)
+                    </button>
+                </div>
+            </form>
+        </div>
+    }
+    else
+    {
+        <Toast Model="Admin" />
+    }
+</div>
+
+@code {
+    private enum Dialog
+    {
+        None,
+        New,
+        Settings,
+        Password,
+        Disable,
+    }
+
+    private Dialog _dialog;
+    private bool _busy;
+    private string _name = string.Empty;
+    private string _password = string.Empty;
+    private bool _isAdmin;
+    private bool _limited;
+    private double _quotaGb = 10;
+    private ElementReference _first;
+    private bool _focus;
+
+    [Parameter]
+    public string? Me { get; set; }
+
+    [Parameter]
+    public CancellationToken Token { get; set; }
+
+    private WebTexts T => Admin.Texts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Admin.Changed += Refresh;
+        Admin.Me = Me;
+        await Admin.LoadAsync(Token);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focus)
+        {
+            _focus = false;
+            await _first.FocusAsync();
+        }
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private void Open(Dialog dialog)
+    {
+        Admin.DismissMessage();
+        var user = Admin.Selected;
+        (_name, _password) = (string.Empty, string.Empty);
+        _isAdmin = dialog == Dialog.Settings && user!.IsAdmin;
+        _limited = dialog == Dialog.Settings && user!.QuotaBytes is not null;
+        _quotaGb = (dialog == Dialog.Settings ? AdminViewModel.QuotaInGb(user!) : null) ?? 10;
+        _dialog = dialog;
+        _focus = dialog is Dialog.New or Dialog.Password;
+    }
+
+    private void Close()
+    {
+        _dialog = Dialog.None;
+        Admin.DismissMessage();
+    }
+
+    private async Task SubmitAsync()
+    {
+        _busy = true;
+        double? quota = _limited ? _quotaGb : null;
+        var ok = _dialog switch
+        {
+            Dialog.New => await Admin.CreateAsync(_name, _password, _isAdmin, quota, Token),
+            Dialog.Settings => await Admin.SaveSettingsAsync(Admin.Selected!, _isAdmin, quota, Token),
+            Dialog.Password => await Admin.SetPasswordAsync(Admin.Selected!, _password, Token),
+            Dialog.Disable => await Admin.SetDisabledAsync(Admin.Selected!, true, Token),
+            _ => true,
+        };
+        _busy = false;
+        if (ok)
+        {
+            _dialog = Dialog.None; // Erfolgsmeldung erscheint unten als Hinweis
+        }
+    }
+
+    public void Dispose() => Admin.Changed -= Refresh;
+}

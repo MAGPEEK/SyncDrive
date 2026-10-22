@@ -1,0 +1,88 @@
+@inject SessionViewModel Session
+
+@* Anmeldeseite: links der selbst gewählte Servername mit Text, rechts die Karte („Welcome back …“, „Sign In“) mit rundem
+   Pfeil; erst der Name, dann das Passwort. Hintergrund: das Bild des Administrators oder ein eigener Verlauf. *@
+<div class="portal @(Session.Portal.BackgroundUrl is null ? "portal-default" : "")" style="@BackgroundStyle">
+    <div class="portal-brand">
+        <h1>@Session.Portal.ServerName</h1>
+        @if (Session.Portal.LoginMessage is { } message)
+        {
+            <p>@message</p>
+        }
+    </div>
+
+    <form class="portal-card" @onsubmit="SubmitAsync" @onsubmit:preventDefault>
+        <div class="portal-bar"></div>
+        <h2 class="portal-welcome">@T.WelcomeBack</h2>
+        <h3 class="portal-heading">@T.SignInHeading</h3>
+
+        @if (Session.Step == SignInStep.UserName)
+        {
+            <input @ref="_field" @bind="_user" class="portal-input" placeholder="@T.UserName" aria-label="@T.UserName"
+                   autocomplete="username" disabled="@Session.IsBusy" />
+        }
+        else
+        {
+            <button type="button" class="portal-account" @onclick="BackAsync" title="@T.OtherAccount">
+                <span class="portal-avatar">@Session.UserName[..1].ToUpperInvariant()</span>
+                <span>@Session.UserName</span>
+                <span class="portal-switch">‹ @T.OtherAccount</span>
+            </button>
+            @* Für Passwort-Manager: der Name gehört zum Formular, auch wenn er hier nur angezeigt wird. *@
+            <input type="text" class="hidden-input" value="@Session.UserName" autocomplete="username" readonly tabindex="-1" aria-hidden="true" />
+            <input @ref="_field" @bind="_password" type="password" class="portal-input" placeholder="@T.Password" aria-label="@T.Password"
+                   autocomplete="current-password" disabled="@Session.IsBusy" />
+        }
+
+        @if (Session.Error is { } error)
+        {
+            <div class="signin-error" role="alert">@error</div>
+        }
+
+        <button type="submit" class="portal-next" disabled="@Session.IsBusy" aria-label="@T.Next" title="@T.Next">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </button>
+    </form>
+</div>
+
+@code {
+    private ElementReference _field;
+    private SignInStep? _focused;
+    private string _user = string.Empty;
+    private string _password = string.Empty;
+
+    private WebTexts T => Session.Texts;
+
+    private string? BackgroundStyle => Session.Portal.BackgroundUrl is { } url ? $"background-image:url('{url}')" : null;
+
+    /// <summary>Der Cursor steht immer im Feld des aktuellen Schritts.</summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focused != Session.Step && !Session.IsBusy)
+        {
+            _focused = Session.Step;
+            await _field.FocusAsync();
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (Session.Step == SignInStep.UserName)
+        {
+            Session.Continue(_user);
+            return;
+        }
+
+        if (!await Session.SignInAsync(_password, CancellationToken.None))
+        {
+            _password = string.Empty; // nie im Formular stehen lassen
+            _focused = null;
+        }
+    }
+
+    private void BackAsync()
+    {
+        _password = string.Empty;
+        Session.BackToUserName();
+    }
+}

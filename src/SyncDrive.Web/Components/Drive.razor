@@ -1,0 +1,537 @@
+@implements IDisposable
+@inject BrowserViewModel Browser
+@inject SessionViewModel Session
+@inject SearchViewModel Search
+@inject RecentViewModel Recent
+@inject VersionsViewModel Versions
+@inject TrashViewModel Trash
+@inject MarksViewModel Marks
+@inject NotificationsViewModel Notes
+@inject AccountViewModel Account
+@inject ShareViewModel Share
+@inject SharedByMeViewModel SharedByMe
+@inject NavigationManager Navigation
+@inject IJSRuntime Js
+
+@* Rahmen: schmale Leiste (Logo, Benachrichtigungen, Konto), Kategorien samt „My Labels“, Kopf mit Pfadleiste bzw. Titel
+   und Suche, darunter die gewählte Ansicht. Auf schmalen Bildschirmen klappen die Kategorien über den Knopf im Kopf aus. *@
+<div class="shell" @onclick="CloseMenus">
+    <nav class="rail">
+        <Logo Size="34" />
+        <div class="rail-fill"></div>
+        <button class="rail-button" title="@T.Notifications" aria-label="@T.Notifications" @onclick="ToggleNotificationsAsync" @onclick:stopPropagation>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1Z" /></svg>
+            @if (Notes.Unread > 0)
+            {
+                <span class="count">@(Notes.Unread > 99 ? "99+" : Notes.Unread.ToString(CultureInfo.CurrentCulture))</span>
+            }
+        </button>
+        @if (_notificationsOpen)
+        {
+            <NotificationPanel SpaceName="SpaceName" Token="Token" OnOpen="OpenNotificationAsync" />
+        }
+        <button class="avatar" title="@Session.Session?.UserName" @onclick="ToggleAccountAsync" @onclick:stopPropagation>
+            @Initial
+        </button>
+        @if (_accountOpen)
+        {
+            <div class="menu account-menu" @onclick:stopPropagation>
+                <div class="menu-head">
+                    <div>@Session.Session?.UserName</div>
+                    @if (Account.UsedBytes is not null)
+                    {
+                        <div class="sub">@T.MyDrive · @Account.UsedText</div>
+                    }
+                </div>
+                <button class="menu-item" @onclick="() => { _accountOpen = false; _devicesOpen = true; }">@T.ClientList</button>
+                @if (Session.Session?.IsAdmin == true)
+                {
+                    <button class="menu-item" @onclick="() => { _accountOpen = false; Show(View.Admin); }">@T.Administration</button>
+                    <button class="menu-item" @onclick="() => { _accountOpen = false; _portalOpen = true; }">@T.LoginPortal</button>
+                }
+                <div class="menu-line"></div>
+                <button class="menu-item" @onclick="SignOutAsync">@T.SignOut</button>
+            </div>
+        }
+    </nav>
+
+    <aside class="categories @(_navOpen ? "open" : "")">
+        @foreach (var space in OwnSpaces)
+        {
+            if (space.Role != "owner" && OwnSpaces.First(s => s.Role != "owner") == space)
+            {
+                <div class="category-heading">@T.TeamFolders</div>
+            }
+            <button class="category @(_view == View.Folder && space == Browser.Space ? "active" : "")" @onclick="() => OpenSpaceAsync(space)">
+                <FileIcon Folder="true" Name="" />
+                <span>@Browser.SpaceLabel(space)</span>
+            </button>
+        }
+        <button class="category @(SharedWithMeActive ? "active" : "")" @onclick="ShowSharedWithMeAsync">
+            <span class="category-icon">👥</span><span>@T.SharedWithMe</span>
+        </button>
+        <button class="category @(_view == View.SharedByMe ? "active" : "")" @onclick="() => ShowSharedByMeAsync(View.SharedByMe)">
+            <span class="category-icon">🔗</span><span>@T.SharedWithOthers</span>
+        </button>
+        <button class="category @(_view == View.FileRequests ? "active" : "")" @onclick="() => ShowSharedByMeAsync(View.FileRequests)">
+            <span class="category-icon">📥</span><span>@T.FileRequests</span>
+        </button>
+        <div class="category-line"></div>
+        <button class="category @(_view == View.Recent ? "active" : "")" @onclick="ShowRecentAsync">
+            <span class="category-icon">🕘</span><span>@T.Recent</span>
+        </button>
+        <button class="category @(_view == View.Starred ? "active" : "")" @onclick="ShowStarredAsync">
+            <span class="category-icon">★</span><span>@T.Starred</span>
+        </button>
+        <button class="category @(_view == View.Trash ? "active" : "")" @onclick="() => Show(View.Trash)">
+            <span class="category-icon">🗑</span><span>@T.RecycleBin</span>
+        </button>
+        <div class="category-heading with-action">
+            <span>@T.MyLabels</span>
+            <button class="heading-add" title="@T.NewLabel" aria-label="@T.NewLabel" @onclick="() => _labelDialogFor = []">＋</button>
+        </div>
+        @foreach (var label in Marks.Labels)
+        {
+            <button class="category @(_view == View.Label && _label?.Id == label.Id ? "active" : "")" @onclick="() => ShowLabelAsync(label)">
+                <span class="category-icon"><span class="label-dot" style="background:@label.Color"></span></span><span>@label.Name</span>
+            </button>
+        }
+    </aside>
+    @if (_navOpen)
+    {
+        <div class="nav-scrim" @onclick="() => _navOpen = false"></div>
+    }
+
+    <main class="content">
+        <header class="content-head">
+            <button class="nav-toggle" aria-label="@T.Categories" aria-expanded="@_navOpen" @onclick="() => _navOpen = !_navOpen" @onclick:stopPropagation>☰</button>
+            <div class="crumbs">
+                @switch (_view)
+                {
+                    case View.Folder:
+                        @foreach (var crumb in Browser.Breadcrumbs)
+                        {
+                            if (crumb != Browser.Breadcrumbs[0])
+                            {
+                                <span class="crumb-sep">›</span>
+                            }
+                            <button class="crumb" @onclick="() => Browser.NavigateAsync(crumb.Path, Token)">@crumb.Label</button>
+                        }
+                        break;
+                    case View.Recent:
+                        <span class="crumb">@T.Recent</span>
+                        break;
+                    case View.Starred:
+                        <span class="crumb">@T.Starred</span>
+                        break;
+                    case View.Label when _label is { } label:
+                        <span class="label-dot large" style="background:@label.Color"></span>
+                        <span class="crumb">@label.Name</span>
+                        <button class="tool" @onclick="() => _deleteLabel = label">🗑 @T.DeleteLabel</button>
+                        break;
+                    case View.Trash:
+                        <span class="crumb">@T.RecycleBin</span>
+                        break;
+                    case View.SharedWithMe:
+                        <span class="crumb">@T.SharedWithMe</span>
+                        break;
+                    case View.SharedByMe:
+                        <span class="crumb">@T.SharedWithOthers</span>
+                        break;
+                    case View.FileRequests:
+                        <span class="crumb">@T.FileRequests</span>
+                        break;
+                    case View.Admin:
+                        <span class="crumb">@T.Administration</span>
+                        break;
+                    case View.Search:
+                        <span class="crumb">@string.Format(CultureInfo.CurrentCulture, T.SearchResults, Search.Query)</span>
+                        break;
+                }
+            </div>
+            <form class="search" @onsubmit="SearchAsync" @onsubmit:preventDefault>
+                <input type="search" placeholder="@T.Search" @bind="_query" aria-label="@T.Search" />
+                <select @bind="_everywhere" aria-label="@T.Search">
+                    <option value="False">@string.Format(CultureInfo.CurrentCulture, T.SearchIn, ScopeLabel)</option>
+                    <option value="True">@T.SearchAll</option>
+                </select>
+            </form>
+        </header>
+
+        @switch (_view)
+        {
+            case View.Folder:
+                <FolderView Token="Token" OnShowVersions="item => ShowVersionsAsync(Browser.Space!, item)" OnNewLabel="items => _labelDialogFor = items"
+                            OnShare="item => OpenShare(item, request: false)" OnRequestFiles="item => OpenShare(item, request: true)" OnGetLink="GetLinkAsync" />
+                break;
+            case View.SharedWithMe:
+                <SharedWithMeView Token="Token" OnOpen="OpenSpaceAsync" />
+                <Toast Model="Browser" />
+                break;
+            case View.SharedByMe:
+            case View.FileRequests:
+                <SharedByMeView Requests="@(_view == View.FileRequests)" OnReveal="RevealAsync"
+                                OnManage="row => OpenShare(row.Located, request: _view == View.FileRequests)" />
+                break;
+            case View.Recent:
+                <LocatedList Texts="T" Items="Recent.Items" State="Recent.State" EmptyText="@T.NoRecent" SpaceLabel="Browser.SpaceLabel" Token="Token"
+                             OnReveal="RevealAsync" OnOpenFolder="OpenFolderAsync" OnShowVersions="e => ShowVersionsAsync(e.Space, e.Item)" />
+                <Toast Model="Recent" />
+                break;
+            case View.Starred:
+                <LocatedList Texts="T" Items="Marks.Starred(Browser.Spaces)" State="MarksState(Marks.Starred(Browser.Spaces))" EmptyText="@T.NoStarred"
+                             SpaceLabel="Browser.SpaceLabel" Token="Token"
+                             OnReveal="RevealAsync" OnOpenFolder="OpenFolderAsync" OnShowVersions="e => ShowVersionsAsync(e.Space, e.Item)" />
+                break;
+            case View.Label when _label is { } label:
+                <LocatedList Texts="T" Items="Marks.ItemsOf(label, Browser.Spaces)" State="MarksState(Marks.ItemsOf(label, Browser.Spaces))"
+                             EmptyText="@T.NoLabeled" SpaceLabel="Browser.SpaceLabel" Token="Token"
+                             OnReveal="RevealAsync" OnOpenFolder="OpenFolderAsync" OnShowVersions="e => ShowVersionsAsync(e.Space, e.Item)" />
+                break;
+            case View.Search:
+                <LocatedList Texts="T" Items="Search.Results" State="Search.State" EmptyText="@T.NoResults" SpaceLabel="Browser.SpaceLabel" Token="Token"
+                             OnReveal="RevealAsync" OnOpenFolder="OpenFolderAsync" OnShowVersions="e => ShowVersionsAsync(e.Space, e.Item)" />
+                <Toast Model="Search" />
+                break;
+            case View.Admin:
+                <AdminPage Me="@Session.Session?.UserName" Token="Token" />
+                break;
+            case View.Trash:
+                <TrashView Spaces="Browser.Spaces" SpaceLabel="Browser.SpaceLabel" Token="Token" />
+                break;
+        }
+        @if (_labelDialogFor is null)
+        {
+            <Toast Model="Marks" />
+        }
+        <Toast Model="Notes" />
+        @if (_shareFor is null)
+        {
+            <Toast Model="Share" />
+        }
+    </main>
+
+    @if (_shareFor is { } shared)
+    {
+        <ShareDialog Space="shared.Space" Item="shared.Item" Request="_shareRequest" StartWithLink="_shareStartWithLink" Token="Token" OnClose="CloseShareAsync" />
+    }
+
+    @if (_versionsOpen)
+    {
+        <VersionsDialog Token="Token" OnClose="() => _versionsOpen = false" OnRestored="() => Browser.LoadAsync(Token)" />
+    }
+
+    @if (_portalOpen)
+    {
+        <PortalDialog Token="Token" OnClose="() => _portalOpen = false" />
+    }
+
+    @if (_devicesOpen)
+    {
+        <DevicesDialog Token="Token" OnClose="() => _devicesOpen = false" />
+    }
+
+    @if (_labelDialogFor is { } targets)
+    {
+        <LabelDialog AssignTo="targets" Token="Token" OnClose="() => _labelDialogFor = null" />
+    }
+
+    @if (_deleteLabel is { } doomed)
+    {
+        <div class="backdrop" @onclick:stopPropagation>
+            <div class="dialog">
+                <h2>@T.DeleteLabel</h2>
+                <p>@Marks.DeleteLabelQuestion(doomed)</p>
+                <div class="dialog-buttons">
+                    <button @onclick="() => _deleteLabel = null">@T.Cancel</button>
+                    <button class="primary danger" @onclick="DeleteLabelAsync">@T.Delete</button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private static readonly TimeSpan NotificationInterval = TimeSpan.FromMinutes(1);
+
+    private enum View
+    {
+        Folder,
+        Recent,
+        Starred,
+        Label,
+        Search,
+        Trash,
+        SharedWithMe,
+        SharedByMe,
+        FileRequests,
+        Admin,
+    }
+
+    private readonly CancellationTokenSource _stop = new();
+    private View _view;
+    private LabelInfo? _label;
+    private bool _navOpen;
+    private bool _accountOpen;
+    private bool _notificationsOpen;
+    private bool _versionsOpen;
+    private bool _portalOpen;
+    private bool _devicesOpen;
+    private IReadOnlyList<LocatedItem>? _labelDialogFor;
+    private LabelInfo? _deleteLabel;
+    private LocatedItem? _shareFor;
+    private bool _shareRequest;
+    private bool _shareStartWithLink;
+    private string _query = string.Empty;
+    private bool _everywhere;
+
+    private WebTexts T => Browser.Texts;
+
+    private CancellationToken Token => _stop.Token;
+
+    private string Initial => (Session.Session?.UserName ?? "?")[..1].ToUpperInvariant();
+
+    /// <summary>Bereich der Suche: der aktuelle Ordner (Pfadleiste) oder überall.</summary>
+    private string ScopeLabel => Browser.Breadcrumbs is [.., var last] ? last.Label : T.MyDrive;
+
+    protected override async Task OnInitializedAsync()
+    {
+        foreach (var model in Models)
+        {
+            model.Changed += Refresh;
+            model.SignedOut += Session.Expired;
+        }
+
+        Notes.Changed += NotesChanged;
+        await Browser.InitializeAsync(Token);
+        _ = Browser.RunLiveUpdatesAsync(Token); // Änderungen anderer Geräte ohne Neuladen
+        _ = Notes.RunPollingAsync(NotificationInterval, Token);
+        await Marks.LoadAsync(Token);
+    }
+
+    private IEnumerable<ViewModel> Models => [Browser, Search, Recent, Versions, Trash, Marks, Notes, Account, Share, SharedByMe];
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    /// <summary>Eine neue Benachrichtigung „geteilt“ für einen Space, den die Seitenleiste noch nicht kennt: Spaces neu lesen (einmal je Space).</summary>
+    private void NotesChanged()
+    {
+        var unknown = Notes.Items
+            .Where(n => n.Type == NotificationsViewModel.Shared && n.SpaceId is { } id && Browser.Spaces.All(s => s.Id != id) && _reloadedFor.Add(id))
+            .ToList();
+        if (unknown.Count > 0)
+        {
+            _ = InvokeAsync(() => Browser.ReloadSpacesAsync(Token));
+        }
+    }
+
+    private readonly HashSet<string> _reloadedFor = new(StringComparer.Ordinal);
+
+    private ListState MarksState(IReadOnlyList<LocatedItem> items) =>
+        Marks.State == ListState.Loading ? ListState.Loading : items.Count == 0 ? ListState.Empty : ListState.Ready;
+
+    private string SpaceName(string? spaceId) =>
+        Browser.Spaces.FirstOrDefault(s => s.Id == spaceId) is { } space ? Browser.SpaceLabel(space) : "?";
+
+    private void CloseMenus()
+    {
+        _accountOpen = false;
+        _notificationsOpen = false;
+    }
+
+    /// <summary>Wechselt die Ansicht; auf schmalen Bildschirmen klappen die Kategorien danach wieder zu.</summary>
+    private void Show(View view)
+    {
+        if (_view == View.Admin && view != View.Admin)
+        {
+            _ = Browser.ReloadSpacesAsync(Token); // in der Verwaltung können Team-Ordner dazugekommen sein
+        }
+
+        _view = view;
+        _navOpen = false;
+    }
+
+    private async Task OpenSpaceAsync(SpaceSummary space)
+    {
+        Show(View.Folder);
+        await Browser.OpenSpaceAsync(space, Token);
+    }
+
+    /// <summary>Eigene Spaces und Team-Ordner; geteilte Ordner stehen unter „Mit mir geteilt“.</summary>
+    private IReadOnlyList<SpaceSummary> OwnSpaces => [.. Browser.Spaces.Where(s => s.SharedBy is null)];
+
+    private bool SharedWithMeActive => _view == View.SharedWithMe || (_view == View.Folder && Browser.Space?.SharedBy is not null);
+
+    private async Task ShowSharedWithMeAsync()
+    {
+        Show(View.SharedWithMe);
+        await Browser.ReloadSpacesAsync(Token); // inzwischen neu geteilte Ordner
+    }
+
+    private async Task ShowSharedByMeAsync(View view)
+    {
+        Show(view);
+        await SharedByMe.LoadAsync(Browser.Spaces, Token);
+    }
+
+    private void OpenShare(DriveItem item, bool request) => OpenShare(new LocatedItem(Browser.Space!, item), request);
+
+    private void OpenShare(LocatedItem item, bool request)
+    {
+        _shareFor = item;
+        _shareRequest = request;
+        _shareStartWithLink = false;
+    }
+
+    private async Task CloseShareAsync()
+    {
+        _shareFor = null;
+        Share.DismissMessage();
+        if (_view is View.SharedByMe or View.FileRequests)
+        {
+            await SharedByMe.LoadAsync(Browser.Spaces, Token);
+        }
+    }
+
+    /// <summary>„Link holen“: vorhandenen öffentlichen Link nehmen oder einen anlegen und in die Zwischenablage legen.</summary>
+    private async Task GetLinkAsync(DriveItem item)
+    {
+        if (Browser.Policies is { LinkPasswordRequired: true } or { LinkMaxDays: not null })
+        {
+            // Passwort oder Ablaufdatum vorgeschrieben: der Link lässt sich nicht stillschweigend anlegen, also gleich der Reiter „Öffentlicher Link“
+            OpenShare(item, request: false);
+            _shareStartWithLink = true;
+            return;
+        }
+
+        if (await Share.EnsureLinkAsync(Browser.Space!, item, Token) is { } link)
+        {
+            var url = ShareViewModel.UrlOf(link, Navigation.BaseUri);
+            Share.ShowLinkCopied(url, await Clipboard.CopyAsync(Js, url));
+        }
+    }
+
+    private async Task ShowRecentAsync()
+    {
+        Show(View.Recent);
+        await Recent.LoadAsync(Browser.Spaces, Token);
+    }
+
+    private async Task ShowStarredAsync()
+    {
+        Show(View.Starred);
+        await Marks.LoadAsync(Token); // Pfade können sich seit dem letzten Laden geändert haben
+    }
+
+    private async Task ShowLabelAsync(LabelInfo label)
+    {
+        _label = label;
+        Show(View.Label);
+        await Marks.LoadAsync(Token);
+    }
+
+    private async Task DeleteLabelAsync()
+    {
+        var label = _deleteLabel!;
+        _deleteLabel = null;
+        if (await Marks.DeleteLabelAsync(label, Token) && _label?.Id == label.Id)
+        {
+            _label = null;
+            Show(View.Folder);
+        }
+    }
+
+    private async Task ToggleAccountAsync()
+    {
+        _notificationsOpen = false;
+        _accountOpen = !_accountOpen;
+        if (_accountOpen)
+        {
+            await Account.LoadUsageAsync(Browser.Spaces, Token);
+        }
+    }
+
+    /// <summary>Beim Öffnen frisch: neue Benachrichtigungen und Spaces, die inzwischen jemand geteilt hat.</summary>
+    private async Task ToggleNotificationsAsync()
+    {
+        _accountOpen = false;
+        _notificationsOpen = !_notificationsOpen;
+        if (_notificationsOpen)
+        {
+            await Browser.ReloadSpacesAsync(Token);
+            await Notes.LoadAsync(Token);
+        }
+    }
+
+    /// <summary>„hat mit Ihnen geteilt“ öffnet den Space, „bittet um Entsperren“ zeigt die Datei.</summary>
+    private async Task OpenNotificationAsync(NotificationInfo note)
+    {
+        _notificationsOpen = false;
+        if (Browser.Spaces.FirstOrDefault(s => s.Id == note.SpaceId) is not { } space)
+        {
+            return;
+        }
+
+        Show(View.Folder);
+        if (note.Type == NotificationsViewModel.UnlockRequest && !string.IsNullOrEmpty(note.Path))
+        {
+            await Browser.RevealAsync(space, note.Path, Token);
+        }
+        else
+        {
+            await Browser.OpenSpaceAsync(space, Token);
+        }
+    }
+
+    private async Task SearchAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_query))
+        {
+            return;
+        }
+
+        var inFolder = _view == View.Folder;
+        Show(View.Search);
+        await Search.SearchAsync(
+            _query, _everywhere || !inFolder, Browser.Spaces, Browser.Space, inFolder ? Browser.Path : string.Empty, Token);
+    }
+
+    private async Task RevealAsync(LocatedItem entry)
+    {
+        Show(View.Folder);
+        await Browser.RevealAsync(entry.Space, entry.Item.Path, Token);
+    }
+
+    private async Task OpenFolderAsync(LocatedItem entry)
+    {
+        Show(View.Folder);
+        await Browser.OpenSpaceAsync(entry.Space, Token);
+        await Browser.NavigateAsync(entry.Item.Path, Token);
+    }
+
+    private async Task ShowVersionsAsync(SpaceSummary space, DriveItem file)
+    {
+        _versionsOpen = true;
+        await Versions.OpenAsync(space, file, Token);
+    }
+
+    private async Task SignOutAsync()
+    {
+        _accountOpen = false;
+        await _stop.CancelAsync();
+        await Session.SignOutAsync(CancellationToken.None);
+    }
+
+    public void Dispose()
+    {
+        foreach (var model in Models)
+        {
+            model.Changed -= Refresh;
+            model.SignedOut -= Session.Expired;
+        }
+
+        Notes.Changed -= NotesChanged;
+        _stop.Cancel();
+        _stop.Dispose();
+    }
+}

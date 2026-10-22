@@ -1,0 +1,65 @@
+# Ein Tag vX.Y.Z baut die Windows-Pakete und das Server-Image und legt ein GitHub-Release an.
+name: release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+  packages: write
+jobs:
+  client:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # Build-Nummer = Zahl der Commits
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+      - run: pwsh installer/build-client.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: client
+          path: artifacts/client/*
+
+  server-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: names
+        run: |
+          echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/syncdrive-server" >> "$GITHUB_OUTPUT"
+          echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ steps.names.outputs.image }}:${{ steps.names.outputs.version }}
+            ${{ steps.names.outputs.image }}:latest
+
+  publish:
+    needs: [client, server-image]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: client
+          path: dist
+      - name: Release notes aus dem CHANGELOG
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '$0 ~ "^## \[" v "\]" {on=1; next} /^## \[/ {on=0} on' CHANGELOG.md > notes.md
+          printf '\n---\nServer image: `ghcr.io/%s/syncdrive-server:%s`\n' "${GITHUB_REPOSITORY_OWNER,,}" "$version" >> notes.md
+      - run: gh release create "$GITHUB_REF_NAME" dist/* --title "SyncDrive $GITHUB_REF_NAME" --notes-file notes.md --prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}

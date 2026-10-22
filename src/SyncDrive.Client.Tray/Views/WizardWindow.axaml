@@ -1,0 +1,116 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="using:SyncDrive.Client.Ui"
+        xmlns:c="using:SyncDrive.Client.Tray.Controls"
+        x:Class="SyncDrive.Client.Tray.Views.WizardWindow"
+        x:DataType="ui:WizardViewModel"
+        Width="560" Height="470" CanResize="False" WindowStartupLocation="CenterScreen"
+        Title="{Binding Texts.WizardTitle}">
+  <Panel>
+    <DockPanel>
+      <!-- Kopfband: Überschrift der aktuellen Seite -->
+      <Border DockPanel.Dock="Top" Background="{StaticResource Accent}" Padding="24,18">
+        <TextBlock Text="{Binding Heading}" Foreground="White" FontSize="18" FontWeight="SemiBold" />
+      </Border>
+
+      <!-- Navigationsknöpfe -->
+      <Border DockPanel.Dock="Bottom" Padding="20,12" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0">
+        <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+          <TextBlock Classes="error" Text="{Binding Error}" VerticalAlignment="Center" Margin="0,0,10,0" />
+          <Button Grid.Column="1" Classes="outline" Content="{Binding Texts.Back}" Command="{Binding BackCommand}" IsVisible="{Binding CanGoBack}" Margin="0,0,8,0" />
+          <Button Grid.Column="2" Classes="primary" Content="{Binding NextText}" Command="{Binding NextCommand}" Margin="0,0,8,0" />
+          <Button Grid.Column="3" Classes="outline" Content="{Binding Texts.Cancel}" Command="{Binding CancelCommand}" />
+        </Grid>
+      </Border>
+
+      <Panel Margin="28,20">
+        <!-- Seite 1: Verbindung (frühere oder neue; die andere Gruppe ist gesperrt) -->
+        <StackPanel IsVisible="{Binding IsConnectionStep}" Spacing="6">
+          <RadioButton GroupName="conn" Content="{Binding Texts.WizardExistingConnection}" IsChecked="{Binding UseExisting}" IsEnabled="{Binding HasConnections}" />
+          <ComboBox Margin="28,0,0,8" MinWidth="320" ItemsSource="{Binding Connections}" SelectedItem="{Binding SelectedConnection, Mode=TwoWay}" IsEnabled="{Binding UseExisting}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="x:Object"><TextBlock Text="{ReflectionBinding DisplayName}" /></DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <RadioButton GroupName="conn" Content="{Binding Texts.WizardNewConnection}" IsChecked="{Binding UseNew}" />
+          <Grid Margin="28,4,0,0" ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto" IsEnabled="{Binding UseNew}">
+            <TextBlock Text="{Binding Texts.ServerAddress}" VerticalAlignment="Center" />
+            <TextBox Grid.Column="1" Margin="0,3" Text="{Binding Address, Mode=TwoWay}" Watermark="{Binding Texts.ServerAddressHint}" />
+            <TextBlock Grid.Row="1" Text="{Binding Texts.UserName}" VerticalAlignment="Center" />
+            <TextBox Grid.Row="1" Grid.Column="1" Margin="0,3" Text="{Binding UserName, Mode=TwoWay}" />
+            <TextBlock Grid.Row="2" Text="{Binding Texts.Password}" VerticalAlignment="Center" />
+            <TextBox Grid.Row="2" Grid.Column="1" Margin="0,3" PasswordChar="●" Text="{Binding Password, Mode=TwoWay}" />
+          </Grid>
+        </StackPanel>
+
+        <!-- Seite 2: Ordner; oben Server, unten Computer, dazwischen die Sync-Richtung -->
+        <StackPanel IsVisible="{Binding IsFoldersStep}" Spacing="14">
+          <TextBlock Text="{Binding Texts.WizardFoldersQuestion}" TextWrapping="Wrap" />
+          <Grid ColumnDefinitions="70,*" RowDefinitions="64,56,64" Margin="10,4,0,0">
+            <Ellipse Width="58" Height="58" Fill="#3A4047" />
+            <TextBlock Text="🖥" FontSize="24" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <Line Grid.Row="1" StartPoint="35,0" EndPoint="35,56" Stroke="{StaticResource Accent}" StrokeThickness="2" StrokeDashArray="2,3" />
+            <Ellipse Grid.Row="1" Width="28" Height="28" Fill="{StaticResource Accent}" />
+            <TextBlock Grid.Row="1" Text="⇅" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            <Ellipse Grid.Row="2" Width="58" Height="58" Fill="#3A4047" />
+            <TextBlock Grid.Row="2" Text="💻" FontSize="24" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+
+            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="14,0,0,0" Spacing="4">
+              <TextBlock Text="{Binding Texts.ServerSide}" FontWeight="SemiBold" />
+              <Button Classes="outline" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Content="{Binding ServerFolderText}" Command="{Binding ChooseServerFolderCommand}" />
+            </StackPanel>
+            <StackPanel Grid.Row="2" Grid.Column="1" VerticalAlignment="Center" Margin="14,0,0,0" Spacing="4">
+              <TextBlock Text="{Binding Texts.YourComputer}" FontWeight="SemiBold" />
+              <Button Classes="outline" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Content="{Binding LocalFolderText}" Command="{Binding ChooseLocalFolderCommand}" />
+            </StackPanel>
+          </Grid>
+        </StackPanel>
+
+        <!-- Seite 3: Optionen -->
+        <ScrollViewer IsVisible="{Binding IsOptionsStep}">
+          <StackPanel Spacing="2">
+            <TextBlock Classes="heading" Margin="0,0,0,4" Text="{Binding Texts.SyncMode}" />
+            <RadioButton GroupName="mode" Content="{Binding Texts.TwoWay}" IsChecked="{Binding TwoWay}" />
+            <RadioButton GroupName="mode" Content="{Binding Texts.DownloadOnly}" IsChecked="{Binding DownloadOnly}" />
+            <RadioButton GroupName="mode" Content="{Binding Texts.UploadOnly}" IsChecked="{Binding UploadOnly}" />
+            <CheckBox Margin="26,2,0,2" Content="{Binding Texts.KeepLocallyDeleted}" IsChecked="{Binding KeepLocallyDeleted}" IsEnabled="{Binding IsUploadOnly}" />
+            <TextBlock Classes="heading" Text="{Binding Texts.FileFilter}" />
+            <Grid ColumnDefinitions="*,120" RowDefinitions="Auto,Auto">
+              <TextBlock Text="{Binding Texts.MaxFileSize}" VerticalAlignment="Center" />
+              <NumericUpDown Grid.Column="1" Minimum="0" Maximum="10000000" Increment="10" FormatString="0" Value="{Binding MaxFileSizeMb, Mode=TwoWay}" />
+              <TextBlock Grid.Row="1" Text="{Binding Texts.ExcludedExtensions}" VerticalAlignment="Center" Margin="0,6,0,0" />
+              <TextBox Grid.Row="1" Grid.Column="1" Margin="0,6,0,0" Text="{Binding ExcludedExtensions, Mode=TwoWay}" />
+            </Grid>
+            <CheckBox Margin="0,10,0,0" Content="{Binding Texts.AdvancedConsistency}" IsChecked="{Binding AdvancedConsistency}" />
+            <CheckBox Margin="0,10,0,0" Content="{Binding Texts.OnDemandOption}" IsChecked="{Binding OnDemand}" IsEnabled="{Binding !IsUploadOnly}" />
+            <TextBlock Classes="sub" Margin="26,0,0,0" Text="{Binding Texts.OnDemandHint}" />
+          </StackPanel>
+        </ScrollViewer>
+      </Panel>
+    </DockPanel>
+
+    <!-- Prüfen: Abdunklung mit Karte, Seite gesperrt -->
+    <Border IsVisible="{Binding IsBusy}" Background="#66000000">
+      <Border Background="White" CornerRadius="4" Padding="26,20" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 4 18 0 #40000000">
+        <StackPanel Orientation="Horizontal" Spacing="14">
+          <ProgressBar IsIndeterminate="True" Width="60" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding Texts.Checking}" VerticalAlignment="Center" />
+        </StackPanel>
+      </Border>
+    </Border>
+
+    <!-- Unbekanntes Zertifikat: Fingerabdruck zeigen, Nutzer entscheidet -->
+    <Border IsVisible="{Binding CertificateFingerprint, Converter={x:Static ObjectConverters.IsNotNull}}" Background="#66000000">
+      <Border Background="White" CornerRadius="4" Padding="22" Width="440" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 4 18 0 #40000000">
+        <StackPanel Spacing="12">
+          <TextBlock Text="{Binding Texts.CertificateQuestion}" TextWrapping="Wrap" />
+          <SelectableTextBlock Text="{Binding FingerprintText}" FontFamily="Consolas,monospace" TextWrapping="Wrap" />
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button Classes="primary" Content="{Binding Texts.Trust}" Command="{Binding TrustCertificateCommand}" />
+            <Button Classes="outline" Content="{Binding Texts.Cancel}" Command="{Binding RejectCertificateCommand}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </Border>
+  </Panel>
+</Window>

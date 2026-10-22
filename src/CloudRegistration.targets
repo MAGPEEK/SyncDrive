@@ -1,0 +1,21 @@
+<Project>
+
+  <!--
+    Legt syncdrive-cloudreg (Shell-Anmeldung der Sync-Ordner, ADR-10) in den Unterordner cloudreg\ der Ausgabe. Nur unter Windows:
+    Das Hilfsprogramm braucht die WinRT-Projektion, Daemon und Oberfläche bleiben net9.0 und bauen auch unter Linux.
+  -->
+  <Target Name="CopyCloudRegistration" AfterTargets="Build" Condition="'$(OS)' == 'Windows_NT' and '$(SkipCloudRegistrationCopy)' != 'true'">
+    <MSBuild Projects="$(MSBuildThisFileDirectory)SyncDrive.Client.CloudRegistration\SyncDrive.Client.CloudRegistration.csproj"
+             Targets="Build" Properties="Configuration=$(Configuration)">
+      <Output TaskParameter="TargetOutputs" ItemName="CloudRegistrationOutput" />
+    </MSBuild>
+    <PropertyGroup>
+      <CloudRegistrationDir>@(CloudRegistrationOutput->'%(RootDir)%(Directory)')</CloudRegistrationDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <CloudRegistrationFiles Include="$(CloudRegistrationDir)*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(CloudRegistrationFiles)" DestinationFolder="$(OutDir)cloudreg" SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

@@ -1,0 +1,490 @@
+@implements IDisposable
+@inject BrowserViewModel Browser
+@inject MarksViewModel Marks
+
+@* Ordneransicht („My Drive“ und geteilte Spaces): Symbolleiste, Liste mit Auswahl, Kontextmenü, Dialoge, Hochladen. Logik im BrowserViewModel. *@
+<div class="view" @onclick="CloseMenus">
+    <div class="toolbar">
+        <div class="create-wrap">
+            <button class="primary" disabled="@(!Browser.CanWrite)" @onclick="ToggleCreate" @onclick:stopPropagation>＋ @T.Create</button>
+            @if (_createOpen)
+            {
+                <div class="menu create-menu" @onclick:stopPropagation>
+                    <button class="menu-item" @onclick="() => OpenDialog(Dialog.NewFolder)">
+                        <FileIcon Folder="true" Name="" /> @T.NewFolder
+                    </button>
+                </div>
+            }
+        </div>
+        <label class="tool @(Browser.CanWrite ? "" : "disabled")" title="@T.Upload">
+            <InputFile OnChange="UploadAsync" multiple disabled="@(!Browser.CanWrite)" class="hidden-input" />
+            ⤒ @T.Upload
+        </label>
+        @if (Browser.SelectionDownloadUrl is { } download)
+        {
+            <a class="tool" href="@download" download="@Browser.SelectionDownloadName">⤓ @T.Download</a>
+        }
+        else
+        {
+            <span class="tool disabled">⤓ @T.Download</span>
+        }
+        @if (Browser.CanShare)
+        {
+            <button class="tool" disabled="@(Browser.SelectedItems is not [_])" @onclick="() => ShareAsync(OnShare, Browser.SelectedItems[0])">👤 @T.Share</button>
+            @if (Browser.Policies.PublicLinks)
+            {
+                <button class="tool" disabled="@(Browser.SelectedItems is not [_])" @onclick="() => ShareAsync(OnGetLink, Browser.SelectedItems[0])">🔗 @T.GetLink</button>
+            }
+        }
+        <div class="create-wrap">
+            <button class="tool" disabled="@(Browser.Selected.Count == 0)" @onclick="ToggleLabels" @onclick:stopPropagation>🏷 @T.Labels</button>
+            @if (_labelsOpen)
+            {
+                <LabelMenu Class="create-menu" Items="Browser.SelectedLocated" Token="Token" OnNewLabel="NewLabelAsync" OnDone="CloseMenus" />
+            }
+        </div>
+        <button class="tool" disabled="@(!Browser.CanWrite || Browser.Selected.Count != 1)" @onclick="() => OpenDialog(Dialog.Rename)">✎ @T.Rename</button>
+        <button class="tool" disabled="@(!Browser.CanWrite || Browser.Selected.Count == 0)" @onclick="() => OpenDialog(Dialog.Delete)">🗑 @T.Delete</button>
+        <button class="tool" disabled="@(SingleFile is null)" @onclick="() => ShowVersionsAsync(SingleFile!)">🕘 @T.Versions</button>
+        <div class="toolbar-fill"></div>
+        @if (Browser.Selected.Count > 0)
+        {
+            <span class="selected-count">@string.Format(CultureInfo.CurrentCulture, T.SelectedCount, Browser.Selected.Count)</span>
+        }
+    </div>
+
+    <div class="list" tabindex="0" @ref="_list" @onkeydown="KeyAsync" @ondragenter="DragEnter" @ondragenter:preventDefault>
+        <div class="row head">
+            <button class="col-title sort" @onclick="() => Browser.SortBy(SortColumn.Name)">@T.Title @Arrow(SortColumn.Name)</button>
+            <span class="col-labels sort">@T.Labels</span>
+            <button class="col-time sort" @onclick="() => Browser.SortBy(SortColumn.Modified)">@T.ModifiedTime @Arrow(SortColumn.Modified)</button>
+            <button class="col-size sort" @onclick="() => Browser.SortBy(SortColumn.Size)">@T.Size @Arrow(SortColumn.Size)</button>
+        </div>
+
+        @switch (Browser.State)
+        {
+            case ListState.Loading:
+                <div class="list-note">@T.Loading</div>
+                break;
+            case ListState.Empty:
+                <div class="list-empty">
+                    <FileIcon Folder="true" Name="" Large="true" />
+                    <p>@T.EmptyFolder</p>
+                </div>
+                break;
+            default:
+                @foreach (var item in Browser.Items)
+                {
+                    <div class="row item @(Browser.Selected.Contains(item.Path) ? "selected" : "")"
+                         @onclick="e => Browser.Select(item, e.CtrlKey || e.MetaKey, e.ShiftKey)"
+                         @ondblclick="() => OpenItemAsync(item)"
+                         @oncontextmenu="e => ShowContextMenu(e, item)" @oncontextmenu:preventDefault>
+                        <span class="col-title">
+                            <Star Starred="Marks.IsStarred(Browser.Space!, item)" OnToggle="() => StarAsync(item)" />
+                            @if (Browser.ThumbnailUrl(item) is { } thumbnail)
+                            {
+                                <img class="thumb" src="@thumbnail" alt="" loading="lazy" @onerror="() => Browser.ThumbnailFailed(thumbnail)" />
+                            }
+                            else
+                            {
+                                <FileIcon Folder="item.IsFolder" Name="@item.Name" />
+                            }
+                            <span class="name">@item.Name</span>
+                        </span>
+                        <span class="col-labels">
+                            @foreach (var label in Marks.LabelsOf(Browser.Space!, item))
+                            {
+                                <span class="chip" style="--chip:@label.Color">@label.Name</span>
+                            }
+                        </span>
+                        <span class="col-time">@item.Modified.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)</span>
+                        <span class="col-size">@(item.IsFolder ? "—" : WebTexts.FormatSize(item.Size))</span>
+                    </div>
+                }
+                break;
+        }
+
+        @if (_dragging && Browser.CanWrite)
+        {
+            <div class="drop-zone" @ondragleave="() => _dragging = false">
+                <InputFile OnChange="UploadAsync" multiple class="drop-input" />
+                <div class="drop-text">⤒ @T.DropHere</div>
+            </div>
+        }
+    </div>
+
+    @if (_contextItem is { } context)
+    {
+        <div class="menu context-menu" style="left:@(_menuX)px;top:@(_menuY)px" @onclick:stopPropagation>
+            <button class="menu-item" @onclick="() => OpenItemAsync(context)">@T.Open</button>
+            @if (Browser.CanShare)
+            {
+                <div class="menu-line"></div>
+                <button class="menu-item" disabled="@(Browser.Selected.Count != 1)" @onclick="() => ShareAsync(OnShare, context)">@T.Share …</button>
+                @if (Browser.Policies.PublicLinks)
+                {
+                    <button class="menu-item" disabled="@(Browser.Selected.Count != 1)" @onclick="() => ShareAsync(OnGetLink, context)">@T.GetLink</button>
+                }
+                @if (context.IsFolder && Browser.Policies.FileRequests)
+                {
+                    <button class="menu-item" disabled="@(Browser.Selected.Count != 1)" @onclick="() => ShareAsync(OnRequestFiles, context)">@T.RequestFiles …</button>
+                }
+            }
+            @if (Browser.CanWrite)
+            {
+                <div class="menu-line"></div>
+                <button class="menu-item" disabled="@(Browser.Selected.Count != 1)" @onclick="() => OpenDialog(Dialog.Rename)">@T.Rename</button>
+            }
+            <div class="menu-line"></div>
+            <button class="menu-item" @onclick="ToggleSelectionStarAsync">@(Marks.AllStarred(Browser.SelectedLocated) ? T.RemoveStar : T.AddStar)</button>
+            <div class="submenu-wrap">
+                <button class="menu-item" @onclick="() => _contextLabels = !_contextLabels">@T.Labels <span class="submenu-arrow">›</span></button>
+                @if (_contextLabels)
+                {
+                    <LabelMenu Class="submenu" Items="Browser.SelectedLocated" Token="Token" OnNewLabel="NewLabelAsync" OnDone="CloseMenus" />
+                }
+            </div>
+            <div class="menu-line"></div>
+            @if (!context.IsFolder)
+            {
+                <button class="menu-item" disabled="@(Browser.Selected.Count != 1)" @onclick="() => ShowVersionsAsync(context)">@T.Versions</button>
+            }
+            @if (Browser.SelectionDownloadUrl is { } contextDownload)
+            {
+                <a class="menu-item" href="@contextDownload" download="@Browser.SelectionDownloadName" @onclick="CloseMenus">@T.Download</a>
+            }
+            @if (Browser.CanWrite)
+            {
+                <div class="menu-line"></div>
+                <button class="menu-item danger" @onclick="() => OpenDialog(Dialog.Delete)">@T.Delete</button>
+            }
+        </div>
+    }
+
+    @if (_dialog is Dialog.NewFolder or Dialog.Rename)
+    {
+        <div class="backdrop">
+            <form class="dialog" @onsubmit="SubmitNameAsync" @onsubmit:preventDefault @onclick:stopPropagation>
+                <h2>@(_dialog == Dialog.NewFolder ? T.NewFolder : T.Rename)</h2>
+                <label>
+                    <span>@T.Name</span>
+                    <input @ref="_nameInput" @bind="_name" @bind:event="oninput" disabled="@_busy" />
+                </label>
+                @if (Browser.Message is { } problem)
+                {
+                    <div class="dialog-error" role="alert">@problem</div>
+                }
+                <div class="dialog-buttons">
+                    <button type="button" disabled="@_busy" @onclick="CloseDialog">@T.Cancel</button>
+                    <button type="submit" class="primary" disabled="@(_busy || string.IsNullOrWhiteSpace(_name))">@T.Ok</button>
+                </div>
+            </form>
+        </div>
+    }
+    else if (_dialog == Dialog.Delete)
+    {
+        <div class="backdrop">
+            <div class="dialog" @onclick:stopPropagation>
+                <h2>@T.Delete</h2>
+                <p>@Browser.DeleteQuestion</p>
+                <div class="dialog-buttons">
+                    <button disabled="@_busy" @onclick="CloseDialog">@T.Cancel</button>
+                    <button class="primary danger" disabled="@_busy" @onclick="DeleteAsync">@T.Delete</button>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <Toast Model="Browser" />
+    }
+
+    @if (_preview is { } shown && Browser.ThumbnailUrl(shown, large: true) is { } large)
+    {
+        <div class="backdrop preview" tabindex="-1" @ref="_previewBox" @onkeydown="PreviewKey" @onclick="ClosePreview">
+            <figure @onclick:stopPropagation>
+                <img src="@large" alt="@shown.Name" @onerror="() => Browser.ThumbnailFailed(large)" />
+                <figcaption>
+                    <span class="name">@shown.Name</span>
+                    <a class="button" href="@Browser.DownloadUrl(shown)" download="@shown.Name">@T.Download</a>
+                    <button @onclick="ClosePreview">@T.Close</button>
+                </figcaption>
+            </figure>
+        </div>
+    }
+
+    @if (Browser.Uploads.Count > 0)
+    {
+        <div class="uploads">
+            @foreach (var upload in Browser.Uploads)
+            {
+                <div class="upload">
+                    <span>@string.Format(CultureInfo.CurrentCulture, T.Uploading, upload.Name)</span>
+                    <progress max="@Math.Max(upload.Size, 1)" value="@upload.Sent"></progress>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private enum Dialog
+    {
+        None,
+        NewFolder,
+        Rename,
+        Delete,
+    }
+
+    private Dialog _dialog;
+    private DriveItem? _contextItem;
+    private double _menuX;
+    private double _menuY;
+    private bool _createOpen;
+    private bool _labelsOpen;
+    private bool _contextLabels;
+    private bool _dragging;
+    private bool _busy;
+    private string _name = string.Empty;
+    private ElementReference _nameInput;
+    private bool _focusName;
+    private ElementReference _list;
+    private bool _focusList;
+
+    [Parameter]
+    public CancellationToken Token { get; set; }
+
+    /// <summary>„Versionen“ einer Datei; der Dialog gehört zum Rahmen, weil ihn auch Suche und „Zuletzt“ öffnen.</summary>
+    [Parameter]
+    public EventCallback<DriveItem> OnShowVersions { get; set; }
+
+    /// <summary>„Neues Label“ aus einem Label-Menü; der Dialog gehört zum Rahmen, weil ihn auch „My Labels“ öffnet.</summary>
+    [Parameter]
+    public EventCallback<IReadOnlyList<LocatedItem>> OnNewLabel { get; set; }
+
+    /// <summary>Freigabedialog; wie Versionen gehört er zum Rahmen.</summary>
+    [Parameter]
+    public EventCallback<DriveItem> OnShare { get; set; }
+
+    [Parameter]
+    public EventCallback<DriveItem> OnRequestFiles { get; set; }
+
+    /// <summary>„Link holen“: Link anlegen, falls nötig, und kopieren.</summary>
+    [Parameter]
+    public EventCallback<DriveItem> OnGetLink { get; set; }
+
+    private async Task ShareAsync(EventCallback<DriveItem> action, DriveItem item)
+    {
+        CloseMenus();
+        await action.InvokeAsync(item);
+    }
+
+    private WebTexts T => Browser.Texts;
+
+    private DriveItem? SingleFile => Browser.SelectedItems is [{ IsFolder: false } only] ? only : null;
+
+    protected override void OnInitialized()
+    {
+        Browser.Changed += Refresh;
+        Marks.Changed += Refresh;
+    }
+
+    /// <summary>Stern in der Zeile: nur dieses Element, die Auswahl bleibt.</summary>
+    private Task StarAsync(DriveItem item) => Marks.ToggleStarAsync([new LocatedItem(Browser.Space!, item)], Token);
+
+    private async Task ToggleSelectionStarAsync()
+    {
+        var items = Browser.SelectedLocated;
+        CloseMenus();
+        await Marks.ToggleStarAsync(items, Token);
+    }
+
+    private void ToggleLabels()
+    {
+        var open = !_labelsOpen;
+        CloseMenus();
+        _labelsOpen = open;
+    }
+
+    private async Task NewLabelAsync(IReadOnlyList<LocatedItem> items)
+    {
+        CloseMenus();
+        await OnNewLabel.InvokeAsync(items);
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    /// <summary>
+    /// Der Cursor steht sofort im Namensfeld (autofocus greift bei nachträglich eingefügten Dialogen nicht); nach dem Dialog
+    /// geht der Fokus zurück in die Liste, damit Entf, F2 und Pfeile weiter wirken.
+    /// </summary>
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusName)
+        {
+            _focusName = false;
+            await _nameInput.FocusAsync();
+        }
+        else if (_focusPreview && _preview is not null)
+        {
+            _focusPreview = false;
+            await _previewBox.FocusAsync();
+        }
+        else if (_focusList)
+        {
+            _focusList = false;
+            await _list.FocusAsync(preventScroll: true);
+        }
+    }
+
+    private string Arrow(SortColumn column) => Browser.Sort != column ? string.Empty : Browser.Descending ? "▼" : "▲";
+
+    private async Task OpenItemAsync(DriveItem item)
+    {
+        CloseMenus();
+        if (Browser.ThumbnailUrl(item, large: true) is not null)
+        {
+            _preview = item; // Bilder groß zeigen statt herunterladen
+            _focusPreview = true;
+            return;
+        }
+
+        await Browser.OpenAsync(item, Token);
+    }
+
+    private DriveItem? _preview;
+    private bool _focusPreview;
+    private ElementReference _previewBox;
+
+    private void ClosePreview()
+    {
+        _preview = null;
+        _focusList = true;
+    }
+
+    private void PreviewKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            ClosePreview();
+        }
+    }
+
+    private async Task ShowVersionsAsync(DriveItem item)
+    {
+        CloseMenus();
+        await OnShowVersions.InvokeAsync(item);
+    }
+
+    private void ShowContextMenu(MouseEventArgs e, DriveItem item)
+    {
+        Browser.SelectForContextMenu(item);
+        _contextItem = item;
+        _menuX = e.ClientX;
+        _menuY = e.ClientY;
+        _createOpen = _labelsOpen = _contextLabels = false;
+    }
+
+    private void CloseMenus()
+    {
+        _contextItem = null;
+        _createOpen = false;
+        _labelsOpen = false;
+        _contextLabels = false;
+    }
+
+    private void ToggleCreate()
+    {
+        var open = !_createOpen;
+        CloseMenus();
+        _createOpen = open;
+    }
+
+    private void OpenDialog(Dialog dialog)
+    {
+        CloseMenus();
+        Browser.DismissMessage();
+        _name = dialog == Dialog.Rename && Browser.SelectedItems is [var item] ? item.Name : string.Empty;
+        _dialog = dialog;
+        _focusName = dialog is Dialog.NewFolder or Dialog.Rename;
+    }
+
+    private void CloseDialog()
+    {
+        _dialog = Dialog.None;
+        _focusList = true;
+        Browser.DismissMessage();
+    }
+
+    private async Task SubmitNameAsync()
+    {
+        _busy = true;
+        var ok = _dialog == Dialog.NewFolder
+            ? await Browser.CreateFolderAsync(_name, Token)
+            : Browser.SelectedItems is [var item] && await Browser.RenameAsync(item, _name, Token);
+        _busy = false;
+        if (ok)
+        {
+            _dialog = Dialog.None; // sonst bleibt der Dialog mit der Meldung offen
+            _focusList = true;
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        _busy = true;
+        await Browser.DeleteSelectedAsync(Token);
+        _busy = false;
+        _dialog = Dialog.None;
+        _focusList = true;
+    }
+
+    private void DragEnter(DragEventArgs e)
+    {
+        if (e.DataTransfer.Types.Contains("Files"))
+        {
+            _dragging = true;
+        }
+    }
+
+    private async Task UploadAsync(InputFileChangeEventArgs e)
+    {
+        _dragging = false;
+        var files = e.GetMultipleFiles(int.MaxValue)
+            .Select(f => new UploadFile(f.Name, f.Size, f.LastModified, () => f.OpenReadStream(long.MaxValue, Token)))
+            .ToList();
+        await Browser.UploadAsync(files, Token);
+    }
+
+    private async Task KeyAsync(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "Delete" when Browser.CanWrite && Browser.Selected.Count > 0:
+                OpenDialog(Dialog.Delete);
+                break;
+            case "F2" when Browser.CanWrite && Browser.Selected.Count == 1:
+                OpenDialog(Dialog.Rename);
+                break;
+            case "Enter" when Browser.SelectedItems is [{ IsFolder: true } folder]:
+                await Browser.OpenAsync(folder, Token);
+                break;
+            case "a" when e.CtrlKey || e.MetaKey:
+                Browser.SelectAll();
+                break;
+            case "Escape":
+                CloseMenus();
+                Browser.ClearSelection();
+                break;
+            case "Backspace" when Browser.Breadcrumbs.Count > 1:
+                await Browser.NavigateAsync(Browser.Breadcrumbs[^2].Path, Token);
+                break;
+        }
+    }
+
+    public void Dispose()
+    {
+        Browser.Changed -= Refresh;
+        Marks.Changed -= Refresh;
+    }
+}

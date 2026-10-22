@@ -1,0 +1,20 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+
+  <!--
+    MSI des Windows-Clients (Oberfläche, Daemon, syncdrive_cli, Shell-Hilfsprogramm). Erwartet die veröffentlichten Programme in
+    $(PublishDir); build-client.ps1 legt sie dort an und ruft dieses Projekt auf. Nicht Teil der Solution (WiX baut nur unter Windows).
+  -->
+  <PropertyGroup>
+    <OutputName>SyncDrive-Client</OutputName>
+    <Platform>x64</Platform>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <DefineConstants>ProductVersion=$(Version);PublishDir=$(PublishDir);Assets=$(MSBuildThisFileDirectory)..\assets;AppIcon=$(MSBuildThisFileDirectory)..\..\src\SyncDrive.Client.Tray\Assets\syncdrive.ico</DefineConstants>
+    <SuppressIces>ICE38;ICE64;ICE91</SuppressIces> <!-- Installation pro Benutzer: Dateien unter LocalAppData, Schlüssel unter HKCU -->
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />
+  </ItemGroup>
+
+</Project>

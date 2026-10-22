@@ -1,0 +1,152 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="SyncDrive.Client.Tray.App"
+             RequestedThemeVariant="Light">
+  <Application.Resources>
+    <SolidColorBrush x:Key="Accent" Color="#0F8B8D" />
+    <SolidColorBrush x:Key="AccentHover" Color="#0B7577" />
+    <SolidColorBrush x:Key="AccentLight" Color="#E4F2F2" />
+    <SolidColorBrush x:Key="TextMain" Color="#2B2F33" />
+    <SolidColorBrush x:Key="TextSub" Color="#7A8088" />
+    <SolidColorBrush x:Key="Line" Color="#E4E7EA" />
+    <SolidColorBrush x:Key="Link" Color="#2F78D0" />
+    <SolidColorBrush x:Key="NavBack" Color="#F7F8F9" />
+    <SolidColorBrush x:Key="ErrorText" Color="#D64541" />
+    <!-- Fluent nutzt den Systemakzent für Optionsfelder, Kästchen, Fokus und Auswahl: auf die eigene Akzentfarbe legen -->
+    <Color x:Key="SystemAccentColor">#0F8B8D</Color>
+    <Color x:Key="SystemAccentColorDark1">#0D7B7D</Color>
+    <Color x:Key="SystemAccentColorDark2">#0B6A6C</Color>
+    <Color x:Key="SystemAccentColorDark3">#08595A</Color>
+    <Color x:Key="SystemAccentColorLight1">#3AA3A5</Color>
+    <Color x:Key="SystemAccentColorLight2">#6CBCBD</Color>
+    <Color x:Key="SystemAccentColorLight3">#A3D6D7</Color>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme />
+
+    <Style Selector="Window">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Foreground" Value="{StaticResource TextMain}" />
+      <Setter Property="Background" Value="White" />
+    </Style>
+
+    <!-- Hauptknopf: Akzentfläche, weiße Schrift (Create, Weiter, OK) -->
+    <Style Selector="Button.primary">
+      <Setter Property="Background" Value="{StaticResource Accent}" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="Padding" Value="16,6" />
+    </Style>
+    <Style Selector="Button.primary:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource AccentHover}" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Button.primary:disabled /template/ ContentPresenter">
+      <Setter Property="Background" Value="#9CCFD0" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+
+    <!-- Nebenknöpfe: grau umrandet -->
+    <Style Selector="Button.outline">
+      <Setter Property="Background" Value="White" />
+      <Setter Property="BorderBrush" Value="#C9CED3" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="Padding" Value="12,5" />
+    </Style>
+
+    <!-- Navigation links: aktiv = Akzentfläche, weiße Schrift -->
+    <Style Selector="Button.nav">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="#555B62" />
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="Padding" Value="18,10" />
+    </Style>
+    <Style Selector="Button.nav.active">
+      <Setter Property="Background" Value="{StaticResource Accent}" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Button.nav.active:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource Accent}" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+
+    <!-- Link: blau, ohne Rahmen (lokaler Pfad, Personen, Dateien) -->
+    <Style Selector="Button.link">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{StaticResource Link}" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.link:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{StaticResource AccentHover}" />
+    </Style>
+
+    <!-- Reiter im Panel: Unterstrich beim aktiven -->
+    <Style Selector="Button.tab">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{StaticResource TextSub}" />
+      <Setter Property="Padding" Value="8,6" />
+      <Setter Property="BorderThickness" Value="0,0,0,2" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="CornerRadius" Value="0" />
+    </Style>
+    <Style Selector="Button.tab.active">
+      <Setter Property="Foreground" Value="{StaticResource TextMain}" />
+      <Setter Property="BorderBrush" Value="{StaticResource Accent}" />
+    </Style>
+    <Style Selector="Button.tab:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Foreground" Value="{StaticResource Accent}" />
+    </Style>
+
+    <Style Selector="TextBlock.sub">
+      <Setter Property="Foreground" Value="{StaticResource TextSub}" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="TextBlock.heading">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,12,0,4" />
+    </Style>
+    <Style Selector="TextBlock.columnHead">
+      <Setter Property="Foreground" Value="{StaticResource Accent}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.error">
+      <Setter Property="Foreground" Value="{StaticResource ErrorText}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <!-- Reiter der Einstellungen: aktiver fett; Hover färbt türkis -->
+    <Style Selector="TabItem">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="MinHeight" Value="34" />
+      <Setter Property="Padding" Value="12,4" />
+    </Style>
+    <Style Selector="TabItem:selected">
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TabItem:pointerover /template/ Border#PART_LayoutRoot">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="TabItem:pointerover">
+      <Setter Property="Foreground" Value="{StaticResource Accent}" />
+    </Style>
+
+    <!-- Auswahl in Listen: helle Akzenttönung statt kräftiger Fläche -->
+    <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+      <Setter Property="Background" Value="#D3EBEB" />
+    </Style>
+    <Style Selector="ListBoxItem:selected:pointerover /template/ ContentPresenter">
+      <Setter Property="Background" Value="#C4E3E4" />
+    </Style>
+
+    <Style Selector="CheckBox, RadioButton">
+      <Setter Property="Margin" Value="0,2" />
+    </Style>
+  </Application.Styles>
+</Application>

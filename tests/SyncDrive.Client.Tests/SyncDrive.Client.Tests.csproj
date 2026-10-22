@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.2" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\SyncDrive.Client.App\SyncDrive.Client.App.csproj" />
+    <ProjectReference Include="..\..\src\SyncDrive.Infra.Fs\SyncDrive.Infra.Fs.csproj" />
+    <ProjectReference Include="..\..\src\SyncDrive.Infra.CloudFiles\SyncDrive.Infra.CloudFiles.csproj" />
+    <ProjectReference Include="..\SyncDrive.Testing\SyncDrive.Testing.csproj" />
+    <ProjectReference Include="..\..\src\SyncDrive.Infra.Sqlite.Client\SyncDrive.Infra.Sqlite.Client.csproj" />
+    <ProjectReference Include="..\..\src\SyncDrive.Infra.Ipc\SyncDrive.Infra.Ipc.csproj" />
+    <ProjectReference Include="..\..\src\SyncDrive.Infra.Secrets\SyncDrive.Infra.Secrets.csproj" />
+    <ProjectReference Include="..\..\src\SyncDrive.Client.Ui\SyncDrive.Client.Ui.csproj" />
+    <ProjectReference Include="..\..\src\SyncDrive.Client.Cli\SyncDrive.Client.Cli.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\..\src\CloudRegistration.targets" />
+
+</Project>

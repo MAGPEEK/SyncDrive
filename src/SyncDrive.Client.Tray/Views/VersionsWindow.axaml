@@ -1,0 +1,37 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="using:SyncDrive.Client.Ui"
+        x:Class="SyncDrive.Client.Tray.Views.VersionsWindow"
+        x:DataType="ui:VersionsViewModel"
+        Width="560" Height="400" MinWidth="460" MinHeight="300"
+        WindowStartupLocation="CenterScreen" Title="{Binding Title}">
+  <DockPanel Margin="16,14">
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
+      <Button Classes="primary" Content="{Binding Texts.SaveAs}" Command="{Binding SaveAsCommand}" />
+      <Button Classes="outline" Content="{Binding Texts.Restore}" Command="{Binding RestoreCommand}" />
+      <Button Classes="outline" Content="{Binding Texts.Cancel}" Command="{Binding CloseCommand}" />
+    </StackPanel>
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,90,*" Margin="10,0,10,6">
+      <TextBlock Classes="columnHead" Text="{Binding Texts.ColumnTime}" />
+      <TextBlock Grid.Column="1" Classes="columnHead" Text="{Binding Texts.ColumnSize}" />
+      <TextBlock Grid.Column="2" Classes="columnHead" Text="{Binding Texts.ColumnBy}" />
+    </Grid>
+    <Panel>
+      <TextBlock Classes="sub" Text="{Binding Texts.NoVersions}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsEmpty}" />
+      <ListBox ItemsSource="{Binding Rows}" SelectedItem="{Binding Selected, Mode=TwoWay}" IsVisible="{Binding !IsEmpty}" Background="White">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="ui:VersionRow">
+            <Grid ColumnDefinitions="*,90,*">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Text="{Binding Time}" />
+                <TextBlock Classes="sub" Text="{Binding CurrentLabel}" VerticalAlignment="Center" />
+              </StackPanel>
+              <TextBlock Grid.Column="1" Text="{Binding Size}" />
+              <TextBlock Grid.Column="2" Text="{Binding By}" />
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </Panel>
+  </DockPanel>
+</Window>

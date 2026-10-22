@@ -1,0 +1,171 @@
+@implements IDisposable
+@inject TeamsViewModel Teams
+
+@* Team-Ordner: Liste mit Speicher und Mitgliedern; darunter die Mitglieder des gewählten Ordners mit Rolle, Entfernen und Hinzufügen. *@
+<div class="toolbar">
+    <button class="primary" @onclick="() => Open(Dialog.New)">＋ @T.NewTeamFolder</button>
+    <button class="tool" disabled="@(Teams.SelectedTeam is null)" @onclick="() => Open(Dialog.Rename)">✎ @T.Rename</button>
+</div>
+<div class="admin-split">
+    <div class="list">
+        <div class="row head admin-teams">
+            <span class="col-title sort">@T.Name</span>
+            <span class="sort">@T.Storage</span>
+            <span class="sort">@T.Members</span>
+        </div>
+        @if (Teams.State == ListState.Loading)
+        {
+            <div class="list-note">@T.Loading</div>
+        }
+        else if (Teams.TeamFolders.Count == 0)
+        {
+            <div class="list-empty"><p>@T.NoTeamFolders</p></div>
+        }
+        @foreach (var team in Teams.TeamFolders)
+        {
+            <div class="row item admin-teams @(team.SpaceId == Teams.SelectedTeam?.SpaceId ? "selected" : "")" @onclick="() => Teams.Select(team)">
+                <span class="col-title"><FileIcon Folder="true" Name="" /> <span class="name">@team.Name</span></span>
+                <span class="sub">@WebTexts.FormatSize(team.UsedBytes)</span>
+                <span class="sub">@Teams.MembersSummary(team)</span>
+            </div>
+        }
+    </div>
+    @if (Teams.SelectedTeam is { } selected)
+    {
+        <div class="admin-detail">
+            <h3>@string.Format(CultureInfo.CurrentCulture, T.MembersOf, selected.Name)</h3>
+            @if (selected.Members.Count == 0)
+            {
+                <p class="sub">@T.NoMembers</p>
+            }
+            @foreach (var member in selected.Members)
+            {
+                <div class="invitee">
+                    <span class="category-icon">@(member.Kind == "group" ? "👥" : "👤")</span>
+                    <span class="name">@member.Name</span>
+                    <select value="@member.Role" aria-label="@T.Access"
+                            @onchange="e => Teams.SetMemberAsync(selected, member.Kind, member.Id, e.Value?.ToString() ?? member.Role, Token)">
+                        @foreach (var role in TeamsViewModel.Roles)
+                        {
+                            <option value="@role">@T.RoleName(role)</option>
+                        }
+                    </select>
+                    <button class="tool" title="@T.Remove" aria-label="@T.Remove" @onclick="() => Teams.RemoveMemberAsync(selected, member, Token)">✕</button>
+                </div>
+            }
+            @if (Teams.Candidates(selected) is { Count: > 0 } candidates)
+            {
+                <div class="invite-row">
+                    <select @bind="_candidate" aria-label="@T.ChooseMember">
+                        <option value="">@T.ChooseMember</option>
+                        @foreach (var candidate in candidates)
+                        {
+                            <option value="@(candidate.Kind + ":" + candidate.Id)">@(candidate.Kind == "group" ? "👥 " : "👤 ")@candidate.Name</option>
+                        }
+                    </select>
+                    <select @bind="_role" aria-label="@T.Access">
+                        @foreach (var role in TeamsViewModel.Roles)
+                        {
+                            <option value="@role">@T.RoleName(role)</option>
+                        }
+                    </select>
+                    <button class="primary" disabled="@string.IsNullOrEmpty(_candidate)" @onclick="() => AddAsync(selected)">＋ @T.Invite</button>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@if (_dialog != Dialog.None)
+{
+    <div class="backdrop">
+        <form class="dialog" @onsubmit="SubmitAsync" @onsubmit:preventDefault>
+            <h2>@(_dialog == Dialog.New ? T.NewTeamFolder : T.Rename)</h2>
+            <label><span>@T.Name</span><input @ref="_input" @bind="_name" @bind:event="oninput" maxlength="64" /></label>
+            @if (Teams.Message is { } message)
+            {
+                <div class="dialog-error" role="alert">@message</div>
+            }
+            <div class="dialog-buttons">
+                <button type="button" @onclick="Close">@T.Cancel</button>
+                <button type="submit" class="primary" disabled="@string.IsNullOrWhiteSpace(_name)">@T.Ok</button>
+            </div>
+        </form>
+    </div>
+}
+else
+{
+    <Toast Model="Teams" />
+}
+
+@code {
+    private enum Dialog
+    {
+        None,
+        New,
+        Rename,
+    }
+
+    private Dialog _dialog;
+    private string _name = string.Empty;
+    private string _candidate = string.Empty;
+    private string _role = TeamsViewModel.DefaultRole;
+    private ElementReference _input;
+    private bool _focus;
+
+    [Parameter]
+    public CancellationToken Token { get; set; }
+
+    private WebTexts T => Teams.Texts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Teams.Changed += Refresh;
+        await Teams.LoadAsync(Token);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focus)
+        {
+            _focus = false;
+            await _input.FocusAsync();
+        }
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private void Open(Dialog dialog)
+    {
+        Teams.DismissMessage();
+        _name = dialog == Dialog.Rename ? Teams.SelectedTeam?.Name ?? string.Empty : string.Empty;
+        _dialog = dialog;
+        _focus = true;
+    }
+
+    private void Close()
+    {
+        _dialog = Dialog.None;
+        Teams.DismissMessage();
+    }
+
+    private async Task SubmitAsync()
+    {
+        var ok = _dialog == Dialog.New
+            ? await Teams.CreateTeamFolderAsync(_name, Token)
+            : await Teams.RenameTeamFolderAsync(Teams.SelectedTeam!, _name, Token);
+        if (ok)
+        {
+            _dialog = Dialog.None;
+        }
+    }
+
+    private async Task AddAsync(TeamFolderInfo team)
+    {
+        var (kind, id) = (_candidate[.._candidate.IndexOf(':', StringComparison.Ordinal)], _candidate[(_candidate.IndexOf(':', StringComparison.Ordinal) + 1)..]);
+        _candidate = string.Empty;
+        await Teams.SetMemberAsync(team, kind, id, _role, Token);
+    }
+
+    public void Dispose() => Teams.Changed -= Refresh;
+}

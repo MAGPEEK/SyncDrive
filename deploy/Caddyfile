@@ -1,0 +1,13 @@
+# SYNCDRIVE_HOST ist der Name, unter dem Clients den Server erreichen (Standard: localhost).
+# Mit "tls internal" stellt Caddy ein Zertifikat seiner eigenen CA aus (Clients müssen dem Fingerprint trauen, siehe A4).
+# Für ein öffentliches Zertifikat: "tls internal" streichen und einen DNS-Namen setzen.
+{
+	auto_https disable_redirects
+}
+
+{$SYNCDRIVE_HOST:localhost}:8443 {
+	tls internal
+	reverse_proxy server:8080 {
+		flush_interval -1 # Long-Poll: Antworten nicht puffern
+	}
+}

@@ -1,0 +1,17 @@
+# Build-Ausgaben und lokale Dateien
+bin/
+obj/
+.vs/
+.idea/
+TestResults/
+*.user
+artifacts/
+# Laufzeitdaten und Geheimnisse nie einchecken
+*.db
+*.db-wal
+*.db-shm
+.syncdrive/
+deploy/admin-password.txt
+deploy/.env
+*.pfx
+*.key

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Setup-Programm: zeigt Lizenz und Fortschritt und installiert die MSI (pro Benutzer, ohne Administratorrechte). -->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal">
+
+  <Bundle Name="SyncDrive Client" Manufacturer="SyncDrive" Version="$(var.ProductVersion)"
+          UpgradeCode="84d8ccaa-aeb0-48d5-82ba-961984d31331" IconSourceFile="$(var.AppIcon)"
+          AboutUrl="https://github.com/MAGPEEK/SyncDrive">
+
+    <BootstrapperApplication>
+      <bal:WixStandardBootstrapperApplication Theme="rtfLicense" LicenseFile="$(var.Assets)\License.rtf" SuppressOptionsUI="yes" />
+    </BootstrapperApplication>
+
+    <Chain>
+      <MsiPackage SourceFile="$(var.MsiPath)" Visible="no">
+        <MsiProperty Name="LAUNCHAPP" Value="1" />
+      </MsiPackage>
+    </Chain>
+  </Bundle>
+</Wix>

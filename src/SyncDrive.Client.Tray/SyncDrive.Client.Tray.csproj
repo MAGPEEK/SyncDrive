@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>syncdrive</AssemblyName>
+    <RootNamespace>SyncDrive.Client.Tray</RootNamespace>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\syncdrive.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SyncDrive.Client.App\SyncDrive.Client.App.csproj" />
+    <ProjectReference Include="..\SyncDrive.Client.Ui\SyncDrive.Client.Ui.csproj" />
+    <ProjectReference Include="..\SyncDrive.Infra.Ipc\SyncDrive.Infra.Ipc.csproj" />
+    <ProjectReference Include="..\SyncDrive.Client.Daemon\SyncDrive.Client.Daemon.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\CloudRegistration.targets" />
+
+</Project>

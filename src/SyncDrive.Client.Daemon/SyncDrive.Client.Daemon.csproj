@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>syncdrive-daemon</AssemblyName>
+    <RootNamespace>SyncDrive.Client.Daemon</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SyncDrive.Core\SyncDrive.Core.csproj" />
+    <ProjectReference Include="..\SyncDrive.Client.App\SyncDrive.Client.App.csproj" />
+    <ProjectReference Include="..\SyncDrive.Infra.CloudFiles\SyncDrive.Infra.CloudFiles.csproj" />
+    <ProjectReference Include="..\SyncDrive.Infra.Fs\SyncDrive.Infra.Fs.csproj" />
+    <ProjectReference Include="..\SyncDrive.Infra.Http\SyncDrive.Infra.Http.csproj" />
+    <ProjectReference Include="..\SyncDrive.Infra.Ipc\SyncDrive.Infra.Ipc.csproj" />
+    <ProjectReference Include="..\SyncDrive.Infra.Secrets\SyncDrive.Infra.Secrets.csproj" />
+    <ProjectReference Include="..\SyncDrive.Infra.Sqlite.Client\SyncDrive.Infra.Sqlite.Client.csproj" />
+    <ProjectReference Include="..\SyncDrive.Client.Ui\SyncDrive.Client.Ui.csproj" />
+  </ItemGroup>
+
+  <Import Project="..\CloudRegistration.targets" />
+
+</Project>

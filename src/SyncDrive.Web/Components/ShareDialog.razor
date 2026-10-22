@@ -1,0 +1,168 @@
+@implements IDisposable
+@inject ShareViewModel Share
+@inject NavigationManager Navigation
+@inject IJSRuntime Js
+
+@* Freigabedialog mit den Reitern „Berechtigungen“ und „Öffentlicher Link“; als „Dateien anfordern“ nur der Hochlade-Link. *@
+<div class="backdrop">
+    <div class="dialog wide" @onclick:stopPropagation>
+        <h2>@(Request ? Share.RequestTitle : Share.Title)</h2>
+        @if (!Request)
+        {
+            <div class="tabs" role="tablist">
+                <button role="tab" class="tab @(_linkTab ? "" : "active")" aria-selected="@(!_linkTab)" @onclick="() => SwitchTab(link: false)">@T.Permissions</button>
+                @if (Share.Policies.PublicLinks)
+                {
+                    <button role="tab" class="tab @(_linkTab ? "active" : "")" aria-selected="@_linkTab" @onclick="() => SwitchTab(link: true)">@T.PublicLink</button>
+                }
+            </div>
+        }
+
+        @if (Share.State == ListState.Loading)
+        {
+            <div class="list-note">@T.Loading</div>
+        }
+        else if (Request)
+        {
+            <LinkEditorView Editor="Share.RequestLink" Title="@T.CreateRequest" Hint="@T.RequestHint" Disabled="Share.IsBusy"
+                            Url="@UrlOf(Share.RequestLink)" OnCopy="CopyAsync" />
+        }
+        else if (LinkTabShown)
+        {
+            <LinkEditorView Editor="Share.ShareLink" Title="@T.CreateLink" Hint="@T.LinkHint" Disabled="Share.IsBusy"
+                            Url="@UrlOf(Share.ShareLink)" OnCopy="CopyAsync" />
+        }
+        else if (!Share.IsFolder)
+        {
+            <p class="sub">@T.OnlyFolders</p>
+            @if (!Share.Policies.PublicLinks)
+            {
+                <p class="sub">@T.LinksDisabled</p>
+            }
+        }
+        else
+        {
+            <form class="invite-row" @onsubmit="InviteAsync" @onsubmit:preventDefault>
+                <input placeholder="@T.UserName" aria-label="@T.UserName" @bind="_userName" @bind:event="oninput" disabled="@Share.IsBusy" />
+                <select @bind="_role" aria-label="@T.Access" disabled="@Share.IsBusy">
+                    @foreach (var role in ShareViewModel.Roles)
+                    {
+                        <option value="@role">@Share.RoleName(role)</option>
+                    }
+                </select>
+                <button type="submit" class="primary" disabled="@(Share.IsBusy || string.IsNullOrWhiteSpace(_userName))">＋ @T.Invite</button>
+            </form>
+            <div class="sub">@T.PeopleWithAccess</div>
+            <div class="invitees">
+                @if (Share.Invitees.Count == 0)
+                {
+                    <div class="list-note">@T.NobodyYet</div>
+                }
+                @foreach (var invitee in Share.Invitees)
+                {
+                    <div class="invitee">
+                        <span class="portal-avatar">@invitee.UserName[..1].ToUpperInvariant()</span>
+                        <span class="name">@invitee.UserName</span>
+                        <select value="@invitee.Role" aria-label="@T.Access" disabled="@Share.IsBusy"
+                                @onchange="e => Share.ChangeRoleAsync(invitee, e.Value?.ToString() ?? invitee.Role, Token)">
+                            @foreach (var role in ShareViewModel.Roles)
+                            {
+                                <option value="@role">@Share.RoleName(role)</option>
+                            }
+                        </select>
+                        <button class="tool" title="@T.Remove" aria-label="@T.Remove" disabled="@Share.IsBusy" @onclick="() => Share.RemoveAsync(invitee, Token)">✕</button>
+                    </div>
+                }
+            </div>
+        }
+
+        @if (_copied is { } copied)
+        {
+            <div class="dialog-note" role="status">@copied</div>
+        }
+        else if (Share.Message is { } message)
+        {
+            <div class="@(message == T.Saved ? "dialog-note" : "dialog-error")" role="status">@message</div>
+        }
+        <div class="dialog-buttons">
+            <button type="button" @onclick="OnClose">@T.Close</button>
+            @if (Request || LinkTabShown)
+            {
+                <button type="button" class="primary" disabled="@Share.IsBusy" @onclick="SaveAsync">@T.Save</button>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _linkTab;
+    private string _userName = string.Empty;
+    private string _role = ShareViewModel.DefaultRole;
+    private string? _copied;
+
+    [Parameter, EditorRequired]
+    public SpaceSummary Space { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public DriveItem Item { get; set; } = null!;
+
+    /// <summary>„Dateien anfordern“ statt „Freigeben“.</summary>
+    [Parameter]
+    public bool Request { get; set; }
+
+    /// <summary>Gleich mit dem Reiter „Öffentlicher Link“ öffnen (Dateien lassen sich nur so teilen).</summary>
+    [Parameter]
+    public bool StartWithLink { get; set; }
+
+    [Parameter]
+    public CancellationToken Token { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private WebTexts T => Share.Texts;
+
+    /// <summary>Den Link-Reiter gibt es nur, wenn die Richtlinien öffentliche Links erlauben.</summary>
+    private bool LinkTabShown => _linkTab && Share.Policies.PublicLinks;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Share.Changed += Refresh;
+        _linkTab = StartWithLink || !Item.IsFolder;
+        await Share.OpenAsync(Space, Item, Token);
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private string? UrlOf(LinkEditor editor) => editor.Link is { } link ? ShareViewModel.UrlOf(link, Navigation.BaseUri) : null;
+
+    private void SwitchTab(bool link)
+    {
+        _linkTab = link;
+        _copied = null;
+        Share.DismissMessage();
+    }
+
+    private async Task InviteAsync()
+    {
+        _copied = null;
+        if (await Share.InviteAsync(_userName, _role, Token))
+        {
+            _userName = string.Empty;
+        }
+    }
+
+    private Task SaveAsync()
+    {
+        _copied = null;
+        return Share.SaveLinkAsync(Request ? Share.RequestLink : Share.ShareLink, Token);
+    }
+
+    private async Task CopyAsync(string url)
+    {
+        Share.DismissMessage();
+        _copied = await Clipboard.CopyAsync(Js, url) ? string.Format(CultureInfo.CurrentCulture, T.LinkCopied, url) : url;
+    }
+
+    public void Dispose() => Share.Changed -= Refresh;
+}

@@ -1,0 +1,13 @@
+<Project>
+  <PropertyGroup>
+    <!-- Einzige Quelle der Produktversion (Semantic Versioning, siehe ../CHANGELOG.md). Vor 1.0.0 darf sich das Protokoll noch ändern.
+         Jeder Meilenstein hebt MINOR, reine Korrekturen PATCH; dazu ein Eintrag im CHANGELOG und ein Git-Tag vX.Y.Z. -->
+    <Version>0.18.1</Version>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+</Project>

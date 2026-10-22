@@ -1,0 +1,96 @@
+@implements IDisposable
+@inject AccountViewModel Account
+
+@* „Client list“: Geräte mit Typ, Version und letzter Verbindung; „Unlink“ (nach Rückfrage) und „Refresh“. *@
+<div class="backdrop" @onclick="OnClose">
+    <div class="dialog wide" @onclick:stopPropagation>
+        <h2>@T.ClientList</h2>
+        <div class="version-list">
+            <div class="row head devices">
+                <span class="sort">@T.DeviceName</span>
+                <span class="sort">@T.ClientType</span>
+                <span class="sort">@T.Version</span>
+                <span class="sort">@T.LastConnection</span>
+            </div>
+            @switch (Account.DevicesState)
+            {
+                case ListState.Loading:
+                    <div class="list-note">@T.Loading</div>
+                    break;
+                case ListState.Empty:
+                    <div class="list-note">—</div>
+                    break;
+                default:
+                    @foreach (var device in Account.Devices)
+                    {
+                        <div class="row item devices @(device == Account.SelectedDevice ? "selected" : "")" @onclick="() => Account.SelectDevice(device)">
+                            <span class="name">
+                                @device.Name
+                                @if (device.IsCurrent)
+                                {
+                                    <span class="badge">@T.ThisBrowser</span>
+                                }
+                            </span>
+                            <span class="sub">@Account.ClientTypeOf(device)</span>
+                            <span class="sub">@(device.ClientVersion ?? "—")</span>
+                            <span class="sub">@((device.LastSeen ?? device.CreatedAt).ToLocalTime().ToString("g", CultureInfo.CurrentCulture))</span>
+                        </div>
+                    }
+                    break;
+            }
+        </div>
+        @if (_confirm)
+        {
+            <p>@Account.UnlinkQuestion</p>
+        }
+        @if (Account.Message is { } message)
+        {
+            <div class="dialog-note" role="status">@message</div>
+        }
+        <div class="dialog-buttons">
+            @if (_confirm)
+            {
+                <button disabled="@_busy" @onclick="() => _confirm = false">@T.Cancel</button>
+                <button class="primary danger" disabled="@_busy" @onclick="UnlinkAsync">@T.Unlink</button>
+            }
+            else
+            {
+                <button disabled="@(!Account.CanUnlink)" @onclick="() => { Account.DismissMessage(); _confirm = true; }">@T.Unlink</button>
+                <button @onclick="() => Account.LoadDevicesAsync(Token)">@T.Refresh</button>
+                <button class="primary" @onclick="OnClose">@T.Close</button>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _confirm;
+    private bool _busy;
+
+    [Parameter]
+    public CancellationToken Token { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private WebTexts T => Account.Texts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Account.Changed += Refresh;
+        Account.DismissMessage();
+        await Account.LoadDevicesAsync(Token);
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private async Task UnlinkAsync()
+    {
+        _busy = true;
+        await Account.UnlinkSelectedAsync(Token);
+        _busy = false;
+        _confirm = false;
+    }
+
+    public void Dispose() => Account.Changed -= Refresh;
+}

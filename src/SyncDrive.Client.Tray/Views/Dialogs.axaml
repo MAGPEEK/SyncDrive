@@ -1,0 +1,18 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="SyncDrive.Client.Tray.Views.MessageDialog"
+        Width="420" SizeToContent="Height" CanResize="False" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner" Title="SyncDrive">
+  <StackPanel Margin="24,20" Spacing="18">
+    <Grid ColumnDefinitions="Auto,*">
+      <Border Width="34" Height="34" CornerRadius="17" Background="#2F78D0" VerticalAlignment="Top" Margin="0,0,14,0">
+        <TextBlock Text="i" Foreground="White" FontWeight="Bold" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </Border>
+      <TextBlock Grid.Column="1" x:Name="MessageText" TextWrapping="Wrap" VerticalAlignment="Center" />
+    </Grid>
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+      <Button x:Name="OkButton" Classes="primary" MinWidth="80" HorizontalContentAlignment="Center" />
+      <Button x:Name="CancelButton" Classes="outline" MinWidth="80" HorizontalContentAlignment="Center" />
+    </StackPanel>
+  </StackPanel>
+</Window>

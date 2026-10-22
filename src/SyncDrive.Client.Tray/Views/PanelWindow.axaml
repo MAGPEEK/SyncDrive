@@ -1,0 +1,92 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="using:SyncDrive.Client.Ui"
+        xmlns:c="using:SyncDrive.Client.Tray.Controls"
+        xmlns:t="using:SyncDrive.Client.Tray"
+        x:Class="SyncDrive.Client.Tray.Views.PanelWindow"
+        x:DataType="ui:PanelViewModel"
+        Width="300" Height="430" CanResize="False"
+        SystemDecorations="BorderOnly" ShowInTaskbar="False" Topmost="True"
+        WindowStartupLocation="Manual" Title="SyncDrive">
+  <Border BorderBrush="{StaticResource Line}" BorderThickness="1">
+    <DockPanel>
+      <!-- Kopf: großes Abzeichen + Wort, farbcodiert -->
+      <Border DockPanel.Dock="Top" Padding="16,14" BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1">
+        <StackPanel Orientation="Horizontal" Spacing="12">
+          <Panel Width="40" Height="40">
+            <c:AppGlyph IsVisible="{Binding Shell.TrayState, Converter={x:Static t:Converters.IsNormal}}" />
+            <c:StatusBadge Kind="{Binding Shell.TrayState, Converter={x:Static t:Converters.TrayBadge}}" />
+          </Panel>
+          <TextBlock Text="{Binding Shell.StateWord}" VerticalAlignment="Center" FontSize="16" FontWeight="SemiBold"
+                     TextWrapping="Wrap" MaxWidth="210"
+                     Foreground="{Binding Shell.StateColor, Converter={x:Static t:Converters.StatusBrush}}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Fußleiste: Ordner, Hauptfenster, Einstellungen, Hilfe -->
+      <Border DockPanel.Dock="Bottom" Padding="8,6" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Background="{StaticResource NavBack}">
+        <StackPanel Orientation="Horizontal" Spacing="2">
+          <Button Classes="link" Padding="8,4" ToolTip.Tip="{Binding Texts.YourComputer}" Command="{Binding OpenSyncFolderCommand}">
+            <c:FolderBadge Width="18" Height="18" />
+          </Button>
+          <Button Classes="link" Padding="8,4" Content="☰" ToolTip.Tip="Sync Tasks" Command="{Binding OpenMainWindowCommand}" />
+          <Button Classes="link" Padding="8,4" Content="⚙" ToolTip.Tip="{Binding Texts.MenuSettings}" Command="{Binding OpenSettingsCommand}" />
+          <Button Classes="link" Padding="8,4" Content="?" ToolTip.Tip="{Binding Texts.MenuAbout}" Command="{Binding HelpCommand}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Reiter -->
+      <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10,4,10,0" Spacing="6">
+        <Button Classes="tab" Classes.active="{Binding ShowRecent}" Content="{Binding Texts.TabRecentlyChanged}" Command="{Binding SelectRecentCommand}" />
+        <Button Classes="tab" Classes.active="{Binding ShowNotifications}" Content="{Binding Texts.TabNotifications}" Command="{Binding SelectNotificationsCommand}" />
+      </StackPanel>
+
+      <Panel>
+        <ScrollViewer IsVisible="{Binding ShowRecent}">
+          <Panel>
+            <TextBlock Classes="sub" Text="{Binding Texts.EmptyRecent}" HorizontalAlignment="Center" Margin="0,40" IsVisible="{Binding !HasRecent}" />
+            <ItemsControl ItemsSource="{Binding Recent}" Margin="0,4">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="ui:ActivityItemViewModel">
+                  <Button Classes="link" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Padding="14,7"
+                          Command="{Binding Open}" Foreground="{StaticResource TextMain}">
+                    <Grid ColumnDefinitions="Auto,*" Opacity="{Binding Dimmed, Converter={x:Static t:Converters.DimmedOpacity}}">
+                      <c:FileKindIcon Kind="{Binding Kind}" Width="26" Height="30" Margin="0,0,10,0" />
+                      <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Classes="sub" Text="{Binding Detail}" />
+                      </StackPanel>
+                    </Grid>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Panel>
+        </ScrollViewer>
+        <ScrollViewer IsVisible="{Binding ShowNotifications}">
+          <Panel>
+            <TextBlock Classes="sub" Text="{Binding Texts.EmptyNotifications}" HorizontalAlignment="Center" Margin="0,40" IsVisible="{Binding !HasNotificationItems}" />
+            <ItemsControl ItemsSource="{Binding Notifications}" Margin="0,4">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="ui:NotificationItemViewModel">
+                  <Grid ColumnDefinitions="Auto,*" Margin="14,7">
+                    <Ellipse Width="8" Height="8" Fill="#D64541" Margin="0,6,8,0" VerticalAlignment="Top" IsVisible="{Binding Unread}" />
+                    <StackPanel Grid.Column="1">
+                      <WrapPanel>
+                        <TextBlock Text="{Binding Actor}" Foreground="{StaticResource Link}" Margin="0,0,4,0" />
+                        <TextBlock Text="{Binding Verb}" Margin="0,0,4,0" />
+                        <TextBlock Text="{Binding Target}" Foreground="{StaticResource Link}" />
+                      </WrapPanel>
+                      <TextBlock Classes="sub" Text="{Binding Server}" />
+                      <TextBlock Classes="sub" Text="{Binding Time}" />
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </Panel>
+        </ScrollViewer>
+      </Panel>
+    </DockPanel>
+  </Border>
+</Window>

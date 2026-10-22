@@ -1,0 +1,77 @@
+@inject BrowserViewModel Browser
+
+@* „Mit mir geteilt“: Ordner anderer mit Absender und Rolle. Doppelklick öffnet ihn wie einen Space; „Verlassen“ nach Rückfrage. *@
+<div class="view" @onclick="() => _context = null">
+    <div class="list" tabindex="0">
+        <div class="row head shared">
+            <span class="col-title sort">@T.Title</span>
+            <span class="col-location sort">@T.SharedBy</span>
+            <span class="col-time sort">@T.Access</span>
+        </div>
+        @if (Browser.SharedWithMe.Count == 0)
+        {
+            <div class="list-empty"><p>@T.NothingSharedWithMe</p></div>
+        }
+        @foreach (var share in Browser.SharedWithMe)
+        {
+            <div class="row item shared @(share == _selected ? "selected" : "")" @onclick="() => _selected = share"
+                 @ondblclick="() => OnOpen.InvokeAsync(share)" @oncontextmenu="e => ShowMenu(e, share)" @oncontextmenu:preventDefault>
+                <span class="col-title"><FileIcon Folder="true" Name="" /> <span class="name">@share.Name</span></span>
+                <span class="col-location">@share.SharedBy</span>
+                <span class="col-time">@T.RoleName(share.Role)</span>
+            </div>
+        }
+    </div>
+
+    @if (_context is { } context)
+    {
+        <div class="menu context-menu" style="left:@(_menuX)px;top:@(_menuY)px" @onclick:stopPropagation>
+            <button class="menu-item" @onclick="() => { _context = null; return OnOpen.InvokeAsync(context); }">@T.Open</button>
+            <div class="menu-line"></div>
+            <button class="menu-item danger" @onclick="() => { _context = null; _leaving = context; }">@T.LeaveShare</button>
+        </div>
+    }
+
+    @if (_leaving is { } leaving)
+    {
+        <div class="backdrop">
+            <div class="dialog" @onclick:stopPropagation>
+                <h2>@T.LeaveShare</h2>
+                <p>@string.Format(CultureInfo.CurrentCulture, T.ConfirmLeave, leaving.Name)</p>
+                <div class="dialog-buttons">
+                    <button @onclick="() => _leaving = null">@T.Cancel</button>
+                    <button class="primary danger" @onclick="LeaveAsync">@T.LeaveShare</button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private SpaceSummary? _selected;
+    private SpaceSummary? _context;
+    private SpaceSummary? _leaving;
+    private double _menuX;
+    private double _menuY;
+
+    [Parameter]
+    public CancellationToken Token { get; set; }
+
+    [Parameter]
+    public EventCallback<SpaceSummary> OnOpen { get; set; }
+
+    private WebTexts T => Browser.Texts;
+
+    private void ShowMenu(MouseEventArgs e, SpaceSummary share)
+    {
+        _selected = _context = share;
+        (_menuX, _menuY) = (e.ClientX, e.ClientY);
+    }
+
+    private async Task LeaveAsync()
+    {
+        var share = _leaving!;
+        _leaving = null;
+        await Browser.LeaveShareAsync(share, Token);
+    }
+}

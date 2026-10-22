@@ -1,0 +1,49 @@
+@implements IDisposable
+@inject SessionViewModel Session
+@inject NavigationManager Navigation
+
+@* Öffentliche Links (/s/{token}) brauchen keine Anmeldung. Sonst erst prüfen, ob schon eine Sitzung besteht (kein Aufblitzen des
+   Anmeldeformulars), dann Anmeldung oder Dateibrowser. *@
+@if (LinkToken is { } token)
+{
+    <PublicLinkPage Token="@token" />
+}
+else if (Session.IsChecking)
+{
+    <div class="splash">@Session.Texts.Loading</div>
+}
+else if (Session.Session is null)
+{
+    <SignIn />
+}
+else
+{
+    <Drive />
+}
+
+@code {
+    /// <summary>Token aus <c>/s/{token}</c>; null auf allen anderen Seiten.</summary>
+    private string? LinkToken
+    {
+        get
+        {
+            var path = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0];
+            return path.StartsWith("s/", StringComparison.Ordinal) && path.Length > 2 ? Uri.UnescapeDataString(path[2..].TrimEnd('/')) : null;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (LinkToken is not null)
+        {
+            return;
+        }
+
+        Session.Changed += Refresh;
+        await Session.CheckAsync(CancellationToken.None);
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Session.Changed -= Refresh;
+}

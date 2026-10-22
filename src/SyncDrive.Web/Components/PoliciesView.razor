@@ -1,0 +1,77 @@
+@implements IDisposable
+@inject PoliciesViewModel Policies
+@inject BrowserViewModel Browser
+
+@* Richtlinien: öffentliche Links und Dateianfragen (an/aus, Passwortpflicht, Höchstdauer). Gespeichert wird mit einem Knopf. *@
+<form class="policies" @onsubmit="SaveAsync" @onsubmit:preventDefault>
+    @if (Policies.Policies is null)
+    {
+        <div class="list-note">@T.Loading</div>
+    }
+    else
+    {
+        <p class="sub">@T.PoliciesHint</p>
+        <fieldset>
+            <legend>@T.PublicLink</legend>
+            <label class="check-row"><input type="checkbox" @bind="_links" /><span>@T.AllowPublicLinks</span></label>
+            <label class="check-row"><input type="checkbox" @bind="_linkPassword" disabled="@(!_links)" /><span>@T.RequirePassword</span></label>
+            <label class="check-row">
+                <input type="checkbox" @bind="_linkLimit" disabled="@(!_links)" /><span>@T.LimitDays</span>
+                <input type="number" min="1" max="@PoliciesViewModel.MaxDays" @bind="_linkDays" disabled="@(!_links || !_linkLimit)" aria-label="@T.LimitDays" />
+            </label>
+        </fieldset>
+        <fieldset>
+            <legend>@T.FileRequests</legend>
+            <label class="check-row"><input type="checkbox" @bind="_requests" /><span>@T.AllowFileRequests</span></label>
+            <label class="check-row"><input type="checkbox" @bind="_requestPassword" disabled="@(!_requests)" /><span>@T.RequirePassword</span></label>
+            <label class="check-row">
+                <input type="checkbox" @bind="_requestLimit" disabled="@(!_requests)" /><span>@T.LimitDays</span>
+                <input type="number" min="1" max="@PoliciesViewModel.MaxDays" @bind="_requestDays" disabled="@(!_requests || !_requestLimit)" aria-label="@T.LimitDays" />
+            </label>
+        </fieldset>
+        <div><button type="submit" class="primary">@T.Save</button></div>
+        <Toast Model="Policies" />
+    }
+</form>
+
+@code {
+    private bool _links;
+    private bool _linkPassword;
+    private bool _linkLimit;
+    private int _linkDays = 30;
+    private bool _requests;
+    private bool _requestPassword;
+    private bool _requestLimit;
+    private int _requestDays = 30;
+
+    [Parameter]
+    public CancellationToken Token { get; set; }
+
+    private WebTexts T => Policies.Texts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Policies.Changed += Refresh;
+        Policies.Saved += Saved;
+        await Policies.LoadAsync(Token);
+        if (Policies.Policies is { } p)
+        {
+            (_links, _linkPassword, _linkLimit, _linkDays) = (p.PublicLinks, p.LinkPasswordRequired, p.LinkMaxDays is not null, p.LinkMaxDays ?? 30);
+            (_requests, _requestPassword, _requestLimit, _requestDays) = (p.FileRequests, p.RequestPasswordRequired, p.RequestMaxDays is not null, p.RequestMaxDays ?? 30);
+        }
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    /// <summary>Menüs und Freigabedialog sollen die neuen Regeln sofort kennen.</summary>
+    private void Saved(SharingPolicies _) => InvokeAsync(() => Browser.RefreshPoliciesAsync(Token));
+
+    private Task SaveAsync() => Policies.SaveAsync(
+        new SharingPolicies(_links, _linkPassword, _linkLimit ? _linkDays : null, _requests, _requestPassword, _requestLimit ? _requestDays : null), Token);
+
+    public void Dispose()
+    {
+        Policies.Changed -= Refresh;
+        Policies.Saved -= Saved;
+    }
+}

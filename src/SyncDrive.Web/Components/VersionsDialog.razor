@@ -1,0 +1,88 @@
+@implements IDisposable
+@inject VersionsViewModel Versions
+
+@* Versionen einer Datei: neueste zuerst, die aktuelle markiert; je Version Herunterladen und (mit Schreibrecht) Wiederherstellen. *@
+<div class="backdrop" @onclick="Close">
+    <div class="dialog wide" @onclick:stopPropagation>
+        <h2>@Versions.Title</h2>
+        <div class="version-list">
+            <div class="row head versions">
+                <span class="sort">@T.ModifiedTime</span>
+                <span class="sort">@T.Size</span>
+                <span class="sort sub">@T.SavedBy</span>
+                <span></span>
+            </div>
+            @if (Versions.State == ListState.Loading)
+            {
+                <div class="list-note">@T.Loading</div>
+            }
+            @foreach (var version in Versions.Versions)
+            {
+                <div class="row versions">
+                    <span>
+                        @version.CreatedAt.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)
+                        @if (Versions.IsCurrent(version))
+                        {
+                            <span class="badge">@T.Current</span>
+                        }
+                    </span>
+                    <span>@WebTexts.FormatSize(version.Size)</span>
+                    <span class="sub">@(version.CreatedBy ?? "—")</span>
+                    <span class="version-actions">
+                        <a class="tool" href="@Versions.DownloadUrl(version)" download="@Versions.File?.Name" title="@T.Download">⤓</a>
+                        @if (Versions.CanRestore && !Versions.IsCurrent(version))
+                        {
+                            <button class="tool" disabled="@_busy" @onclick="() => RestoreAsync(version)">↺ @T.Restore</button>
+                        }
+                    </span>
+                </div>
+            }
+        </div>
+        @if (Versions.Message is { } message)
+        {
+            <div class="dialog-note" role="status">@message</div>
+        }
+        <div class="dialog-buttons">
+            <button @onclick="Close">@T.Close</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _busy;
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    /// <summary>Nach dem Wiederherstellen hat die Datei eine neue Fassung; die Liste dahinter lädt neu.</summary>
+    [Parameter]
+    public EventCallback OnRestored { get; set; }
+
+    [Parameter]
+    public CancellationToken Token { get; set; }
+
+    private WebTexts T => Versions.Texts;
+
+    protected override void OnInitialized() => Versions.Changed += Refresh;
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private async Task RestoreAsync(VersionInfo version)
+    {
+        _busy = true;
+        if (await Versions.RestoreAsync(version, Token))
+        {
+            await OnRestored.InvokeAsync();
+        }
+
+        _busy = false;
+    }
+
+    private Task Close()
+    {
+        Versions.DismissMessage();
+        return OnClose.InvokeAsync();
+    }
+
+    public void Dispose() => Versions.Changed -= Refresh;
+}

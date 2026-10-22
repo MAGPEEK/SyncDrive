@@ -1,0 +1,137 @@
+@implements IDisposable
+@inject TeamsViewModel Teams
+
+@* Gruppen: links die Liste, darunter die Mitglieder der gewählten Gruppe zum An- und Abhaken. *@
+<div class="toolbar">
+    <button class="primary" @onclick="() => Open(Dialog.New)">＋ @T.NewGroup</button>
+    <button class="tool" disabled="@(Teams.SelectedGroup is null)" @onclick="() => Open(Dialog.Delete)">🗑 @T.DeleteGroup</button>
+</div>
+<div class="admin-split">
+    <div class="list">
+        <div class="row head admin-groups">
+            <span class="col-title sort">@T.Name</span>
+            <span class="sort">@T.Members</span>
+        </div>
+        @if (Teams.State == ListState.Loading)
+        {
+            <div class="list-note">@T.Loading</div>
+        }
+        else if (Teams.Groups.Count == 0)
+        {
+            <div class="list-empty"><p>@T.NoGroups</p></div>
+        }
+        @foreach (var group in Teams.Groups)
+        {
+            <div class="row item admin-groups @(group.Id == Teams.SelectedGroup?.Id ? "selected" : "")" @onclick="() => Teams.Select(group)">
+                <span class="col-title"><span class="category-icon">👥</span><span class="name">@group.Name</span></span>
+                <span class="sub">@group.Members.Count</span>
+            </div>
+        }
+    </div>
+    @if (Teams.SelectedGroup is { } selected)
+    {
+        <div class="admin-detail">
+            <h3>@string.Format(CultureInfo.CurrentCulture, T.MembersOf, selected.Name)</h3>
+            @foreach (var user in Teams.Users)
+            {
+                <label class="check-row">
+                    <input type="checkbox" checked="@TeamsViewModel.IsMember(selected, user)" @onchange="() => Teams.ToggleGroupMemberAsync(selected, user, Token)" />
+                    <span>@user.Name</span>
+                </label>
+            }
+        </div>
+    }
+</div>
+
+@if (_dialog != Dialog.None)
+{
+    <div class="backdrop">
+        <form class="dialog" @onsubmit="SubmitAsync" @onsubmit:preventDefault>
+            @if (_dialog == Dialog.New)
+            {
+                <h2>@T.NewGroup</h2>
+                <label><span>@T.Name</span><input @ref="_input" @bind="_name" @bind:event="oninput" maxlength="64" /></label>
+            }
+            else
+            {
+                <h2>@T.DeleteGroup</h2>
+                <p>@string.Format(CultureInfo.CurrentCulture, T.ConfirmDeleteGroup, Teams.SelectedGroup?.Name)</p>
+            }
+            @if (Teams.Message is { } message)
+            {
+                <div class="dialog-error" role="alert">@message</div>
+            }
+            <div class="dialog-buttons">
+                <button type="button" @onclick="Close">@T.Cancel</button>
+                <button type="submit" class="primary @(_dialog == Dialog.Delete ? "danger" : "")">@(_dialog == Dialog.Delete ? T.Delete : T.Ok)</button>
+            </div>
+        </form>
+    </div>
+}
+else
+{
+    <Toast Model="Teams" />
+}
+
+@code {
+    private enum Dialog
+    {
+        None,
+        New,
+        Delete,
+    }
+
+    private Dialog _dialog;
+    private string _name = string.Empty;
+    private ElementReference _input;
+    private bool _focus;
+
+    [Parameter]
+    public CancellationToken Token { get; set; }
+
+    private WebTexts T => Teams.Texts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Teams.Changed += Refresh;
+        await Teams.LoadAsync(Token);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focus)
+        {
+            _focus = false;
+            await _input.FocusAsync();
+        }
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private void Open(Dialog dialog)
+    {
+        Teams.DismissMessage();
+        _name = string.Empty;
+        _dialog = dialog;
+        _focus = dialog == Dialog.New;
+    }
+
+    private void Close()
+    {
+        _dialog = Dialog.None;
+        Teams.DismissMessage();
+    }
+
+    private async Task SubmitAsync()
+    {
+        var ok = _dialog == Dialog.New
+            ? await Teams.CreateGroupAsync(_name, Token)
+            : await Teams.DeleteGroupAsync(Teams.SelectedGroup!, Token);
+        if (ok)
+        {
+            _dialog = Dialog.None;
+        }
+    }
+
+    public void Dispose() => Teams.Changed -= Refresh;
+}

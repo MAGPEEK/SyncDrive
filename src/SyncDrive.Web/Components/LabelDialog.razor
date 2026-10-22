@@ -1,0 +1,75 @@
+@inject MarksViewModel Marks
+
+@* „Neues Label“: Name und Farbe. Aus einem Label-Menü geöffnet, bekommen die gewählten Elemente das Label gleich mit. *@
+<div class="backdrop">
+    <form class="dialog" @onsubmit="CreateAsync" @onsubmit:preventDefault @onclick:stopPropagation>
+        <h2>@T.NewLabel</h2>
+        <label>
+            <span>@T.Name</span>
+            <input @ref="_input" @bind="_name" @bind:event="oninput" maxlength="@MarksViewModel.MaxLabelName" disabled="@_busy" />
+        </label>
+        <div class="color-field">
+            <span class="sub">@T.Color</span>
+            <div class="swatches" role="radiogroup" aria-label="@T.Color">
+                @foreach (var color in MarksViewModel.Colors)
+                {
+                    <button type="button" class="swatch @(color == _color ? "chosen" : "")" style="background:@color" role="radio"
+                            aria-checked="@(color == _color)" aria-label="@color" @onclick="() => _color = color"></button>
+                }
+            </div>
+        </div>
+        @if (Marks.Message is { } problem)
+        {
+            <div class="dialog-error" role="alert">@problem</div>
+        }
+        <div class="dialog-buttons">
+            <button type="button" disabled="@_busy" @onclick="CloseAsync">@T.Cancel</button>
+            <button type="submit" class="primary" disabled="@(_busy || string.IsNullOrWhiteSpace(_name))">@T.Ok</button>
+        </div>
+    </form>
+</div>
+
+@code {
+    private string _name = string.Empty;
+    private string _color = MarksViewModel.Colors[5];
+    private bool _busy;
+    private ElementReference _input;
+
+    [Parameter]
+    public IReadOnlyList<LocatedItem> AssignTo { get; set; } = [];
+
+    [Parameter]
+    public CancellationToken Token { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private WebTexts T => Marks.Texts;
+
+    protected override void OnInitialized() => Marks.DismissMessage();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await _input.FocusAsync();
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        _busy = true;
+        var ok = await Marks.CreateLabelAsync(_name, _color, AssignTo, Token);
+        _busy = false;
+        if (ok)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+
+    private async Task CloseAsync()
+    {
+        Marks.DismissMessage();
+        await OnClose.InvokeAsync();
+    }
+}

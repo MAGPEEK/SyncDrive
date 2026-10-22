@@ -1,0 +1,14 @@
+@* Stern vor dem Namen: leer oder gefüllt; ein Klick schaltet um, ohne die Auswahl zu ändern oder die Zeile zu öffnen. *@
+<button class="star @(Starred ? "on" : "")" title="@(Starred ? Texts.RemoveStar : Texts.AddStar)" aria-pressed="@Starred"
+        @onclick="OnToggle" @onclick:stopPropagation @ondblclick:stopPropagation>@(Starred ? "★" : "☆")</button>
+
+@code {
+    [Inject]
+    private WebTexts Texts { get; set; } = null!;
+
+    [Parameter]
+    public bool Starred { get; set; }
+
+    [Parameter]
+    public EventCallback OnToggle { get; set; }
+}

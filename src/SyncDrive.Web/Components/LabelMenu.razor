@@ -1,0 +1,42 @@
+@inject MarksViewModel Marks
+
+@* Untermenü „Labels“ (Kontextmenü und Symbolleiste): jedes Label mit Haken, wenn alle gewählten Elemente es tragen; darunter „Neues Label“. *@
+<div class="menu label-menu @Class" @onclick:stopPropagation>
+    @foreach (var label in Marks.Labels)
+    {
+        <button class="menu-item" @onclick="() => ToggleAsync(label)">
+            <span class="check">@(Marks.AllHave(label, Items) ? "✓" : "")</span>
+            <span class="label-dot" style="background:@label.Color"></span>
+            <span class="label-name">@label.Name</span>
+        </button>
+    }
+    @if (Marks.Labels.Count > 0)
+    {
+        <div class="menu-line"></div>
+    }
+    <button class="menu-item" @onclick="() => OnNewLabel.InvokeAsync(Items)">＋ @Marks.Texts.NewLabel …</button>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<LocatedItem> Items { get; set; } = [];
+
+    [Parameter]
+    public string Class { get; set; } = string.Empty;
+
+    [Parameter]
+    public CancellationToken Token { get; set; }
+
+    /// <summary>„Neues Label“: der Rahmen öffnet den Dialog; das neue Label geht an <see cref="Items"/>.</summary>
+    [Parameter]
+    public EventCallback<IReadOnlyList<LocatedItem>> OnNewLabel { get; set; }
+
+    [Parameter]
+    public EventCallback OnDone { get; set; }
+
+    private async Task ToggleAsync(LabelInfo label)
+    {
+        await OnDone.InvokeAsync();
+        await Marks.ToggleLabelAsync(label, Items, Token);
+    }
+}

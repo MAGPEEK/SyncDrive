@@ -1,0 +1,39 @@
+@* Dateiart-Symbol wie in den Listen des Desktop-Clients: Ordner gelb, Dateien mit einer Farbe je Art. *@
+@if (Folder)
+{
+    <svg class="file-icon @(Large ? "large" : "")" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M2 6.5A1.5 1.5 0 0 1 3.5 5h5l2 2h10A1.5 1.5 0 0 1 22 8.5v10a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 2 18.5z" fill="#F2B84B" />
+        <path d="M2 9h20v9.5a1.5 1.5 0 0 1-1.5 1.5h-17A1.5 1.5 0 0 1 2 18.5z" fill="#F7C95E" />
+    </svg>
+}
+else
+{
+    <svg class="file-icon @(Large ? "large" : "")" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 2h9l5 5v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="@Color" />
+        <path d="M14 2v5h5" fill="#ffffff" opacity="0.55" />
+    </svg>
+}
+
+@code {
+    [Parameter]
+    public bool Folder { get; set; }
+
+    [Parameter]
+    public string Name { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool Large { get; set; }
+
+    private string Color => System.IO.Path.GetExtension(Name).ToUpperInvariant() switch
+    {
+        ".DOC" or ".DOCX" or ".ODT" or ".RTF" or ".TXT" or ".MD" => "#3B7DDD",
+        ".XLS" or ".XLSX" or ".ODS" or ".CSV" => "#2E9D57",
+        ".PPT" or ".PPTX" or ".ODP" => "#E0663A",
+        ".PDF" => "#D64541",
+        ".JPG" or ".JPEG" or ".PNG" or ".GIF" or ".BMP" or ".HEIC" or ".WEBP" or ".SVG" => "#9B59B6",
+        ".MP3" or ".WAV" or ".FLAC" or ".M4A" or ".OGG" => "#E67E22",
+        ".MP4" or ".MOV" or ".MKV" or ".AVI" or ".WEBM" => "#C0392B",
+        ".ZIP" or ".7Z" or ".RAR" or ".TAR" or ".GZ" or ".ISO" => "#7F8C8D",
+        _ => "#95A0AA",
+    };
+}

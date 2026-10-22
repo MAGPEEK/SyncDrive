@@ -1,0 +1,141 @@
+@* Liste mit Ort-Spalte für „Zuletzt“ und Suchergebnisse. Doppelklick: Ordner öffnen, Datei herunterladen; Kontextmenü mit „Speicherort öffnen“. *@
+<div class="view" @onclick="() => _context = null">
+    <div class="list" tabindex="0">
+        <div class="row head located">
+            <span class="col-title sort">@Texts.Title</span>
+            <span class="col-location sort">@Texts.Location</span>
+            <span class="col-time sort">@Texts.ModifiedTime</span>
+            <span class="col-size sort">@Texts.Size</span>
+        </div>
+        @switch (State)
+        {
+            case ListState.Loading:
+                <div class="list-note">@Texts.Loading</div>
+                break;
+            case ListState.Empty:
+                <div class="list-empty"><p>@EmptyText</p></div>
+                break;
+            default:
+                @foreach (var entry in Items)
+                {
+                    <div class="row item located @(entry == _selected ? "selected" : "")"
+                         @onclick="() => _selected = entry"
+                         @ondblclick="() => OpenAsync(entry)"
+                         @oncontextmenu="e => ShowMenu(e, entry)" @oncontextmenu:preventDefault>
+                        <span class="col-title">
+                            <Star Starred="Marks.IsStarred(entry.Space, entry.Item)" OnToggle="() => Marks.ToggleStarAsync([entry], Token)" />
+                            <FileIcon Folder="entry.Item.IsFolder" Name="@entry.Item.Name" /> <span class="name">@entry.Item.Name</span>
+                        </span>
+                        <span class="col-location">@entry.Location(SpaceLabel)</span>
+                        <span class="col-time">@entry.Item.Modified.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)</span>
+                        <span class="col-size">@(entry.Item.IsFolder ? "—" : WebTexts.FormatSize(entry.Item.Size))</span>
+                    </div>
+                }
+                break;
+        }
+    </div>
+
+    @if (_context is { } context)
+    {
+        <div class="menu context-menu" style="left:@(_menuX)px;top:@(_menuY)px" @onclick:stopPropagation>
+            <button class="menu-item" @onclick="() => RevealAsync(context)">@Texts.OpenLocation</button>
+            <div class="menu-line"></div>
+            <button class="menu-item" @onclick="() => StarAsync(context)">@(Marks.IsStarred(context.Space, context.Item) ? Texts.RemoveStar : Texts.AddStar)</button>
+            @if (!context.Item.IsFolder)
+            {
+                <div class="menu-line"></div>
+                <button class="menu-item" @onclick="() => VersionsAsync(context)">@Texts.Versions</button>
+                <a class="menu-item" href="@DownloadUrl(context)" download="@context.Item.Name" @onclick="() => _context = null">@Texts.Download</a>
+            }
+            else
+            {
+                <div class="menu-line"></div>
+                <a class="menu-item" href="@Api.ZipUrl(context.Space.Id, [context.Item.Path])" download="@(context.Item.Name + ".zip")"
+                   @onclick="() => _context = null">@Texts.Download</a>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private LocatedItem? _selected;
+    private LocatedItem? _context;
+    private double _menuX;
+    private double _menuY;
+
+    [Inject]
+    private IDriveApi Api { get; set; } = null!;
+
+    [Inject]
+    private MarksViewModel Marks { get; set; } = null!;
+
+    [Parameter]
+    public CancellationToken Token { get; set; }
+
+    [Parameter, EditorRequired]
+    public WebTexts Texts { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<LocatedItem> Items { get; set; } = [];
+
+    [Parameter]
+    public ListState State { get; set; }
+
+    [Parameter]
+    public string EmptyText { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public Func<SpaceSummary, string> SpaceLabel { get; set; } = null!;
+
+    /// <summary>Zum Ordner des Eintrags wechseln und ihn dort wählen.</summary>
+    [Parameter]
+    public EventCallback<LocatedItem> OnReveal { get; set; }
+
+    /// <summary>Doppelklick auf einen Ordner: in ihn hinein.</summary>
+    [Parameter]
+    public EventCallback<LocatedItem> OnOpenFolder { get; set; }
+
+    [Parameter]
+    public EventCallback<LocatedItem> OnShowVersions { get; set; }
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = null!;
+
+    private string DownloadUrl(LocatedItem entry) => Api.DownloadUrl(entry.Space.Id, entry.Item.Path);
+
+    private void ShowMenu(MouseEventArgs e, LocatedItem entry)
+    {
+        _selected = _context = entry;
+        (_menuX, _menuY) = (e.ClientX, e.ClientY);
+    }
+
+    private async Task OpenAsync(LocatedItem entry)
+    {
+        if (entry.Item.IsFolder)
+        {
+            await OnOpenFolder.InvokeAsync(entry);
+        }
+        else
+        {
+            Navigation.NavigateTo(DownloadUrl(entry), forceLoad: true); // Anhang: der Browser lädt herunter und bleibt auf der Seite
+        }
+    }
+
+    private async Task RevealAsync(LocatedItem entry)
+    {
+        _context = null;
+        await OnReveal.InvokeAsync(entry);
+    }
+
+    private async Task StarAsync(LocatedItem entry)
+    {
+        _context = null;
+        await Marks.ToggleStarAsync([entry], Token);
+    }
+
+    private async Task VersionsAsync(LocatedItem entry)
+    {
+        _context = null;
+        await OnShowVersions.InvokeAsync(entry);
+    }
+}

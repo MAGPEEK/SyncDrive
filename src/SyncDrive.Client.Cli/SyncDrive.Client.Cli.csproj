@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- syncdrive_cli: Kommandozeile für den Client. Spricht wie die Oberfläche über die Pipe mit dem Daemon und startet ihn bei Bedarf. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <AssemblyName>syncdrive_cli</AssemblyName>
+    <RootNamespace>SyncDrive.Client.Cli</RootNamespace>
+    <NoWarn>$(NoWarn);CA1707</NoWarn> <!-- der Dateiname syncdrive_cli.exe ist so gewünscht -->
+    <ApplicationIcon>..\SyncDrive.Client.Tray\Assets\syncdrive.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SyncDrive.Client.App\SyncDrive.Client.App.csproj" />
+    <ProjectReference Include="..\SyncDrive.Infra.Ipc\SyncDrive.Infra.Ipc.csproj" />
+  </ItemGroup>
+
+</Project>

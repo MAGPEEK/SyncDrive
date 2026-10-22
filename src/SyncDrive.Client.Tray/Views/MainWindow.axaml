@@ -1,0 +1,286 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="using:SyncDrive.Client.Ui"
+        xmlns:c="using:SyncDrive.Client.Tray.Controls"
+        xmlns:t="using:SyncDrive.Client.Tray"
+        x:Class="SyncDrive.Client.Tray.Views.MainWindow"
+        x:DataType="ui:MainWindowViewModel"
+        Width="800" Height="540" MinWidth="680" MinHeight="420"
+        WindowStartupLocation="CenterScreen" Title="SyncDrive">
+  <Grid ColumnDefinitions="210,1,*">
+    <!-- Navigation: fünf feste Seiten -->
+    <StackPanel Background="{StaticResource NavBack}">
+      <StackPanel Orientation="Horizontal" Margin="18,16,0,14" Spacing="8">
+        <c:AppGlyph Width="22" Height="22" />
+        <TextBlock Text="{Binding Texts.AppName}" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" />
+      </StackPanel>
+      <Button Classes="nav" Classes.active="{Binding IsSyncTasks}" Command="{Binding NavigateCommand}" CommandParameter="{x:Static ui:MainPage.SyncTasks}">
+        <StackPanel Orientation="Horizontal" Spacing="10"><TextBlock Text="⟳" /><TextBlock Text="{Binding Texts.NavSyncTasks}" /></StackPanel>
+      </Button>
+      <Button Classes="nav" Classes.active="{Binding IsBackup}" Command="{Binding NavigateCommand}" CommandParameter="{x:Static ui:MainPage.BackupTask}">
+        <StackPanel Orientation="Horizontal" Spacing="10"><TextBlock Text="⤓" /><TextBlock Text="{Binding Texts.NavBackupTask}" /></StackPanel>
+      </Button>
+      <Button Classes="nav" Classes.active="{Binding IsLogs}" Command="{Binding NavigateCommand}" CommandParameter="{x:Static ui:MainPage.Logs}">
+        <StackPanel Orientation="Horizontal" Spacing="10"><TextBlock Text="≡" /><TextBlock Text="{Binding Texts.NavLogs}" /></StackPanel>
+      </Button>
+      <Button Classes="nav" Classes.active="{Binding IsNotifications}" Command="{Binding NavigateCommand}" CommandParameter="{x:Static ui:MainPage.Notifications}">
+        <StackPanel Orientation="Horizontal" Spacing="10"><TextBlock Text="✉" /><TextBlock Text="{Binding Texts.NavNotifications}" /></StackPanel>
+      </Button>
+      <Button Classes="nav" Classes.active="{Binding IsSettings}" Command="{Binding NavigateCommand}" CommandParameter="{x:Static ui:MainPage.GlobalSettings}">
+        <StackPanel Orientation="Horizontal" Spacing="10"><TextBlock Text="⚙" /><TextBlock Text="{Binding Texts.NavGlobalSettings}" /></StackPanel>
+      </Button>
+    </StackPanel>
+    <Border Grid.Column="1" Background="{StaticResource Line}" />
+
+    <Panel Grid.Column="2">
+      <!-- Sync Tasks -->
+      <ContentControl IsVisible="{Binding IsSyncTasks}" Content="{Binding SyncTasks}">
+        <ContentControl.ContentTemplate>
+          <DataTemplate x:DataType="ui:SyncTasksViewModel">
+            <DockPanel>
+              <WrapPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="16,14,8,8"><!-- bricht um, wenn die Beschriftungen länger werden (Deutsch) -->
+                <Button Classes="primary" Margin="0,0,8,6" Command="{Binding CreateCommand}">
+                  <StackPanel Orientation="Horizontal" Spacing="6"><TextBlock Text="+" FontWeight="Bold" /><TextBlock Text="{Binding Texts.Create}" /></StackPanel>
+                </Button>
+                <Border Width="1" Height="24" Margin="0,0,12,6" Background="{StaticResource Line}" />
+                <Button Classes="outline" Margin="0,0,8,6" Content="{Binding PauseText}" Command="{Binding PauseOrResumeCommand}" />
+                <Button Classes="outline" Margin="0,0,8,6" Content="{Binding Texts.Delete}" Command="{Binding DeleteCommand}" />
+                <Button Classes="outline" Margin="0,0,8,6" Content="{Binding Texts.EditConnection}" Command="{Binding EditConnectionCommand}" />
+                <Button Classes="outline" Margin="0,0,8,6" Content="{Binding Texts.SyncRules}" Command="{Binding SyncRulesCommand}" />
+              </WrapPanel>
+              <Panel>
+                <StackPanel IsVisible="{Binding IsEmpty}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14" MaxWidth="380">
+                  <c:FolderBadge Width="96" Height="96" HorizontalAlignment="Center" Opacity="0.5" />
+                  <TextBlock Text="{Binding Texts.EmptySyncTasks}" TextWrapping="Wrap" TextAlignment="Center" Foreground="{StaticResource TextSub}" />
+                  <Button Classes="primary" HorizontalAlignment="Center" Content="{Binding Texts.Create}" Command="{Binding CreateCommand}" />
+                </StackPanel>
+                <ListBox IsVisible="{Binding !IsEmpty}" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
+                         Background="White" Padding="0">
+                  <ListBox.DataTemplates>
+                    <DataTemplate DataType="ui:ServerGroupViewModel">
+                      <Border Background="{StaticResource AccentLight}" Margin="-12,-9" Padding="12,8">
+                        <Grid ColumnDefinitions="Auto,Auto,*">
+                          <Button Classes="link" Width="22" Content="{Binding IsExpanded, Converter={x:Static t:Converters.Chevron}}"
+                                  Command="{Binding $parent[ListBox].((ui:SyncTasksViewModel)DataContext).ToggleGroupCommand}" CommandParameter="{Binding}" />
+                          <TextBlock Grid.Column="1" Text="🖥" FontSize="18" Margin="4,0,10,0" VerticalAlignment="Center" />
+                          <StackPanel Grid.Column="2">
+                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                            <TextBlock Classes="sub" Text="{Binding Address}" />
+                          </StackPanel>
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                    <DataTemplate DataType="ui:TaskRowViewModel">
+                      <Grid ColumnDefinitions="Auto,*" Margin="30,4,0,4">
+                        <c:FolderBadge Width="34" Height="34" Kind="{Binding State, Converter={x:Static t:Converters.TaskBadge}}" Margin="0,0,12,0" />
+                        <StackPanel Grid.Column="1" Spacing="1">
+                          <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                            <TextBlock Classes="sub" Text="{Binding ModeText}" VerticalAlignment="Center" />
+                            <TextBlock Classes="sub" Text="☁" IsVisible="{Binding Task.OnDemand}" />
+                          </StackPanel>
+                          <TextBlock Classes="sub" Text="{Binding StateText}" />
+                          <TextBlock Classes="sub" Text="{Binding Detail}" IsVisible="{Binding Detail, Converter={x:Static t:Converters.NotNull}}" TextTrimming="CharacterEllipsis" />
+                          <Button Classes="link" HorizontalAlignment="Left" Content="{Binding Task.LocalPath}"
+                                  Command="{Binding $parent[ListBox].((ui:SyncTasksViewModel)DataContext).OpenLocalFolderCommand}" CommandParameter="{Binding}" />
+                        </StackPanel>
+                      </Grid>
+                    </DataTemplate>
+                  </ListBox.DataTemplates>
+                </ListBox>
+              </Panel>
+            </DockPanel>
+          </DataTemplate>
+        </ContentControl.ContentTemplate>
+      </ContentControl>
+
+      <!-- Backup Task: Leerzustand mit einer Handlung -->
+      <StackPanel IsVisible="{Binding IsBackup}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14" MaxWidth="380">
+        <c:FolderBadge Width="96" Height="96" HorizontalAlignment="Center" Opacity="0.5" />
+        <TextBlock Text="{Binding Texts.EmptyBackup}" TextWrapping="Wrap" TextAlignment="Center" Foreground="{StaticResource TextSub}" />
+        <Button Classes="primary" HorizontalAlignment="Center" Content="{Binding Texts.CreateBackupTask}" IsEnabled="False" />
+        <TextBlock Classes="sub" Text="{Binding Texts.BackupPlanned}" HorizontalAlignment="Center" />
+      </StackPanel>
+
+      <!-- Logs -->
+      <ContentControl IsVisible="{Binding IsLogs}" Content="{Binding Logs}">
+        <ContentControl.ContentTemplate>
+          <DataTemplate x:DataType="ui:LogsViewModel">
+            <DockPanel Margin="16,14">
+              <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,Auto,*,200" Margin="0,0,0,10">
+                <ComboBox ItemsSource="{Binding TaskOptions}" SelectedItem="{Binding TaskFilter, Mode=TwoWay}" MinWidth="150">
+                  <ComboBox.ItemTemplate><DataTemplate x:DataType="x:Object"><TextBlock Text="{ReflectionBinding Value}" /></DataTemplate></ComboBox.ItemTemplate>
+                </ComboBox>
+                <ComboBox Grid.Column="1" Margin="8,0" ItemsSource="{Binding EventChoices}" SelectedItem="{Binding EventChoice, Mode=TwoWay}" MinWidth="150">
+                  <ComboBox.ItemTemplate><DataTemplate x:DataType="x:Object"><TextBlock Text="{ReflectionBinding Value}" /></DataTemplate></ComboBox.ItemTemplate>
+                </ComboBox>
+                <TextBox Grid.Column="3" Watermark="{Binding Texts.Search}" Text="{Binding Search, Mode=TwoWay}" />
+              </Grid>
+              <Grid DockPanel.Dock="Top" ColumnDefinitions="*,90,150,170" Margin="4,0,4,6">
+                <TextBlock Classes="columnHead" Text="{Binding Texts.ColumnName}" />
+                <TextBlock Grid.Column="1" Classes="columnHead" Text="{Binding Texts.ColumnKind}" />
+                <TextBlock Grid.Column="2" Classes="columnHead" Text="{Binding Texts.ColumnTime}" />
+                <TextBlock Grid.Column="3" Classes="columnHead" Text="{Binding Texts.ColumnEvent}" />
+              </Grid>
+              <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding Rows}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="ui:LogRow">
+                      <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="4,7">
+                        <Grid ColumnDefinitions="*,90,150,170">
+                          <TextBlock Text="{Binding Name}" ToolTip.Tip="{Binding FullName}" TextTrimming="CharacterEllipsis" />
+                          <TextBlock Grid.Column="1" Text="{Binding Kind}" />
+                          <TextBlock Grid.Column="2" Text="{Binding Time}" />
+                          <TextBlock Grid.Column="3" Text="{Binding Event}" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </DockPanel>
+          </DataTemplate>
+        </ContentControl.ContentTemplate>
+      </ContentControl>
+
+      <!-- Notifications -->
+      <ContentControl IsVisible="{Binding IsNotifications}" Content="{Binding Notifications}">
+        <ContentControl.ContentTemplate>
+          <DataTemplate x:DataType="ui:NotificationsViewModel">
+            <DockPanel Margin="16,14">
+              <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,200" Margin="0,0,0,10">
+                <ComboBox SelectedIndex="0" MinWidth="170">
+                  <ComboBoxItem Content="{Binding Texts.AllNotifications}" />
+                </ComboBox>
+                <TextBox Grid.Column="2" Watermark="{Binding Texts.Search}" Text="{Binding Search, Mode=TwoWay}" />
+              </Grid>
+              <Grid DockPanel.Dock="Top" ColumnDefinitions="*,200" Margin="4,0,4,6">
+                <TextBlock Classes="columnHead" Text="{Binding Texts.ColumnNotification}" HorizontalAlignment="Center" />
+                <TextBlock Grid.Column="1" Classes="columnHead" Text="{Binding Texts.ColumnServer}" HorizontalAlignment="Center" />
+              </Grid>
+              <Panel>
+                <TextBlock Classes="sub" Text="{Binding Texts.EmptyNotifications}" HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsEmpty}" />
+                <ScrollViewer>
+                  <ItemsControl ItemsSource="{Binding Items}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="ui:NotificationItemViewModel">
+                        <Border BorderBrush="{StaticResource Line}" BorderThickness="0,0,0,1" Padding="4,8">
+                          <Grid ColumnDefinitions="Auto,*,200">
+                            <Ellipse Width="8" Height="8" Fill="#D64541" Margin="0,0,8,0" IsVisible="{Binding Unread}" VerticalAlignment="Center" />
+                            <WrapPanel Grid.Column="1">
+                              <TextBlock Text="{Binding Actor}" Foreground="{StaticResource Link}" Margin="0,0,4,0" />
+                              <TextBlock Text="{Binding Verb}" Margin="0,0,4,0" />
+                              <TextBlock Text="{Binding Target}" Foreground="{StaticResource Link}" Margin="0,0,8,0" />
+                              <TextBlock Classes="sub" Text="{Binding Time}" VerticalAlignment="Center" />
+                            </WrapPanel>
+                            <TextBlock Grid.Column="2" Text="{Binding Server}" HorizontalAlignment="Center" />
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+              </Panel>
+            </DockPanel>
+          </DataTemplate>
+        </ContentControl.ContentTemplate>
+      </ContentControl>
+
+      <!-- Global Settings -->
+      <ContentControl IsVisible="{Binding IsSettings}" Content="{Binding Settings}">
+        <ContentControl.ContentTemplate>
+          <DataTemplate x:DataType="ui:SettingsViewModel">
+            <TabControl Margin="12,8">
+              <TabItem Header="{Binding Texts.TabGeneral}">
+                <ScrollViewer>
+                  <StackPanel Margin="4,8" Spacing="2">
+                    <CheckBox Content="{Binding Texts.StartWithWindows}" IsChecked="{Binding StartWithWindows}" />
+                    <TextBlock Classes="heading" Text="{Binding Texts.OnRestartHeading}" />
+                    <RadioButton GroupName="restart" Content="{Binding Texts.OnRestartRefetch}" IsChecked="{Binding RefetchOnRestart}" />
+                    <RadioButton GroupName="restart" Content="{Binding Texts.OnRestartPropagate}" IsChecked="{Binding PropagateOnRestart}" />
+                    <TextBlock Classes="heading" Text="{Binding Texts.ConflictHeading}" />
+                    <RadioButton GroupName="conflict" Content="{Binding Texts.ConflictNewer}" IsChecked="{Binding KeepNewest}" />
+                    <RadioButton GroupName="conflict" Content="{Binding Texts.ConflictServer}" IsChecked="{Binding KeepServer}" />
+                    <CheckBox Margin="26,2,0,2" Content="{Binding Texts.RenameDiscarded}" IsChecked="{Binding RenameDiscarded}" />
+                    <TextBlock Classes="heading" Text="{Binding Texts.DesktopShortcutFolder}" />
+                    <ComboBox MinWidth="220" ItemsSource="{Binding ShortcutFolders}" SelectedItem="{Binding DesktopShortcutFolder, Mode=TwoWay}" />
+                    <TextBlock Classes="heading" Text="{Binding Texts.Language}" />
+                    <ComboBox MinWidth="220" ItemsSource="{Binding Languages}" SelectedItem="{Binding LanguageChoice, Mode=TwoWay}">
+                      <ComboBox.ItemTemplate><DataTemplate x:DataType="x:Object"><TextBlock Text="{ReflectionBinding Value}" /></DataTemplate></ComboBox.ItemTemplate>
+                    </ComboBox>
+                  </StackPanel>
+                </ScrollViewer>
+              </TabItem>
+              <TabItem Header="{Binding Texts.TabNotifications}">
+                <StackPanel Margin="4,8">
+                  <CheckBox Content="{Binding Texts.ShowDesktopNotifications}" IsChecked="{Binding ShowDesktopNotifications}" />
+                </StackPanel>
+              </TabItem>
+              <TabItem Header="{Binding Texts.TabDisplay}">
+                <StackPanel Margin="4,8" Spacing="2">
+                  <CheckBox Content="{Binding Texts.ShowTips}" IsChecked="{Binding ShowTips}" />
+                  <TextBlock Classes="heading" Text="{Binding Texts.TrayIconStyle}" />
+                  <CheckBox Content="{Binding Texts.MinimalTrayIcon}" IsChecked="{Binding MinimalTrayIcon}" />
+                  <TextBlock Classes="heading" Text="{Binding Texts.LocalFolderDisplay}" />
+                  <CheckBox Content="{Binding Texts.ShowContextMenu}" IsChecked="{Binding ShowContextMenu}" />
+                  <CheckBox Content="{Binding Texts.ShowOverlays}" IsChecked="{Binding ShowOverlays}" />
+                  <CheckBox Margin="26,2,0,2" Content="{Binding Texts.ShowOverlaysForUnsynced}" IsChecked="{Binding ShowOverlaysForUnsynced}" IsEnabled="{Binding ShowOverlays}" />
+                  <TextBlock Margin="0,10,0,0" Text="{Binding Texts.OverlayNote}" Foreground="{StaticResource Accent}" TextWrapping="Wrap" />
+                </StackPanel>
+              </TabItem>
+              <TabItem Header="{Binding Texts.TabProxy}">
+                <StackPanel Margin="4,8" Spacing="2">
+                  <RadioButton GroupName="proxy" Content="{Binding Texts.ProxyNone}" IsChecked="{Binding ProxyNone}" />
+                  <RadioButton GroupName="proxy" Content="{Binding Texts.ProxyAuto}" IsChecked="{Binding ProxyAuto}" />
+                  <RadioButton GroupName="proxy" Content="{Binding Texts.ProxyManual}" IsChecked="{Binding ProxyManual}" />
+                  <Grid Margin="26,6,0,0" ColumnDefinitions="Auto,220,Auto,80" RowDefinitions="Auto,Auto,Auto,Auto" IsEnabled="{Binding IsProxyManual}">
+                    <TextBlock Text="{Binding Texts.ProxyHost}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                    <TextBox Grid.Column="1" Text="{Binding ProxyHost, Mode=TwoWay}" />
+                    <TextBlock Grid.Column="2" Text="{Binding Texts.ProxyPort}" VerticalAlignment="Center" Margin="12,0,10,0" />
+                    <TextBox Grid.Column="3" Text="{Binding ProxyPort, Mode=TwoWay, Converter={x:Static t:Converters.PortText}}" />
+                    <CheckBox Grid.Row="1" Grid.ColumnSpan="4" Margin="0,8,0,4" Content="{Binding Texts.ProxyAuthentication}" IsChecked="{Binding ProxyAuthentication}" />
+                    <TextBlock Grid.Row="2" Text="{Binding Texts.UserName}" VerticalAlignment="Center" Margin="0,0,10,0" />
+                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding ProxyUserName, Mode=TwoWay}" IsEnabled="{Binding ProxyAuthentication}" />
+                    <TextBlock Grid.Row="3" Text="{Binding Texts.Password}" VerticalAlignment="Center" Margin="0,6,10,0" />
+                    <TextBox Grid.Row="3" Grid.Column="1" Margin="0,6,0,0" PasswordChar="●" Text="{Binding ProxyPassword, Mode=TwoWay}" IsEnabled="{Binding ProxyAuthentication}" />
+                    <Button Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="2" Margin="12,6,0,0" Classes="outline" Content="{Binding Texts.SavePassword}"
+                            Command="{Binding SaveProxyPasswordCommand}" IsEnabled="{Binding ProxyAuthentication}" />
+                  </Grid>
+                </StackPanel>
+              </TabItem>
+              <TabItem Header="{Binding Texts.TabUsage}">
+                <StackPanel Margin="4,8" Spacing="8">
+                  <TextBlock Text="{Binding Texts.UsageExplanation}" TextWrapping="Wrap" Foreground="{StaticResource TextSub}" />
+                  <ItemsControl ItemsSource="{Binding Usage}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="ui:ServerGroupViewModel">
+                        <StackPanel Margin="0,4">
+                          <Border Background="{StaticResource AccentLight}" Padding="10,6">
+                            <StackPanel>
+                              <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                              <TextBlock Classes="sub" Text="{Binding Address}" />
+                            </StackPanel>
+                          </Border>
+                          <ItemsControl ItemsSource="{Binding Tasks}">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate x:DataType="ui:TaskRowViewModel">
+                                <Grid ColumnDefinitions="*,Auto" Margin="24,6,10,6">
+                                  <TextBlock Text="{Binding Title}" />
+                                  <TextBlock Grid.Column="1" Text="{Binding Detail}" FontWeight="SemiBold" />
+                                </Grid>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </TabItem>
+            </TabControl>
+          </DataTemplate>
+        </ContentControl.ContentTemplate>
+      </ContentControl>
+    </Panel>
+  </Grid>
+</Window>

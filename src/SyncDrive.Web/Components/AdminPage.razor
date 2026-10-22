@@ -1,0 +1,46 @@
+@inject WebTexts T
+
+@* Verwaltung mit Reitern: Benutzer, Gruppen, Team-Ordner. *@
+<div class="view">
+    <div class="tabs admin-tabs" role="tablist">
+        @foreach (var (tab, label) in Tabs)
+        {
+            <button role="tab" class="tab @(_tab == tab ? "active" : "")" aria-selected="@(_tab == tab)" @onclick="() => _tab = tab">@label</button>
+        }
+    </div>
+    @switch (_tab)
+    {
+        case Tab.Users:
+            <AdminView Me="@Me" Token="Token" />
+            break;
+        case Tab.Groups:
+            <GroupsView Token="Token" />
+            break;
+        case Tab.Policies:
+            <PoliciesView Token="Token" />
+            break;
+        default:
+            <TeamFoldersView Token="Token" />
+            break;
+    }
+</div>
+
+@code {
+    private enum Tab
+    {
+        Users,
+        Groups,
+        TeamFolders,
+        Policies,
+    }
+
+    private Tab _tab;
+
+    [Parameter]
+    public string? Me { get; set; }
+
+    [Parameter]
+    public CancellationToken Token { get; set; }
+
+    private IEnumerable<(Tab Tab, string Label)> Tabs => [(Tab.Users, T.Users), (Tab.Groups, T.Groups), (Tab.TeamFolders, T.TeamFoldersTab), (Tab.Policies, T.PoliciesTab)];
+}

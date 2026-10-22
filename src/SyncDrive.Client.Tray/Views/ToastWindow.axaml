@@ -1,0 +1,17 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="using:SyncDrive.Client.Tray.Controls"
+        x:Class="SyncDrive.Client.Tray.Views.ToastWindow"
+        Width="320" SizeToContent="Height" CanResize="False"
+        SystemDecorations="BorderOnly" ShowInTaskbar="False" Topmost="True" ShowActivated="False"
+        WindowStartupLocation="Manual" Title="SyncDrive">
+  <Border BorderBrush="{StaticResource Line}" BorderThickness="1" Padding="14,12">
+    <Grid ColumnDefinitions="Auto,*">
+      <c:AppGlyph Width="28" Height="28" Margin="0,0,12,0" VerticalAlignment="Top" />
+      <StackPanel Grid.Column="1" Spacing="2">
+        <TextBlock x:Name="TitleText" FontWeight="SemiBold" />
+        <TextBlock x:Name="MessageText" TextWrapping="Wrap" />
+      </StackPanel>
+    </Grid>
+  </Border>
+</Window>

@@ -1,0 +1,82 @@
+@implements IDisposable
+@inject PortalViewModel Portal
+@inject SessionViewModel Session
+
+@* Nur für Administratoren: Anmeldeseite gestalten (Servername, Text, Hintergrundbild) mit kleiner Vorschau. *@
+<div class="backdrop">
+    <form class="dialog wide" @onsubmit="SaveAsync" @onsubmit:preventDefault @onclick:stopPropagation>
+        <h2>@T.LoginPortal</h2>
+        <div class="portal-preview @(Portal.Portal?.BackgroundUrl is null ? "portal-default" : "")" style="@PreviewStyle">
+            <strong>@(string.IsNullOrWhiteSpace(_name) ? "SyncDrive" : _name)</strong>
+            <span>@_message</span>
+        </div>
+        <label>
+            <span>@T.ServerName</span>
+            <input @bind="_name" @bind:event="oninput" maxlength="64" disabled="@Portal.IsBusy" />
+        </label>
+        <label>
+            <span>@T.LoginMessage</span>
+            <input @bind="_message" @bind:event="oninput" maxlength="200" disabled="@Portal.IsBusy" />
+        </label>
+        <div class="portal-image-row">
+            <span class="sub">@T.Background — @T.ImageHint</span>
+            <label class="tool @(Portal.IsBusy ? "disabled" : "")">
+                <InputFile OnChange="UploadAsync" accept="image/jpeg,image/png,image/webp" class="hidden-input" disabled="@Portal.IsBusy" />
+                🖼 @T.ChooseImage
+            </label>
+            @if (Portal.Portal?.BackgroundUrl is not null)
+            {
+                <button type="button" class="tool" disabled="@Portal.IsBusy" @onclick="RemoveAsync">✕ @T.RemoveImage</button>
+            }
+        </div>
+        @if (Portal.Message is { } message)
+        {
+            <div class="dialog-note" role="status">@message</div>
+        }
+        <div class="dialog-buttons">
+            <button type="button" @onclick="OnClose">@T.Close</button>
+            <button type="submit" class="primary" disabled="@(Portal.IsBusy || string.IsNullOrWhiteSpace(_name))">@T.Save</button>
+        </div>
+    </form>
+</div>
+
+@code {
+    private string _name = string.Empty;
+    private string _message = string.Empty;
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public CancellationToken Token { get; set; }
+
+    private WebTexts T => Portal.Texts;
+
+    private string? PreviewStyle => Portal.Portal?.BackgroundUrl is { } url ? $"background-image:url('{url}')" : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Portal.Changed += Refresh;
+        Portal.Saved += Session.PortalChanged;
+        await Portal.LoadAsync(Token);
+        _name = Portal.Portal?.ServerName ?? string.Empty;
+        _message = Portal.Portal?.LoginMessage ?? string.Empty;
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private Task SaveAsync() => Portal.SaveAsync(_name, _message, Token);
+
+    private Task RemoveAsync() => Portal.RemoveBackgroundAsync(Token);
+
+    private Task UploadAsync(InputFileChangeEventArgs e) =>
+        Portal.SetBackgroundAsync(
+            new UploadFile(e.File.Name, e.File.Size, e.File.LastModified, () => e.File.OpenReadStream(PortalViewModel.MaxBackgroundBytes, Token)),
+            Token);
+
+    public void Dispose()
+    {
+        Portal.Changed -= Refresh;
+        Portal.Saved -= Session.PortalChanged;
+    }
+}

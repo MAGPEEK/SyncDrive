@@ -1,0 +1,49 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="using:SyncDrive.Client.Ui"
+        x:Class="SyncDrive.Client.Tray.Views.EditConnectionWindow"
+        x:DataType="ui:EditConnectionViewModel"
+        Width="480" Height="330" CanResize="False" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner" Title="{Binding Title}">
+  <Panel>
+    <DockPanel Margin="22,18">
+      <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,14,0,0">
+        <Button Classes="primary" Content="{Binding Texts.Save}" Command="{Binding SaveCommand}" />
+        <Button Classes="outline" Content="{Binding Texts.Cancel}" Command="{Binding CancelCommand}" />
+      </StackPanel>
+      <StackPanel Spacing="6">
+        <Grid ColumnDefinitions="110,*" RowDefinitions="Auto,Auto,Auto">
+          <TextBlock Text="{Binding Texts.ServerAddress}" VerticalAlignment="Center" />
+          <TextBox Grid.Column="1" Margin="0,3" Text="{Binding Address, Mode=TwoWay}" Watermark="{Binding Texts.ServerAddressHint}" />
+          <TextBlock Grid.Row="1" Text="{Binding Texts.UserName}" VerticalAlignment="Center" />
+          <TextBox Grid.Row="1" Grid.Column="1" Margin="0,3" Text="{Binding UserName, Mode=TwoWay}" />
+          <TextBlock Grid.Row="2" Text="{Binding Texts.Password}" VerticalAlignment="Center" />
+          <TextBox Grid.Row="2" Grid.Column="1" Margin="0,3" PasswordChar="●" Text="{Binding Password, Mode=TwoWay}" />
+        </Grid>
+        <TextBlock Classes="error" Text="{Binding Error}" />
+      </StackPanel>
+    </DockPanel>
+
+    <Border IsVisible="{Binding IsBusy}" Background="#66000000">
+      <Border Background="White" CornerRadius="4" Padding="24,18" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <StackPanel Orientation="Horizontal" Spacing="14">
+          <ProgressBar IsIndeterminate="True" Width="60" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding Texts.Checking}" VerticalAlignment="Center" />
+        </StackPanel>
+      </Border>
+    </Border>
+
+    <Border IsVisible="{Binding CertificateFingerprint, Converter={x:Static ObjectConverters.IsNotNull}}" Background="#66000000">
+      <Border Background="White" CornerRadius="4" Padding="20" Width="420" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <StackPanel Spacing="12">
+          <TextBlock Text="{Binding Texts.CertificateQuestion}" TextWrapping="Wrap" />
+          <SelectableTextBlock Text="{Binding FingerprintText}" FontFamily="Consolas,monospace" TextWrapping="Wrap" />
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+            <Button Classes="primary" Content="{Binding Texts.Trust}" Command="{Binding TrustCertificateCommand}" />
+            <Button Classes="outline" Content="{Binding Texts.Cancel}" Command="{Binding RejectCertificateCommand}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </Border>
+  </Panel>
+</Window>

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SyncDrive.Contracts\SyncDrive.Contracts.csproj" />
+    <ProjectReference Include="..\SyncDrive.Server.App\SyncDrive.Server.App.csproj" />
+    <ProjectReference Include="..\SyncDrive.Infra.Blob\SyncDrive.Infra.Blob.csproj" />
+    <ProjectReference Include="..\SyncDrive.Infra.Sqlite\SyncDrive.Infra.Sqlite.csproj" />
+    <ProjectReference Include="..\SyncDrive.Infra.Security\SyncDrive.Infra.Security.csproj" />
+    <!-- Weboberfläche (ADR-11): wird beim Veröffentlichen nach wwwroot gebaut und unter / ausgeliefert. -->
+    <ProjectReference Include="..\SyncDrive.Web\SyncDrive.Web.csproj" />
+    <ProjectReference Include="..\SyncDrive.Infra.Imaging\SyncDrive.Infra.Imaging.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.21" />
+  </ItemGroup>
+
+</Project>

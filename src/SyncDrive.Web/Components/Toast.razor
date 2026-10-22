@@ -1,0 +1,13 @@
+@* Meldungszeile unten mittig, bis sie geschlossen wird; zeigt die Meldung eines ViewModels. *@
+@if (Model.Message is { } message)
+{
+    <div class="toast" role="status">
+        <span>@message</span>
+        <button class="toast-close" @onclick="Model.DismissMessage">✕</button>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public ViewModel Model { get; set; } = null!;
+}

@@ -1,0 +1,59 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="using:SyncDrive.Client.Ui"
+        x:Class="SyncDrive.Client.Tray.Views.SyncRulesWindow"
+        x:DataType="ui:SyncRulesViewModel"
+        Width="560" Height="480" CanResize="False" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner" Title="{Binding Title}">
+  <DockPanel Margin="14">
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
+      <Button Classes="primary" Content="{Binding Texts.Save}" Command="{Binding SaveCommand}" IsEnabled="{Binding !IsBusy}" />
+      <Button Classes="outline" Content="{Binding Texts.Cancel}" Command="{Binding CancelCommand}" />
+    </StackPanel>
+    <TabControl>
+      <!-- Folder: Häkchen = wird synchronisiert -->
+      <TabItem Header="{Binding Texts.TabFolder}">
+        <DockPanel Margin="4,8">
+          <TextBlock DockPanel.Dock="Top" Classes="sub" Text="{Binding Texts.FolderRulesHint}" Margin="0,0,0,8" />
+          <Border BorderBrush="{StaticResource Line}" BorderThickness="1">
+            <TreeView ItemsSource="{Binding Folders}">
+              <TreeView.Styles>
+                <Style Selector="TreeViewItem" x:DataType="ui:SelectableFolderNode">
+                  <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+                </Style>
+              </TreeView.Styles>
+              <TreeView.ItemTemplate>
+                <TreeDataTemplate x:DataType="ui:SelectableFolderNode" ItemsSource="{Binding Children}">
+                  <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" IsEnabled="{Binding IsEnabled}" Content="{Binding Name}" />
+                </TreeDataTemplate>
+              </TreeView.ItemTemplate>
+            </TreeView>
+          </Border>
+        </DockPanel>
+      </TabItem>
+
+      <!-- File Filter -->
+      <TabItem Header="{Binding Texts.FileFilter}">
+        <Grid Margin="4,10" ColumnDefinitions="*,180" RowDefinitions="Auto,Auto,Auto">
+          <TextBlock Text="{Binding Texts.MaxFileSize}" VerticalAlignment="Center" />
+          <NumericUpDown Grid.Column="1" Minimum="0" Maximum="10000000" Increment="10" FormatString="0" Value="{Binding MaxFileSizeMb, Mode=TwoWay}" />
+          <TextBlock Grid.Row="1" Text="{Binding Texts.ExcludedExtensions}" VerticalAlignment="Center" Margin="0,8,0,0" />
+          <TextBox Grid.Row="1" Grid.Column="1" Margin="0,8,0,0" Text="{Binding ExcludedExtensions, Mode=TwoWay}" />
+          <TextBlock Grid.Row="2" Text="{Binding Texts.ExcludedNamesLabel}" VerticalAlignment="Center" Margin="0,8,0,0" />
+          <TextBox Grid.Row="2" Grid.Column="1" Margin="0,8,0,0" Text="{Binding ExcludedNames, Mode=TwoWay}" />
+        </Grid>
+      </TabItem>
+
+      <!-- Sync Mode -->
+      <TabItem Header="{Binding Texts.SyncMode}">
+        <StackPanel Margin="4,10" Spacing="2">
+          <RadioButton GroupName="rules-mode" Content="{Binding Texts.TwoWay}" IsChecked="{Binding TwoWay}" />
+          <RadioButton GroupName="rules-mode" Content="{Binding Texts.DownloadOnly}" IsChecked="{Binding DownloadOnly}" />
+          <RadioButton GroupName="rules-mode" Content="{Binding Texts.UploadOnly}" IsChecked="{Binding UploadOnly}" />
+          <CheckBox Margin="26,2,0,2" Content="{Binding Texts.KeepLocallyDeleted}" IsChecked="{Binding KeepLocallyDeleted}" IsEnabled="{Binding IsUploadOnly}" />
+          <CheckBox Margin="0,10,0,0" Content="{Binding Texts.AdvancedConsistency}" IsChecked="{Binding AdvancedConsistency}" />
+        </StackPanel>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</Window>

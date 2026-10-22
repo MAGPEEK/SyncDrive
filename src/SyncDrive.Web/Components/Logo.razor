@@ -1,0 +1,13 @@
+@* Eigenes Zeichen von SyncDrive (wie im Desktop-Client): zwei gegenläufige Bögen in der Akzentfarbe. *@
+<svg width="@Size" height="@Size" viewBox="0 0 48 48" aria-hidden="true">
+    <rect x="2" y="2" width="44" height="44" rx="11" fill="#0F8B8D" />
+    <path d="M14 21a10 10 0 0 1 18-5" stroke="#fff" stroke-width="3.6" fill="none" stroke-linecap="round" />
+    <path d="M34 27a10 10 0 0 1-18 5" stroke="#fff" stroke-width="3.6" fill="none" stroke-linecap="round" />
+    <path d="M33 10v7h-7" stroke="#fff" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M15 38v-7h7" stroke="#fff" stroke-width="3.6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+</svg>
+
+@code {
+    [Parameter]
+    public int Size { get; set; } = 32;
+}

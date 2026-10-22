@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Nur dieses kleine Programm braucht die WinRT-Projektion; Daemon und Tests bleiben net9.0 und bauen auch unter Linux. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>syncdrive-cloudreg</AssemblyName>
+    <RootNamespace>SyncDrive.Client.CloudRegistration</RootNamespace>
+  </PropertyGroup>
+
+</Project>

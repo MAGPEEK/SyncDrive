@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Logik der Weboberfläche ohne Blazor: HTTP-Zugriff und ViewModels, in xUnit testbar (ADR-11). -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SyncDrive.Contracts\SyncDrive.Contracts.csproj" />
+    <ProjectReference Include="..\SyncDrive.Core\SyncDrive.Core.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,50 @@
+@inject NotificationsViewModel Notes
+
+@* „Notification Center“ neben der Glocke: neueste zuerst, ungelesene mit Punkt; ein Klick markiert gelesen und führt zum Ziel. *@
+<div class="menu notification-panel" @onclick:stopPropagation>
+    <div class="panel-head">
+        <span>@Notes.Texts.Notifications</span>
+        <button class="link" disabled="@(Notes.Unread == 0)" @onclick="() => Notes.MarkAllReadAsync(Token)">@Notes.Texts.MarkAllRead</button>
+    </div>
+    @switch (Notes.State)
+    {
+        case ListState.Loading:
+            <div class="list-note">@Notes.Texts.Loading</div>
+            break;
+        case ListState.Empty:
+            <div class="list-note">@Notes.Texts.NoNotifications</div>
+            break;
+        default:
+            <div class="panel-list">
+                @foreach (var note in Notes.Items)
+                {
+                    <button class="notification @(note.Read ? "" : "unread")" @onclick="() => OpenAsync(note)">
+                        <span class="unread-dot"></span>
+                        <span class="notification-text">
+                            <span>@Notes.TextOf(note, SpaceName)</span>
+                            <span class="sub">@note.CreatedAt.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)</span>
+                        </span>
+                    </button>
+                }
+            </div>
+            break;
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public Func<string?, string> SpaceName { get; set; } = null!;
+
+    [Parameter]
+    public CancellationToken Token { get; set; }
+
+    /// <summary>Ziel der Benachrichtigung öffnen (geteilter Space, Datei zum Entsperren).</summary>
+    [Parameter]
+    public EventCallback<NotificationInfo> OnOpen { get; set; }
+
+    private async Task OpenAsync(NotificationInfo note)
+    {
+        await Notes.MarkReadAsync(note, Token);
+        await OnOpen.InvokeAsync(note);
+    }
+}

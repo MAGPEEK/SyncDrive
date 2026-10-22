@@ -1,0 +1,174 @@
+@implements IDisposable
+@inject PublicLinkViewModel Link
+
+@* Seite eines öffentlichen Links (/s/{token}) ohne Anmeldung: Passwort, Ordner durchblättern und herunterladen, eine Datei herunterladen
+   oder bei einer Dateianfrage Dateien hochladen. *@
+<div class="public-page">
+    <header class="public-head">
+        <Logo Size="30" />
+        <span>@T.AppName</span>
+    </header>
+    <main class="public-card">
+        @if (Link.IsLoading)
+        {
+            <div class="list-note">@T.Loading</div>
+        }
+        else if (Link.Problem is { } problem)
+        {
+            <div class="list-empty"><p>@problem</p></div>
+        }
+        else if (Link.Info is { } info)
+        {
+            <div class="public-title">
+                <FileIcon Folder="@(info.ItemKind == NodeKinds.Directory)" Name="@info.Name" Large="true" />
+                <div>
+                    <h1>@info.Name</h1>
+                    <div class="sub">
+                        @string.Format(CultureInfo.CurrentCulture, T.SharedByOwner, info.Owner)
+                        @if (Link.ExpiresText is { } expires)
+                        {
+                            <span> · @expires</span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            @if (Link.NeedsPassword)
+            {
+                <form class="public-password" @onsubmit="UnlockAsync" @onsubmit:preventDefault>
+                    <p>@T.PasswordPrompt</p>
+                    <input type="password" @ref="_password" @bind="_secret" @bind:event="oninput" aria-label="@T.Password" autocomplete="off" />
+                    <button type="submit" class="primary" disabled="@string.IsNullOrEmpty(_secret)">@T.Unlock</button>
+                    @if (Link.Message is { } wrong)
+                    {
+                        <div class="dialog-error" role="alert">@wrong</div>
+                    }
+                </form>
+            }
+            else if (Link.IsRequest)
+            {
+                <p>@Link.RequestHint</p>
+                <label class="public-drop">
+                    <InputFile OnChange="UploadAsync" multiple class="drop-input" />
+                    <span>⤒ @T.DropToUpload</span>
+                    <span class="primary">@T.ChooseFiles</span>
+                </label>
+                @foreach (var upload in Link.Uploads)
+                {
+                    <div class="upload">
+                        <span>@string.Format(CultureInfo.CurrentCulture, T.Uploading, upload.Name)</span>
+                        <progress max="@Math.Max(upload.Size, 1)" value="@upload.Sent"></progress>
+                    </div>
+                }
+                @foreach (var name in Link.Uploaded)
+                {
+                    <div class="dialog-note">✓ @string.Format(CultureInfo.CurrentCulture, T.UploadedAs, name)</div>
+                }
+                <Toast Model="Link" />
+            }
+            else if (!Link.IsFolder)
+            {
+                <p class="sub">@WebTexts.FormatSize(info.Size) · @info.MTime.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)</p>
+                <a class="primary public-download" href="@Link.DownloadUrl(null)" download="@info.Name">⤓ @T.Download</a>
+            }
+            else
+            {
+                <div class="public-toolbar">
+                    <div class="crumbs">
+                        @foreach (var crumb in Link.Breadcrumbs)
+                        {
+                            if (crumb != Link.Breadcrumbs[0])
+                            {
+                                <span class="crumb-sep">›</span>
+                            }
+                            <button class="crumb" @onclick="() => Link.NavigateAsync(crumb.Path, _stop.Token)">@crumb.Label</button>
+                        }
+                    </div>
+                    <a class="primary" href="@Link.ZipUrl()" download="@Link.ZipName()">⤓ @T.DownloadAll</a>
+                </div>
+                <div class="list">
+                    <div class="row head public-row">
+                        <span class="col-title sort">@T.Title</span>
+                        <span class="col-time sort">@T.ModifiedTime</span>
+                        <span class="col-size sort">@T.Size</span>
+                    </div>
+                    @if (Link.Items.Count == 0)
+                    {
+                        <div class="list-empty"><p>@T.EmptyFolder</p></div>
+                    }
+                    @foreach (var item in Link.Items)
+                    {
+                        <div class="row item public-row">
+                            @if (item.IsFolder)
+                            {
+                                <button class="col-title link-button" @onclick="() => Link.NavigateAsync(item.Path, _stop.Token)">
+                                    <FileIcon Folder="true" Name="" /> <span class="name">@item.Name</span>
+                                </button>
+                            }
+                            else
+                            {
+                                <a class="col-title link-button" href="@Link.DownloadUrl(item)" download="@item.Name">
+                                    <FileIcon Folder="false" Name="@item.Name" /> <span class="name">@item.Name</span>
+                                </a>
+                            }
+                            <span class="col-time">@item.Modified.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)</span>
+                            <span class="col-size">@(item.IsFolder ? "—" : WebTexts.FormatSize(item.Size))</span>
+                        </div>
+                    }
+                </div>
+                <Toast Model="Link" />
+            }
+        }
+    </main>
+</div>
+
+@code {
+    private readonly CancellationTokenSource _stop = new();
+    private string _secret = string.Empty;
+    private ElementReference _password;
+    private bool _focusPassword;
+
+    [Parameter, EditorRequired]
+    public string Token { get; set; } = string.Empty;
+
+    private WebTexts T => Link.Texts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Link.Changed += Refresh;
+        await Link.LoadAsync(Token, _stop.Token);
+        _focusPassword = Link.NeedsPassword;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusPassword)
+        {
+            _focusPassword = false;
+            await _password.FocusAsync();
+        }
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private async Task UnlockAsync()
+    {
+        if (!await Link.UnlockAsync(_secret, _stop.Token))
+        {
+            _secret = string.Empty;
+            _focusPassword = true;
+        }
+    }
+
+    private Task UploadAsync(InputFileChangeEventArgs e) =>
+        Link.UploadAsync(
+            [.. e.GetMultipleFiles(int.MaxValue).Select(f => new UploadFile(f.Name, f.Size, f.LastModified, () => f.OpenReadStream(long.MaxValue, _stop.Token)))],
+            _stop.Token);
+
+    public void Dispose()
+    {
+        Link.Changed -= Refresh;
+        _stop.Cancel();
+        _stop.Dispose();
+    }
+}
