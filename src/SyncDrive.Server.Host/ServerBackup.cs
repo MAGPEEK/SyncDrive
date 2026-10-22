@@ -8,8 +8,8 @@ namespace SyncDrive.Server.Host;
 /// <summary>
 /// Sicherung der Server-Daten im laufenden Betrieb nach <see cref="ServerOptions.BackupDirectory"/>:
 /// <c>db/server-JJJJMMTT-HHMMSS.db</c> (konsistenter Stand, die letzten <see cref="ServerOptions.BackupsToKeep"/>), <c>blocks/</c>
-/// (inkrementell, gemeinsam für alle Stände) und <c>portal/</c>. Wiederherstellen: Server anhalten, einen Stand als <c>server.db</c> und die
-/// Ordner <c>blocks/</c> und <c>portal/</c> nach <c>/data</c> kopieren, Server starten.
+/// (inkrementell, gemeinsam für alle Stände), <c>portal/</c> und <c>avatars/</c>. Wiederherstellen: Server anhalten, einen Stand als <c>server.db</c> und die
+/// Ordner <c>blocks/</c>, <c>portal/</c> und <c>avatars/</c> nach <c>/data</c> kopieren, Server starten.
 /// </summary>
 public sealed class ServerBackup(IOptions<ServerOptions> options, TimeProvider clock)
 {
@@ -29,6 +29,7 @@ public sealed class ServerBackup(IOptions<ServerOptions> options, TimeProvider c
         // Blöcke nach der Datenbank: jeder Block, auf den der Stand verweist, lag vorher schon im Speicher (erst hochladen, dann committen).
         var newBlocks = await new FileBlockStore(Path.Combine(settings.DataDirectory, "blocks")).CopyMissingToAsync(Path.Combine(target, "blocks"), ct);
         CopyFolder(Path.Combine(settings.DataDirectory, "portal"), Path.Combine(target, "portal"));
+        CopyFolder(Path.Combine(settings.DataDirectory, "avatars"), Path.Combine(target, "avatars"));
         Prune(databases, settings.BackupsToKeep);
         return (name, newBlocks);
     }

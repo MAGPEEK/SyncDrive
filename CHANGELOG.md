@@ -5,6 +5,13 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.30.0] – 2026-10-22 – Profilbild
+
+### Hinzugefügt
+- Weboberfläche: eigenes **Profilbild**. Im Profilmenü auf das Bild klicken oder „Profilbild ändern“ wählen (JPEG, PNG oder WebP bis
+  5 MB); „Profilbild entfernen“ kehrt zum Anfangsbuchstaben zurück. Der Server speichert nur eine verkleinerte Fassung (höchstens 256 px,
+  JPEG) unter `/data/avatars`, die tägliche Sicherung schließt sie ein. API: `GET`/`PUT`/`DELETE /api/v1/account/avatar` (nur das eigene Bild).
+
 ## [0.29.0] – 2026-10-22 – Zahnrad für die Verwaltung
 
 ### Geändert

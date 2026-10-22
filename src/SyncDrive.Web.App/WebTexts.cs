@@ -67,6 +67,8 @@ public sealed record WebTexts
     public required string SignInButton { get; init; }
     public required string SignInTagline { get; init; }
     public required string LoginPortal { get; init; }
+    public required string ChangePicture { get; init; }
+    public required string RemovePicture { get; init; }
     public required string OrganisationSettings { get; init; }
     public required string ManageUsersGroups { get; init; }
     public required string ServerName { get; init; }
@@ -287,6 +289,8 @@ public sealed record WebTexts
         SignInButton = "Log in",
         SignInTagline = "SyncDrive – your files on your own server",
         LoginPortal = "Sign-in page",
+        ChangePicture = "Change profile picture",
+        RemovePicture = "Remove profile picture",
         OrganisationSettings = "Organisation settings",
         ManageUsersGroups = "Manage users & groups",
         ServerName = "Server name",
@@ -506,6 +510,8 @@ public sealed record WebTexts
         SignInButton = "Anmelden",
         SignInTagline = "SyncDrive – Ihre Dateien auf Ihrem eigenen Server",
         LoginPortal = "Anmeldeseite",
+        ChangePicture = "Profilbild ändern",
+        RemovePicture = "Profilbild entfernen",
         OrganisationSettings = "Organisationseinstellungen",
         ManageUsersGroups = "Benutzer & Gruppen verwalten",
         ServerName = "Servername",

@@ -61,24 +61,51 @@ public static partial class ApiEndpoints
         secured.MapPut("/web/portal", async (PortalUpdateRequest request, HttpContext http, PortalService portal, CancellationToken ct) =>
             Portal(await portal.UpdateAsync(Caller(http), request.ServerName, request.LoginMessage, ct)));
         secured.MapPut("/web/portal/background", async (HttpContext http, PortalService portal, CancellationToken ct) =>
-        {
-            using var body = new MemoryStream();
-            var buffer = new byte[81920];
-            int read;
-            while ((read = await http.Request.Body.ReadAsync(buffer, ct)) > 0)
-            {
-                if (body.Length + read > PortalService.MaxBackgroundBytes)
-                {
-                    return Problem(new ServiceError(ErrorCode.InvalidRequest, "Bild zu groß."));
-                }
-
-                body.Write(buffer, 0, read);
-            }
-
-            return Portal(await portal.SetBackgroundAsync(Caller(http), body.ToArray(), ct));
-        });
+            await ReadImageAsync(http, PortalService.MaxBackgroundBytes, ct) is { } image
+                ? Portal(await portal.SetBackgroundAsync(Caller(http), image, ct))
+                : Problem(new ServiceError(ErrorCode.InvalidRequest, "Bild zu groß.")));
         secured.MapDelete("/web/portal/background", async (HttpContext http, PortalService portal, CancellationToken ct) =>
             Portal(await portal.RemoveBackgroundAsync(Caller(http), ct)));
+
+        // Eigenes Profilbild: lesen, ersetzen, entfernen (nur das eigene).
+        secured.MapGet("/account/avatar", async (HttpContext http, AvatarService avatars, CancellationToken ct) =>
+        {
+            if (await avatars.OpenAsync(Caller(http).UserId, ct) is not { } image)
+            {
+                return Problem(new ServiceError(ErrorCode.NotFound, "Kein Profilbild."));
+            }
+
+            http.Response.Headers.CacheControl = "private, no-cache"; // die Oberfläche hängt nach einem Wechsel eine neue Version an
+            return Results.Stream(image, "image/jpeg");
+        });
+        secured.MapPut("/account/avatar", async (HttpContext http, AvatarService avatars, CancellationToken ct) =>
+            await ReadImageAsync(http, AvatarService.MaxBytes, ct) is not { } image
+                ? Problem(new ServiceError(ErrorCode.InvalidRequest, "Bild zu groß."))
+                : await avatars.SetAsync(Caller(http), image, ct) is { } error ? Problem(error) : Results.NoContent());
+        secured.MapDelete("/account/avatar", async (HttpContext http, AvatarService avatars, CancellationToken ct) =>
+        {
+            await avatars.RemoveAsync(Caller(http), ct);
+            return Results.NoContent();
+        });
+    }
+
+    /// <summary>Liest den Rumpf; null, sobald er <paramref name="maxBytes"/> überschreitet (dann wird nicht weitergelesen).</summary>
+    private static async Task<byte[]?> ReadImageAsync(HttpContext http, int maxBytes, CancellationToken ct)
+    {
+        using var body = new MemoryStream();
+        var buffer = new byte[81920];
+        int read;
+        while ((read = await http.Request.Body.ReadAsync(buffer, ct)) > 0)
+        {
+            if (body.Length + read > maxBytes)
+            {
+                return null;
+            }
+
+            body.Write(buffer, 0, read);
+        }
+
+        return body.ToArray();
     }
 
     private static IResult Portal(ServiceResult<PortalSettings> result) =>

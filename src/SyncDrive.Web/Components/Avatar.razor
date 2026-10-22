@@ -1,0 +1,17 @@
+@* Profilbild oder, ohne Bild, der Anfangsbuchstabe; fehlt das Bild auf dem Server (404), fällt die Anzeige auf den Buchstaben zurück. *@
+@if (Model.HasAvatar)
+{
+    <img class="avatar-img" src="@Model.AvatarUrl" alt="" @onerror="Model.AvatarMissing" />
+}
+else
+{
+    <span class="avatar-initial">@Initial</span>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public AccountViewModel Model { get; set; } = null!;
+
+    [Parameter]
+    public string Initial { get; set; } = "?";
+}

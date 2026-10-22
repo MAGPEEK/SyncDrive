@@ -55,13 +55,17 @@
             }
         }
         <button class="avatar" title="@Session.Session?.UserName" @onclick="ToggleAccountAsync" @onclick:stopPropagation>
-            @Initial
+            <Avatar Model="Account" Initial="@Initial" />
         </button>
         @if (_accountOpen)
         {
             <div class="menu account-menu" @onclick:stopPropagation>
-                <div class="menu-head">
-                    <div>@Session.Session?.UserName</div>
+                <div class="menu-head profile-head">
+                    <label class="profile-picture" title="@T.ChangePicture">
+                        <Avatar Model="Account" Initial="@Initial" />
+                        <InputFile OnChange="SetAvatarAsync" accept="image/jpeg,image/png,image/webp" class="hidden-input" />
+                    </label>
+                    <div class="profile-name">@Session.Session?.UserName</div>
                     @if (Account.UsedBytes is not null)
                     {
                         <div class="sub">@T.MyDrive · @Account.UsedText</div>
@@ -71,6 +75,14 @@
                         }
                     }
                 </div>
+                <label class="menu-item">
+                    @T.ChangePicture
+                    <InputFile OnChange="SetAvatarAsync" accept="image/jpeg,image/png,image/webp" class="hidden-input" />
+                </label>
+                @if (Account.HasAvatar)
+                {
+                    <button class="menu-item" @onclick="() => Account.RemoveAvatarAsync(Token)">@T.RemovePicture</button>
+                }
                 <button class="menu-item" @onclick="() => { _accountOpen = false; _devicesOpen = true; }">@T.ClientList</button>
                 <div class="menu-line"></div>
                 <button class="menu-item" @onclick="SignOutAsync">@T.SignOut</button>
@@ -228,6 +240,7 @@
             <Toast Model="Marks" />
         }
         <Toast Model="Notes" />
+        <Toast Model="Account" />
         @if (_shareFor is null)
         {
             <Toast Model="Share" />
@@ -527,6 +540,9 @@
         _versionsOpen = true;
         await Versions.OpenAsync(space, file, Token);
     }
+
+    private Task SetAvatarAsync(InputFileChangeEventArgs e) => Account.SetAvatarAsync(
+        new UploadFile(e.File.Name, e.File.Size, e.File.LastModified, () => e.File.OpenReadStream(AccountViewModel.MaxAvatarBytes, Token)), Token);
 
     private async Task SignOutAsync()
     {

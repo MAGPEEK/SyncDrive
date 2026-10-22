@@ -132,6 +132,54 @@ public sealed class AccountViewModel(IDriveApi api, WebTexts texts) : ViewModel(
 
     public bool CanUnlink => SelectedDevice is { IsCurrent: false };
 
+    public const int MaxAvatarBytes = 5 * 1024 * 1024;
+    private int _avatarVersion;
+
+    /// <summary>Adresse des eigenen Profilbilds; wechselt nach jedem Hochladen, damit der Browser das neue lädt.</summary>
+    public string AvatarUrl => $"api/v1/account/avatar?v={_avatarVersion}";
+
+    /// <summary>Kein Bild (der Server antwortete 404 oder es wurde entfernt): dann zeigt die Oberfläche den Anfangsbuchstaben.</summary>
+    public bool HasAvatar { get; private set; } = true;
+
+    public void AvatarMissing()
+    {
+        HasAvatar = false;
+        OnChanged();
+    }
+
+    public async Task<bool> SetAvatarAsync(UploadFile image, CancellationToken ct)
+    {
+        if (image.Size > MaxAvatarBytes)
+        {
+            return Fail(Texts.ImageTooLarge);
+        }
+
+        var ok = await RunAsync(async () =>
+        {
+            await using var content = image.Open();
+            await api.SetAvatarAsync(content, ct);
+        });
+        if (ok)
+        {
+            _avatarVersion++;
+            HasAvatar = true;
+        }
+
+        OnChanged();
+        return ok;
+    }
+
+    public async Task RemoveAvatarAsync(CancellationToken ct)
+    {
+        if (await RunAsync(() => api.RemoveAvatarAsync(ct)))
+        {
+            _avatarVersion++;
+            HasAvatar = false;
+        }
+
+        OnChanged();
+    }
+
     public async Task LoadStorageAsync(CancellationToken ct)
     {
         StorageInfo? storage = null;

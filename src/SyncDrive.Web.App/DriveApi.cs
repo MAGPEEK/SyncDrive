@@ -34,6 +34,11 @@ public interface IDriveApi
 
     Task<PortalInfo> RemovePortalBackgroundAsync(CancellationToken ct);
 
+    /// <summary>Eigenes Profilbild ersetzen (JPEG, PNG oder WebP; der Server verkleinert es).</summary>
+    Task SetAvatarAsync(Stream image, CancellationToken ct);
+
+    Task RemoveAvatarAsync(CancellationToken ct);
+
     /// <summary>Angemeldet? Null, wenn kein gültiges Sitzungs-Cookie da ist.</summary>
     Task<WebSessionInfo?> GetSessionAsync(CancellationToken ct);
 
@@ -239,6 +244,20 @@ public sealed class HttpDriveApi : IDriveApi, IPublicLinkApi
     {
         using var response = await _http.DeleteAsync("api/v1/web/portal/background", ct);
         return await ReadAsync<PortalInfo>(response, ct);
+    }
+
+    public async Task SetAvatarAsync(Stream image, CancellationToken ct)
+    {
+        using var body = new StreamContent(image);
+        body.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+        using var response = await _http.PutAsync("api/v1/account/avatar", body, ct);
+        await EnsureAsync(response, ct);
+    }
+
+    public async Task RemoveAvatarAsync(CancellationToken ct)
+    {
+        using var response = await _http.DeleteAsync("api/v1/account/avatar", ct);
+        await EnsureAsync(response, ct);
     }
 
     public async Task<WebSessionInfo?> GetSessionAsync(CancellationToken ct)
