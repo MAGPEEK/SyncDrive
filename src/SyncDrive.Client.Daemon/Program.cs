@@ -16,6 +16,11 @@ if (!OperatingSystem.IsWindows())
 }
 
 var paths = ClientPaths.Default();
+if (args is ["--uninstall"])
+{
+    return await UninstallAsync(paths);
+}
+
 paths.EnsureCreated();
 var userKey = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(Environment.UserName.ToUpperInvariant())))[..16];
 using var single = new Mutex(initiallyOwned: true, $@"Local\SyncDrive.Daemon.{userKey}", out var first);
@@ -73,6 +78,33 @@ catch (OperationCanceledException) when (stop.IsCancellationRequested)
 
 Log("Daemon beendet");
 return 0;
+
+// Vom Installer beim Deinstallieren aufgerufen (nicht bei Updates): Oberfläche und Daemon beenden, dann alles Benutzerbezogene entfernen.
+static async Task<int> UninstallAsync(ClientPaths paths)
+{
+    foreach (var process in System.Diagnostics.Process.GetProcessesByName("syncdrive").Concat(System.Diagnostics.Process.GetProcessesByName("syncdrive-daemon")))
+    {
+        using (process)
+        {
+            if (process.Id != Environment.ProcessId && process.SessionId == System.Diagnostics.Process.GetCurrentProcess().SessionId)
+            {
+                process.Kill(entireProcessTree: true);
+                process.WaitForExit(5000);
+            }
+        }
+    }
+
+    var tray = Path.Combine(AppContext.BaseDirectory, "syncdrive.exe");
+    var config = new SqliteClientConfigStore(paths.ConfigDatabase);
+    var uninstaller = new ClientUninstaller(
+        paths,
+        config,
+        WindowsCloudFolders.IsSupported ? new WindowsCloudFolders("0.0.0", Console.Error.WriteLine, CloudRegistrationExecutable()) : null,
+        new WindowsUninstallSteps(new ShellMenuRegistrar(new CurrentUserClasses(), config, tray), new WindowsAutostart(tray), CloudRegistrationExecutable()),
+        Console.Error.WriteLine);
+    await uninstaller.RunAsync(CancellationToken.None);
+    return 0;
+}
 
 // Im Build liegt das Hilfsprogramm in cloudreg\, in der Installation (ein Ordner, eine Laufzeit) neben dem Daemon.
 static string CloudRegistrationExecutable()

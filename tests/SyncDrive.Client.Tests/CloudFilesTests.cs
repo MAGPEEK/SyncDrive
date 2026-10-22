@@ -53,6 +53,7 @@ public sealed class CloudFilesTests
         finally
         {
             await folders.DetachAsync(task, default);
+            RemoveNavigationEntry(root);
             Directory.Delete(root, recursive: true);
         }
     }
@@ -96,6 +97,7 @@ public sealed class CloudFilesTests
         finally
         {
             await folders.DetachAsync(task, default);
+            RemoveNavigationEntry(root);
             Directory.Delete(root, recursive: true);
         }
     }
@@ -122,6 +124,7 @@ public sealed class CloudFilesTests
         finally
         {
             await folders.DetachAsync(task, default);
+            RemoveNavigationEntry(root);
             Directory.Delete(root, recursive: true);
         }
     }
@@ -172,6 +175,7 @@ public sealed class CloudFilesTests
         finally
         {
             await folders.DetachAsync(task, default);
+            RemoveNavigationEntry(root);
             Directory.Delete(root, recursive: true);
         }
 
@@ -182,6 +186,33 @@ public sealed class CloudFilesTests
     private static WindowsCloudFolders Folders(Action<string>? log) => new(
         "0.0.0-test", log, Path.Combine(AppContext.BaseDirectory, "cloudreg", "syncdrive-cloudreg.exe"),
         Path.Combine(Environment.SystemDirectory, "imageres.dll") + ",0");
+
+    /// <summary>
+    /// Windows lässt beim Abmelden die 32-Bit-Kopie des Eintrags im Navigationsbereich liegen (wie <c>WindowsUninstallSteps</c>); der Test
+    /// räumt seinen eigenen in beiden Ansichten weg.
+    /// </summary>
+    private static void RemoveNavigationEntry(string root)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        foreach (var view in new[] { Microsoft.Win32.RegistryView.Registry64, Microsoft.Win32.RegistryView.Registry32 })
+        {
+            using var user = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.CurrentUser, view);
+            using var classes = user.OpenSubKey(@"Software\Classes\CLSID");
+            foreach (var id in classes?.GetSubKeyNames() ?? [])
+            {
+                using var bag = classes!.OpenSubKey($@"{id}\Instance\InitPropertyBag");
+                if (string.Equals(bag?.GetValue("TargetFolderPath") as string, root, StringComparison.OrdinalIgnoreCase))
+                {
+                    user.DeleteSubKeyTree($@"Software\Classes\CLSID\{id}", throwOnMissingSubKey: false);
+                    user.DeleteSubKeyTree($@"Software\Microsoft\Windows\CurrentVersion\Explorer\Desktop\NameSpace\{id}", throwOnMissingSubKey: false);
+                }
+            }
+        }
+    }
 
     /// <summary>Einträge des Explorer-Kontextmenüs einer Datei (Shell.Application), ohne Zugriffstasten-Zeichen.</summary>
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]

@@ -43,8 +43,17 @@ try
             StorageProviderSyncRootManager.Unregister(SyncRootId(task));
             return 0;
 
+        case ["unregister-all"]:
+            // Deinstallation: auch Sync-Roots früher gelöschter Aufgaben, aber nur die von SyncDrive für diesen Benutzer
+            foreach (var root in StorageProviderSyncRootManager.GetCurrentSyncRoots().Where(r => r.Id.StartsWith(SyncRootId(string.Empty), StringComparison.Ordinal)))
+            {
+                StorageProviderSyncRootManager.Unregister(root.Id);
+            }
+
+            return 0;
+
         default:
-            Console.Error.WriteLine("Aufruf: register <aufgabe> <ordner> <anzeigename> <symbol> <version> | unregister <aufgabe>");
+            Console.Error.WriteLine("Aufruf: register <aufgabe> <ordner> <anzeigename> <symbol> <version> | unregister <aufgabe> | unregister-all");
             return 2;
     }
 }

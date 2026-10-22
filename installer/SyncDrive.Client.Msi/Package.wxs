@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   SyncDrive Client für Windows. Installation pro Benutzer nach %LOCALAPPDATA%\Programs\SyncDrive, ohne Administratorrechte (der Client
-  läuft ohnehin je Benutzer: Daemon, Autostart und Explorer-Menü liegen unter HKCU). Benutzerdaten (%LOCALAPPDATA%\SyncDrive) bleiben bei
-  der Deinstallation erhalten.
+  läuft ohnehin je Benutzer: Daemon, Autostart und Explorer-Menü liegen unter HKCU). Beim Deinstallieren (nicht bei Updates) räumt
+  der Daemon (Schalter uninstall) alles Benutzerbezogene ab: Sync-Ordner abmelden, Registry, %LOCALAPPDATA%\SyncDrive. Die Dateien bleiben.
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
@@ -40,7 +40,7 @@
         <RemoveRegistryValue Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Run" Name="SyncDrive" />
         <RemoveRegistryKey Root="HKCU" Key="Software\Classes\*\shell\SyncDrive" Action="removeOnUninstall" />
         <RemoveRegistryKey Root="HKCU" Key="Software\Classes\Directory\shell\SyncDrive" Action="removeOnUninstall" />
-        <RemoveRegistryKey Root="HKCU" Key="Software\SyncDrive\Installer" Action="removeOnUninstall" />
+        <RemoveRegistryKey Root="HKCU" Key="Software\SyncDrive" Action="removeOnUninstall" />
       </Component>
     </ComponentGroup>
 
@@ -63,8 +63,13 @@
     <util:CloseApplication Id="CloseDaemon" Target="syncdrive-daemon.exe" TerminateProcess="1" RebootPrompt="no" />
 
     <CustomAction Id="LaunchApp" Directory="INSTALLFOLDER" ExeCommand="&quot;[INSTALLFOLDER]syncdrive.exe&quot;" Return="asyncNoWait" Impersonate="yes" />
+    <!-- Deinstallation, aber kein Update (dabei entfernt die neue Fassung die alte): Benutzerdaten und Registrierungen aufräumen, solange
+         die Programmdateien noch da sind. Ein Fehler beim Aufräumen hält die Deinstallation nicht auf. -->
+    <CustomAction Id="CleanupUserData" Directory="INSTALLFOLDER" ExeCommand="&quot;[INSTALLFOLDER]syncdrive-daemon.exe&quot; --uninstall"
+                  Execute="deferred" Impersonate="yes" Return="ignore" />
     <InstallExecuteSequence>
       <Custom Action="LaunchApp" After="InstallFinalize" Condition="NOT REMOVE AND LAUNCHAPP = &quot;1&quot;" />
+      <Custom Action="CleanupUserData" Before="RemoveFiles" Condition="REMOVE~=&quot;ALL&quot; AND NOT UPGRADINGPRODUCTCODE" />
     </InstallExecuteSequence>
 
     <WixVariable Id="WixUILicenseRtf" Value="$(var.Assets)\License.rtf" />

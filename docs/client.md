@@ -139,7 +139,13 @@ while ((syncdrive_cli status) -match 'Syncing') { Start-Sleep 5 }
 ## Uninstalling
 
 *Settings → Apps → Installed apps → SyncDrive Client → Uninstall*, or `msiexec /x SyncDrive-Client-<version>-<build>-x64.msi /qn`.
-The uninstaller closes SyncDrive and removes the programs, the Start menu entry, the `PATH` entry, the autostart entry and the
-Explorer context menu. Your synced files and `%LOCALAPPDATA%\SyncDrive` stay; delete that folder to remove all settings.
-Online-only placeholders that were never downloaded cannot be opened without the client — make them available offline
-(right-click → *SyncDrive* → *Always keep on this device*) before uninstalling if you need them.
+The uninstaller closes SyncDrive and removes everything it set up:
+
+- the programs, the Start menu entry and the `PATH` entry;
+- the autostart entry, the Explorer context menu and all SyncDrive entries in the Explorer navigation pane;
+- the registration of every sync folder with Windows (status icons, files on demand) and the hidden `.syncdrive` folder inside it;
+- all settings, sign-in data and logs in `%LOCALAPPDATA%\SyncDrive` and the registry key `HKCU\Software\SyncDrive`.
+
+Your synced files stay where they are as normal files. Online-only placeholders that were never downloaded are removed (their
+content stays on the server) — make files you need offline available first (right-click → *SyncDrive* → *Always keep on this device*).
+Updating to a newer version keeps all settings.

@@ -5,6 +5,20 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.26.0] – 2026-10-22 – Vollständige Deinstallation
+
+### Geändert
+- Deinstallation des Windows-Clients räumt alles Benutzerbezogene ab (nicht bei Updates): Der Installer ruft vor dem Entfernen der
+  Dateien `syncdrive-daemon --uninstall` auf. Das beendet Oberfläche und Daemon, meldet jeden Sync-Ordner bei Windows ab (Platzhalter ohne
+  Inhalt verschwinden, alles andere wird zur gewöhnlichen Datei), löscht den Arbeitsordner `.syncdrive`, meldet übrige Sync-Roots ab
+  (`syncdrive-cloudreg unregister-all`), entfernt Explorer-Menü, Autostart, alle SyncDrive-Einträge im Navigationsbereich und
+  `HKCU\Software\SyncDrive` und zuletzt `%LOCALAPPDATA%\SyncDrive` (Konfiguration, Anmeldedaten, Logs). Die synchronisierten Dateien bleiben.
+  Ein gescheiterter Schritt hält die übrigen nicht auf.
+
+### Behoben
+- Windows legt den Navigationseintrag eines Cloud-Ordners in der 64- und der 32-Bit-Ansicht der Registry an und entfernt beim Abmelden nur
+  die 64-Bit-Kopie. Deinstallation und die echten Cloud-Files-Tests räumen jetzt beide Ansichten auf (die Tests hatten Reste hinterlassen).
+
 ## [0.25.0] – 2026-10-22 – Einfachere Einrichtung des Clients
 
 ### Geändert
