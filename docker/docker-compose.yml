@@ -1,0 +1,53 @@
+# SyncDrive server + Caddy (TLS on port 8443) from the Docker Hub image. Usage: see README.md in this folder.
+services:
+  server:
+    image: magpeek/syncdrive-server:${SYNCDRIVE_VERSION:-latest}
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:-Europe/Berlin}
+      SYNCDRIVE_Server__AdminUserName: admin
+      SYNCDRIVE_Server__AdminPasswordFile: /run/secrets/admin_password
+      SYNCDRIVE_Server__TrustForwardedHeaders: "true"   # only Caddy can reach the server
+      SYNCDRIVE_Server__RequireTls: "true"
+      SYNCDRIVE_Server__BackupDirectory: /backup
+      SYNCDRIVE_Server__BackupTime: ${SYNCDRIVE_BACKUP_TIME:-02:30}
+    secrets:
+      - admin_password
+    volumes:
+      - syncdrive-data:/data
+      - syncdrive-backup:/backup
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    networks: [internal]
+
+  proxy:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      SYNCDRIVE_HOST: ${SYNCDRIVE_HOST:-localhost}
+    ports:
+      - "8443:8443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on:
+      server:
+        condition: service_healthy
+    networks: [internal, default]
+
+secrets:
+  admin_password:
+    file: ./admin-password.txt
+
+volumes:
+  syncdrive-data:
+  syncdrive-backup:
+  caddy-data:
+
+networks:
+  internal:
+    internal: true

@@ -24,3 +24,4 @@ Caddyfile text eol=lf
 *.wixproj text eol=crlf
 *.razor text eol=crlf
 *.css text eol=crlf
+.env.example text eol=lf

@@ -82,11 +82,11 @@ docker run -d --name syncdrive -p 127.0.0.1:8080:8080 -v syncdrive-data:/data \
 Open `http://localhost:8080/` and sign in as `admin`.
 
 **Production setup with Docker Compose:** the server plus a [Caddy](https://caddyserver.com/) reverse proxy that terminates TLS on
-port **8443**. Create a folder with the `docker-compose.yml` and `Caddyfile` from
-**[docs/server.md → Option A](docs/server.md#option-a-docker-compose-with-tls-recommended)**, then:
+port **8443**. Copy the example folder **[`docker/`](docker)** (`docker-compose.yml`, `Caddyfile`, `.env.example`) to the
+server, then:
 
 ```bash
-echo "SYNCDRIVE_HOST=drive.example.lan" > .env                 # the name clients use to reach the server
+cp .env.example .env && nano .env                              # SYNCDRIVE_HOST: the name clients use to reach the server
 printf '%s' 'a-long-admin-password' > admin-password.txt       # read once on the first start
 sudo chown 1654:1654 admin-password.txt && sudo chmod 400 admin-password.txt
 docker compose up -d
@@ -176,7 +176,8 @@ pwsh installer/build-client.ps1          # Windows: client .msi and .exe into ar
 | `src/SyncDrive.Web*` | Web interface (Blazor WebAssembly) and its view models |
 | `src/SyncDrive.Infra.*` | Adapters: SQLite, block files, Argon2, HTTP, named pipes, Windows Cloud Files, thumbnails |
 | `tests/` | Unit, contract, scenario, end-to-end and architecture tests |
-| `deploy/` | Docker Compose stack with Caddy |
+| `docker/` | Docker Compose example with the Docker Hub image (deploy without source code) |
+| `deploy/` | Same stack built from source, with resource limits and log rotation |
 | `installer/` | WiX 5 projects and build script for the Windows packages |
 
 The architecture is hexagonal: the core knows nothing about databases, HTTP or Windows; architecture tests enforce the dependency rules.

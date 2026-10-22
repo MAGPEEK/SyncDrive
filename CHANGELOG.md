@@ -5,6 +5,12 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.18.4] – 2026-10-22 – Compose-Beispiel
+
+### Hinzugefügt
+- Ordner `docker/` mit einem lauffähigen Compose-Beispiel aus dem Docker-Hub-Image (`docker-compose.yml`, `Caddyfile`, `.env.example`,
+  README mit Aufbau, Bereitstellung, Betrieb und Anpassungen). `.env` und `admin-password.txt` dort sind von Git ausgeschlossen.
+
 ## [0.18.3] – 2026-10-22 – Betriebsanleitung Docker
 
 ### Geändert

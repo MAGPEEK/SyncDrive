@@ -31,6 +31,9 @@ Every release publishes a multi-arch image (`linux/amd64`, `linux/arm64`) on Doc
 Two containers: the SyncDrive server, reachable only on an internal Docker network, and [Caddy](https://caddyserver.com/) as
 reverse proxy that terminates TLS on port 8443. No source code is needed.
 
+The ready-made files are in the folder **[`docker/`](../docker)** (`docker-compose.yml`, `Caddyfile`, `.env.example` and a short
+README): copy the folder to the server and continue with step 4. The steps below show the same files in full.
+
 **1. Create a folder**
 
 ```bash

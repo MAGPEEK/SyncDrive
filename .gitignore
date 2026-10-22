@@ -15,3 +15,5 @@ deploy/admin-password.txt
 deploy/.env
 *.pfx
 *.key
+docker/admin-password.txt
+docker/.env
