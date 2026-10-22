@@ -62,13 +62,14 @@ button:disabled { cursor: default; opacity: .45; }
 .crumb:last-child { font-weight: 600; }
 .crumb-sep { color: var(--text-sub); }
 
-.toolbar { display: flex; align-items: center; gap: 6px; padding: 6px 20px 10px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.toolbar { display: flex; align-items: center; gap: 2px; padding: 6px 20px 8px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
 .toolbar-fill { flex: 1; }
-.tool { border: 1px solid transparent; background: none; padding: 6px 10px; border-radius: 5px; color: var(--text); text-decoration: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+.tool { border: 1px solid transparent; background: none; padding: 5px 7px; border-radius: 5px; color: var(--text); font-size: 13px; text-decoration: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .tool:hover:not(:disabled):not(.disabled) { background: var(--nav); border-color: var(--line); }
 .tool.disabled { opacity: .45; cursor: default; }
 .hidden-input { display: none; }
-.create-wrap { position: relative; margin-right: 8px; }
+.create-wrap { position: relative; margin-right: 4px; }
+.toolbar .primary { padding: 6px 12px; }
 .selected-count { color: var(--text-sub); font-size: 13px; }
 
 /* Liste */
@@ -226,7 +227,7 @@ button:disabled { cursor: default; opacity: .45; }
 .rail-button svg { width: 22px; height: 22px; fill: currentColor; }
 .rail-button .count { position: absolute; top: 1px; right: 0; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: var(--error);
     color: #fff; font-size: 11px; font-weight: 700; line-height: 17px; text-align: center; }
-.notification-panel { left: 50px; bottom: 54px; width: 360px; max-width: calc(100vw - 64px); padding: 0; }
+.notification-panel { left: 50px; top: 52px; width: 360px; max-width: calc(100vw - 64px); padding: 0; }
 .panel-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); font-weight: 600; }
 .link { border: none; background: none; color: var(--accent); padding: 0; font-weight: 400; font-size: 13px; }
 .panel-list { max-height: 60vh; overflow-y: auto; }

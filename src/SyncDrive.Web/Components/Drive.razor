@@ -17,7 +17,6 @@
 <div class="shell" @onclick="CloseMenus">
     <nav class="rail">
         <Logo Size="34" />
-        <div class="rail-fill"></div>
         <button class="rail-button" title="@T.Notifications" aria-label="@T.Notifications" @onclick="ToggleNotificationsAsync" @onclick:stopPropagation>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1Z" /></svg>
             @if (Notes.Unread > 0)
@@ -29,6 +28,7 @@
         {
             <NotificationPanel SpaceName="SpaceName" Token="Token" OnOpen="OpenNotificationAsync" />
         }
+        <div class="rail-fill"></div>
         <button class="avatar" title="@Session.Session?.UserName" @onclick="ToggleAccountAsync" @onclick:stopPropagation>
             @Initial
         </button>

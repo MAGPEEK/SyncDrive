@@ -5,6 +5,13 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.21.1] – 2026-10-22 – Kompaktere Leisten
+
+### Geändert
+- Weboberfläche: Die Benachrichtigungsglocke sitzt oben in der linken Leiste direkt unter dem Logo; die Benachrichtigungen klappen daneben
+  nach unten auf. Die Werkzeugleiste ist kompakter (engere Abstände und Polster, 13 px Schrift, kein Umbruch innerhalb einer Schaltfläche)
+  und bleibt bei 1024 px Breite einzeilig.
+
 ## [0.21.0] – 2026-10-22 – Freigabe und Link in einem
 
 ### Geändert
