@@ -67,6 +67,7 @@ button:disabled { cursor: default; opacity: .45; }
 .tool { border: 1px solid transparent; background: none; padding: 5px 7px; border-radius: 5px; color: var(--text); font-size: 13px; text-decoration: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .tool:hover:not(:disabled):not(.disabled) { background: var(--nav); border-color: var(--line); }
 .tool.disabled { opacity: .45; cursor: default; }
+.tool-icon { width: 15px; height: 15px; fill: currentColor; flex: none; }
 .hidden-input { display: none; }
 .create-wrap { position: relative; margin-right: 4px; }
 .toolbar .primary { padding: 6px 12px; }
@@ -318,6 +319,7 @@ button:disabled { cursor: default; opacity: .45; }
 .meter { display: block; height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; }
 .meter-fill { display: block; height: 100%; background: var(--accent); }
 .meter-fill.full { background: var(--error); }
+.meter.quota { margin-top: 6px; }
 
 @media (max-width: 720px) {
     .row.admin-users { grid-template-columns: minmax(0, 1fr) 90px; }

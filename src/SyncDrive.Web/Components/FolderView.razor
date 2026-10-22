@@ -33,7 +33,7 @@
             <button class="tool" disabled="@(Browser.SelectedItems is not [_])" @onclick="() => ShareAsync(OnShare, Browser.SelectedItems[0])">👤 @T.Share</button>
         }
         <div class="create-wrap">
-            <button class="tool" disabled="@(Browser.Selected.Count == 0)" @onclick="ToggleLabels" @onclick:stopPropagation>🏷 @T.Labels</button>
+            <button class="tool" disabled="@(Browser.Selected.Count == 0)" @onclick="ToggleLabels" @onclick:stopPropagation><svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M3 4v7.2c0 .5.2 1 .6 1.4l7.8 7.8a2 2 0 0 0 2.8 0l6.4-6.4a2 2 0 0 0 0-2.8L12.8 3.6c-.4-.4-.9-.6-1.4-.6H4a1 1 0 0 0-1 1Zm4.5 2a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z" /></svg> @T.Labels</button>
             @if (_labelsOpen)
             {
                 <LabelMenu Class="create-menu" Items="Browser.SelectedLocated" Token="Token" OnNewLabel="NewLabelAsync" OnDone="CloseMenus" />

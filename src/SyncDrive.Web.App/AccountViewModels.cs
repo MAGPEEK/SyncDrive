@@ -108,7 +108,21 @@ public sealed class AccountViewModel(IDriveApi api, WebTexts texts) : ViewModel(
     /// <summary>Summe der Spaces, die dem Benutzer gehören; null, solange unbekannt.</summary>
     public long? UsedBytes { get; private set; }
 
-    public string UsedText => string.Format(CultureInfo.CurrentCulture, Texts.StorageUsed, WebTexts.FormatSize(UsedBytes ?? 0));
+    /// <summary>Vom Administrator gesetztes Kontingent; null = unbegrenzt.</summary>
+    public long? QuotaBytes { get; private set; }
+
+    /// <summary>„1,2 GB von 5 GB belegt“ mit Kontingent, sonst „1,2 GB belegt“.</summary>
+    public string UsedText => QuotaBytes is { } quota
+        ? string.Format(CultureInfo.CurrentCulture, Texts.StorageUsedOf, WebTexts.FormatSize(UsedBytes ?? 0), WebTexts.FormatSize(quota))
+        : string.Format(CultureInfo.CurrentCulture, Texts.StorageUsed, WebTexts.FormatSize(UsedBytes ?? 0));
+
+    /// <summary>Anteil am Kontingent (0–1) für den Balken; null ohne Kontingent.</summary>
+    public double? QuotaShare => QuotaBytes switch
+    {
+        null => null,
+        0 => 1,
+        var quota => Math.Min(1, (double)(UsedBytes ?? 0) / quota.Value),
+    };
 
     public IReadOnlyList<DeviceInfo> Devices { get; private set; } = [];
 
@@ -118,18 +132,12 @@ public sealed class AccountViewModel(IDriveApi api, WebTexts texts) : ViewModel(
 
     public bool CanUnlink => SelectedDevice is { IsCurrent: false };
 
-    public async Task LoadUsageAsync(IReadOnlyList<SpaceSummary> spaces, CancellationToken ct)
+    public async Task LoadStorageAsync(CancellationToken ct)
     {
-        long total = 0;
-        if (await RunAsync(async () =>
-            {
-                foreach (var space in spaces.Where(s => s.Role == "owner"))
-                {
-                    total += (await api.UsageAsync(space.Id, ct)).Bytes;
-                }
-            }))
+        StorageInfo? storage = null;
+        if (await RunAsync(async () => storage = await api.GetStorageAsync(ct)))
         {
-            UsedBytes = total;
+            (UsedBytes, QuotaBytes) = (storage!.UsedBytes, storage.QuotaBytes);
         }
 
         OnChanged();

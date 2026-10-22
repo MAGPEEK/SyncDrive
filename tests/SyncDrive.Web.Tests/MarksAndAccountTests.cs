@@ -199,16 +199,24 @@ public sealed class MarksAndAccountTests(HostFactory factory) : IClassFixture<Ho
     }
 
     [Fact]
-    public async Task The_account_menu_shows_the_storage_used_by_own_spaces()
+    public async Task The_account_menu_shows_the_storage_used_by_own_spaces_and_the_quota_once_one_is_set()
     {
         var page = await OpenPageAsync();
         await page.Browser.UploadAsync([WebPage.File("a.txt", "1234"), WebPage.File("b.txt", "567")], default);
         var account = new AccountViewModel(page.Api, WebTexts.English);
 
-        await account.LoadUsageAsync(page.Browser.Spaces, default);
+        await account.LoadStorageAsync(default);
+        var unlimited = (account.UsedBytes, account.UsedText, account.QuotaShare);
+        var adminPage = await WebPage.OpenAsync(factory, HostFactory.AdminName, HostFactory.AdminPassword);
+        var admin = new AdminViewModel(adminPage.Api, WebTexts.English) { Me = HostFactory.AdminName };
+        await admin.LoadAsync(default);
+        await admin.SaveSettingsAsync(admin.Users.Single(u => u.Name == page.User), isAdmin: false, quotaGb: 1, default);
+        var quota = admin.Users.Single(u => u.Name == page.User).QuotaBytes!.Value;
+        await account.LoadStorageAsync(default);
 
-        Assert.Equal(7L, account.UsedBytes);
-        Assert.Equal("7 B used", account.UsedText);
+        Assert.Equal(((long?)7, "7 B used", (double?)null), unlimited);
+        Assert.Equal($"7 B of {WebTexts.FormatSize(quota)} used", account.UsedText);
+        Assert.InRange(account.QuotaShare!.Value, double.Epsilon, 0.001);
     }
 
     [Fact]

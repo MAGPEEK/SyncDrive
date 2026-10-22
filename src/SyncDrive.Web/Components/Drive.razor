@@ -40,6 +40,10 @@
                     @if (Account.UsedBytes is not null)
                     {
                         <div class="sub">@T.MyDrive · @Account.UsedText</div>
+                        @if (Account.QuotaShare is { } share)
+                        {
+                            <span class="meter quota"><span class="meter-fill @(share >= 0.9 ? "full" : "")" style="width:@((share * 100).ToString("0", CultureInfo.InvariantCulture))%"></span></span>
+                        }
                     }
                 </div>
                 <button class="menu-item" @onclick="() => { _accountOpen = false; _devicesOpen = true; }">@T.ClientList</button>
@@ -426,7 +430,7 @@
         _accountOpen = !_accountOpen;
         if (_accountOpen)
         {
-            await Account.LoadUsageAsync(Browser.Spaces, Token);
+            await Account.LoadStorageAsync(Token);
         }
     }
 

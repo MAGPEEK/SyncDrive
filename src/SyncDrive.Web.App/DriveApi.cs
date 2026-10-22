@@ -111,8 +111,8 @@ public interface IDriveApi
     /// <summary>„Unlink“: Das Gerät verliert seinen Zugang und muss sich neu anmelden.</summary>
     Task UnlinkDeviceAsync(string deviceId, CancellationToken ct);
 
-    /// <summary>Belegter Speicher eines Space (aktuelle Fassungen).</summary>
-    Task<UsageResponse> UsageAsync(string spaceId, CancellationToken ct);
+    /// <summary>Eigener Speicher: belegt in den eigenen Spaces und das Kontingent (null = unbegrenzt).</summary>
+    Task<StorageInfo> GetStorageAsync(CancellationToken ct);
 
     /// <summary>Freigabedialog: Eingeladene, Link und Dateianfrage eines Elements (nur wer den Space verwaltet).</summary>
     Task<SharingResponse> GetSharingAsync(string spaceId, string path, CancellationToken ct);
@@ -417,10 +417,10 @@ public sealed class HttpDriveApi : IDriveApi, IPublicLinkApi
         await EnsureAsync(response, ct);
     }
 
-    public async Task<UsageResponse> UsageAsync(string spaceId, CancellationToken ct)
+    public async Task<StorageInfo> GetStorageAsync(CancellationToken ct)
     {
-        using var response = await _http.GetAsync($"api/v1/spaces/{Escape(spaceId)}/usage", ct);
-        return await ReadAsync<UsageResponse>(response, ct);
+        using var response = await _http.GetAsync("api/v1/account/storage", ct);
+        return await ReadAsync<StorageInfo>(response, ct);
     }
 
     public async Task<SharingResponse> GetSharingAsync(string spaceId, string path, CancellationToken ct)

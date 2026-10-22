@@ -87,16 +87,26 @@ public sealed partial class AdminService(
             ? await accounts.SetPasswordAsync(userId, request.Password ?? string.Empty, ct)
             : new ServiceError(ErrorCode.Forbidden, "Nur für Administratoren.");
 
+    /// <summary>Eigener Speicher für das Konto-Menü; dieselbe Rechnung wie in der Admin-Konsole (Spaces, die dem Benutzer gehören).</summary>
+    public async Task<StorageInfo> StorageOfAsync(string userId, CancellationToken ct) =>
+        new(await UsedBytesAsync(userId, ct), (await store.FindUserByIdAsync(userId, ct))?.QuotaBytes);
+
     private async Task<AdminUserInfo> DescribeAsync(UserRecord user, CancellationToken ct)
     {
+        var used = await UsedBytesAsync(user.Id, ct);
+        var devices = (await store.ListDevicesAsync(user.Id, ct)).Count;
+        return new AdminUserInfo(user.Id, user.Name, user.IsAdmin, user.Disabled, used, user.QuotaBytes, devices, user.CreatedAt);
+    }
+
+    private async Task<long> UsedBytesAsync(string userId, CancellationToken ct)
+    {
         long used = 0;
-        foreach (var membership in (await store.ListMembershipsAsync(user.Id, ct)).Where(m => m.Role == SpaceRole.Owner))
+        foreach (var membership in (await store.ListMembershipsAsync(userId, ct)).Where(m => m.Role == SpaceRole.Owner))
         {
             used += await spaces.GetUsedBytesAsync(membership.SpaceId, ct);
         }
 
-        var devices = (await store.ListDevicesAsync(user.Id, ct)).Count;
-        return new AdminUserInfo(user.Id, user.Name, user.IsAdmin, user.Disabled, used, user.QuotaBytes, devices, user.CreatedAt);
+        return used;
     }
 
     private static ServiceResult<T> Forbidden<T>() => Fail<T>(ErrorCode.Forbidden, "Nur für Administratoren.");

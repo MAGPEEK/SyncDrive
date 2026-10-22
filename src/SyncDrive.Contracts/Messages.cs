@@ -185,6 +185,9 @@ public sealed record PublicUploadResponse(string Name, long Size);
 /// <summary>Body von <c>POST /public/{token}/files</c>: Datei einer Dateianfrage aus vorher hochgeladenen Blöcken (Browser zerlegt selbst).</summary>
 public sealed record PublicFileRequest(string Name, IReadOnlyList<string> Blocks, long Size, string FileHash);
 
+/// <summary>Eigener Speicher (<c>GET /account/storage</c>): belegt in den eigenen Spaces und das Kontingent; null = unbegrenzt.</summary>
+public sealed record StorageInfo(long UsedBytes, long? QuotaBytes);
+
 /// <summary>Ein Benutzer in der Admin-Konsole (M7): Rechte, Sperre, belegter Speicher (eigene Spaces) und Kontingent, Anzahl Geräte.</summary>
 public sealed record AdminUserInfo(
     string Id, string Name, bool IsAdmin, bool Disabled, long UsedBytes, long? QuotaBytes, int Devices, DateTimeOffset? CreatedAt);

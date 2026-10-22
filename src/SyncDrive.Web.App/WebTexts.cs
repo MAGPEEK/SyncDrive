@@ -93,6 +93,7 @@ public sealed record WebTexts
     public required string MarkAllRead { get; init; }
     public required string NotifyShared { get; init; }
     public required string StorageUsed { get; init; }
+    public required string StorageUsedOf { get; init; }
     public required string ClientList { get; init; }
     public required string DeviceName { get; init; }
     public required string ClientType { get; init; }
@@ -308,6 +309,7 @@ public sealed record WebTexts
         MarkAllRead = "Mark all as read",
         NotifyShared = "{0} shared “{1}” with you",
         StorageUsed = "{0} used",
+        StorageUsedOf = "{0} of {1} used",
         ClientList = "Client list",
         DeviceName = "Device name",
         ClientType = "Client type",
@@ -522,6 +524,7 @@ public sealed record WebTexts
         MarkAllRead = "Alle als gelesen markieren",
         NotifyShared = "{0} hat „{1}“ mit Ihnen geteilt",
         StorageUsed = "{0} belegt",
+        StorageUsedOf = "{0} von {1} belegt",
         ClientList = "Geräteliste",
         DeviceName = "Gerätename",
         ClientType = "Client-Typ",

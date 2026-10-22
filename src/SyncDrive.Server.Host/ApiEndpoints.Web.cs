@@ -19,6 +19,8 @@ public static partial class ApiEndpoints
         secured.MapGet("/web/session", async (HttpContext http, AccountService accounts, CancellationToken ct) =>
             Results.Ok(new WebSessionInfo(await accounts.UserNameOfAsync(Caller(http).UserId, ct) ?? "?", Caller(http).IsAdmin)));
         secured.MapDelete("/web/session", SignOutWeb);
+        secured.MapGet("/account/storage", async (HttpContext http, AdminService admin, CancellationToken ct) =>
+            Results.Ok(await admin.StorageOfAsync(Caller(http).UserId, ct)));
         secured.MapGet("/spaces/{spaceId}/download", Download);
         secured.MapGet("/spaces/{spaceId}/zip", Zip);
         secured.MapGet("/spaces/{spaceId}/thumbnail", (string spaceId, string? path, string? size, HttpContext http, PreviewService previews, CancellationToken ct) =>

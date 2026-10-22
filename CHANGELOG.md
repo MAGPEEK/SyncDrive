@@ -5,6 +5,17 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.22.0] – 2026-10-22 – Speicher und Kontingent im Konto-Menü
+
+### Hinzugefügt
+- `GET /api/v1/account/storage`: eigener belegter Speicher (Spaces, die dem Benutzer gehören) und das Kontingent; dieselbe Rechnung wie
+  in der Verwaltung.
+
+### Geändert
+- Weboberfläche, Konto-Menü: mit Kontingent „293 KB von 1 GB belegt“ samt Balken (rot ab 90 %), ohne Kontingent wie bisher „… belegt“.
+  Der Browser summiert nicht mehr selbst über die Spaces.
+- Das Symbol vor „Labels“ ist ein eigenes SVG-Etikett in Textfarbe statt des kaum erkennbaren Emojis.
+
 ## [0.21.1] – 2026-10-22 – Kompaktere Leisten
 
 ### Geändert
