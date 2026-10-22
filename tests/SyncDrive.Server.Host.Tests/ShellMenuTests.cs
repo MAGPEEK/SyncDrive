@@ -43,10 +43,10 @@ public sealed class ShellMenuTests : IDisposable
         Assert.Equal(
             "System.ItemPathDisplay:~<\"C:\\Users\\x\\SyncDrive\\\" OR System.ItemPathDisplay:~<\"D:\\Fotos\\\"",
             _registry.Get(file, "AppliesTo"));
-        Assert.Equal("Browse previous versions", _registry.Get(file + @"\shell\01versions", "MUIVerb"));
-        Assert.Equal($"\"{Exe}\" --shell versions \"%1\"", _registry.Get(file + @"\shell\01versions\command", null));
-        Assert.Equal(["01versions"], _registry.Children(file + @"\shell"));
-        Assert.Equal(["01stopsync", "02resumesync"], _registry.Children(ShellMenuRegistrar.FolderKey + @"\shell"));
+        Assert.Equal("Browse previous versions", _registry.Get(file + @"\shell\02versions", "MUIVerb"));
+        Assert.Equal($"\"{Exe}\" --shell versions \"%1\"", _registry.Get(file + @"\shell\02versions\command", null));
+        Assert.Equal(["01getlink", "02versions"], _registry.Children(file + @"\shell"));
+        Assert.Equal(["01getlink", "02stopsync", "03resumesync"], _registry.Children(ShellMenuRegistrar.FolderKey + @"\shell"));
     }
 
     [Fact]
@@ -60,13 +60,15 @@ public sealed class ShellMenuTests : IDisposable
 
         var file = ShellMenuRegistrar.FileKey + @"\shell";
         var folder = ShellMenuRegistrar.FolderKey + @"\shell";
-        Assert.Equal(["01versions", "02keep", "03freeup"], _registry.Children(file));
-        Assert.Equal(["01keep", "02freeup", "03stopsync", "04resumesync"], _registry.Children(folder));
-        Assert.Equal("Immer auf diesem Gerät behalten", _registry.Get(file + @"\02keep", "MUIVerb"));
-        Assert.Equal("Speicherplatz freigeben", _registry.Get(folder + @"\02freeup", "MUIVerb"));
-        Assert.Equal("System.ItemPathDisplay:~<\"D:\\Abruf\\\"", _registry.Get(file + @"\03freeup", "AppliesTo"));
-        Assert.Null(_registry.Get(file + @"\01versions", "AppliesTo"));
-        Assert.Equal($"\"{Exe}\" --shell keep \"%1\"", _registry.Get(folder + @"\01keep\command", null));
+        Assert.Equal(["01getlink", "02versions", "03keep", "04freeup"], _registry.Children(file));
+        Assert.Equal(["01getlink", "02keep", "03freeup", "04stopsync", "05resumesync"], _registry.Children(folder));
+        Assert.Equal("Link erhalten", _registry.Get(file + @"\01getlink", "MUIVerb"));
+        Assert.Equal($"\"{Exe}\" --shell getlink \"%1\"", _registry.Get(folder + @"\01getlink\command", null));
+        Assert.Equal("Immer auf diesem Gerät behalten", _registry.Get(file + @"\03keep", "MUIVerb"));
+        Assert.Equal("Speicherplatz freigeben", _registry.Get(folder + @"\03freeup", "MUIVerb"));
+        Assert.Equal("System.ItemPathDisplay:~<\"D:\\Abruf\\\"", _registry.Get(file + @"\04freeup", "AppliesTo"));
+        Assert.Null(_registry.Get(file + @"\02versions", "AppliesTo"));
+        Assert.Equal($"\"{Exe}\" --shell keep \"%1\"", _registry.Get(folder + @"\02keep\command", null));
     }
 
     [Fact]
@@ -75,7 +77,7 @@ public sealed class ShellMenuTests : IDisposable
         await _config.SaveTaskAsync(new SyncTaskDefinition("t1", "c1", "s1", RelativePath.Root, @"C:\Sync"), default);
         await _config.SaveSettingsAsync(new ClientSettings { Language = "de" }, default);
         await Registrar().RefreshAsync(default);
-        Assert.Equal("Diesen Ordner nicht mehr synchronisieren", _registry.Get(ShellMenuRegistrar.FolderKey + @"\shell\01stopsync", "MUIVerb"));
+        Assert.Equal("Diesen Ordner nicht mehr synchronisieren", _registry.Get(ShellMenuRegistrar.FolderKey + @"\shell\02stopsync", "MUIVerb"));
 
         await _config.SaveSettingsAsync(new ClientSettings { ShowContextMenu = false }, default);
         await Registrar().RefreshAsync(default);

@@ -142,6 +142,7 @@ public sealed class IpcServer(string pipeName, IDaemonControl control, IClientSe
                 IpcProtocol.Methods.RestoreVersion => await RestoreVersion(Required<VersionParams>(request), ct),
                 IpcProtocol.Methods.FolderSync => await FolderSync(Required<FolderSyncParams>(request), ct),
                 IpcProtocol.Methods.Pin => await Pin(Required<PinParams>(request), ct),
+                IpcProtocol.Methods.Link => await Shell().GetLinkAsync(Required<PathParams>(request).Path, ct),
                 _ => throw new IpcException(IpcProtocol.Errors.UnknownMethod, request.Method),
             };
             return new IpcMessage(request.Id, Ok: true, Result: result is null ? null : JsonSerializer.SerializeToElement(result, IpcProtocol.Json));

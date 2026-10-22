@@ -65,6 +65,7 @@ public static class IpcProtocol
         public const string RestoreVersion = "shell.restoreversion";
         public const string FolderSync = "shell.foldersync";
         public const string Pin = "shell.pin";
+        public const string Link = "shell.link";
     }
 
     internal static class Errors

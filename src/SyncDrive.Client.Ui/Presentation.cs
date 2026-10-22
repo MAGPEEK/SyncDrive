@@ -42,6 +42,9 @@ public interface IUiServices
 
     Task ShowMessageAsync(string message);
 
+    /// <summary>Legt <paramref name="text"/> in die Zwischenablage und zeigt <paramref name="message"/> (z. B. „Link kopiert“).</summary>
+    Task CopyAndShowAsync(string text, string message);
+
     Task<bool> ConfirmAsync(string message);
 
     void OpenFolder(string path);

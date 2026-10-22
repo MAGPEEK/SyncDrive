@@ -155,6 +155,25 @@ public sealed class HttpServerAccess(
         }, ct);
     }
 
+    public async Task<Result<LinkInfo>> GetOrCreateLinkAsync(ServerLogin login, string spaceId, RelativePath path, CancellationToken ct)
+    {
+        using var http = await ClientAsync(login.Server, login.DeviceToken, login.PinnedCertificateSha256, ct);
+        var space = Uri.EscapeDataString(spaceId);
+        var query = $"path={Uri.EscapeDataString(path.Value)}";
+        return await SendAsync(async () =>
+        {
+            using var sharing = await http.GetAsync($"spaces/{space}/sharing?{query}", ct);
+            var existing = await ReadAsync<SharingResponse, LinkInfo?>(sharing, s => s.Link, ct);
+            if (!existing.IsSuccess || existing.Value is not null)
+            {
+                return existing.IsSuccess ? Result.Ok(existing.Value!) : Result.Fail<LinkInfo>(existing.Error!);
+            }
+
+            using var created = await http.PutAsJsonAsync($"spaces/{space}/sharing/link?{query}&kind={LinkKinds.Share}", new LinkRequest(null), Json, ct);
+            return await ReadAsync<LinkInfo, LinkInfo>(created, l => l, ct);
+        }, ct);
+    }
+
     public async Task<Result<Stream>> DownloadBlockAsync(ServerLogin login, string spaceId, string hash, CancellationToken ct)
     {
         var http = await ClientAsync(login.Server, login.DeviceToken, login.PinnedCertificateSha256, ct);

@@ -92,6 +92,19 @@ public sealed class WindowManager(IClassicDesktopStyleApplicationLifetime lifeti
         }
     }
 
+    public async Task CopyAndShowAsync(string text, string message)
+    {
+        if (Owner() is { } owner)
+        {
+            if (owner.Clipboard is { } clipboard)
+            {
+                await clipboard.SetTextAsync(text);
+            }
+
+            await new MessageDialog(message, CurrentTexts, confirm: false).ShowDialog<bool>(owner);
+        }
+    }
+
     public async Task<bool> ConfirmAsync(string message) =>
         Owner() is { } owner && await new MessageDialog(message, CurrentTexts, confirm: true).ShowDialog<bool>(owner);
 

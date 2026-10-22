@@ -276,6 +276,15 @@ public sealed class DaemonEndToEndTests(HostFactory factory) : IClassFixture<Hos
 
         // Anheften gibt es nur mit Dateien auf Abruf (diese Aufgabe hält alles lokal)
         Assert.Equal(ShellErrors.NotOnDemand, (await ui.SetPinnedAsync(file, keep: true, default)).ErrorCode);
+
+        // Link erhalten: legt einen öffentlichen Link an, beim zweiten Mal derselbe; die Adresse führt zur Linkseite
+        var link = await ui.GetLinkAsync(file, default);
+        var again = await ui.GetLinkAsync(file, default);
+        Assert.True(link.Succeeded, link.Message);
+        Assert.StartsWith("http://localhost:8443/s/", link.Message, StringComparison.Ordinal); // Adresse, unter der der Client den Server kennt
+        Assert.Equal(link.Message, again.Message);
+        using var visitor = factory.CreateClient();
+        Assert.Equal(System.Net.HttpStatusCode.OK, (await visitor.GetAsync("api/v1/public/" + link.Message!["http://localhost:8443/s/".Length..])).StatusCode);
     }
 
     [Fact]

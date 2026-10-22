@@ -42,6 +42,9 @@ public static class ShellErrors
 
     /// <summary>Anheften und Freigeben gibt es nur in Aufgaben mit Dateien auf Abruf.</summary>
     public const string NotOnDemand = "not_on_demand";
+
+    /// <summary>Der Server schreibt für Links Passwort oder Ablaufdatum vor; anlegen nur in der Weboberfläche.</summary>
+    public const string LinkNeedsWeb = "link_needs_web";
 }
 
 /// <summary>Was das Explorer-Menü „SyncDrive“ anbietet; der Daemon setzt es um, die Oberfläche ruft es über die Pipe auf.</summary>
@@ -63,6 +66,9 @@ public interface IShellActions
 
     /// <summary>„Immer auf diesem Gerät behalten“ (<paramref name="keep"/>) oder „Speicherplatz freigeben“; nur in Aufgaben mit Dateien auf Abruf.</summary>
     Task<ShellResult> SetPinnedAsync(string localPath, bool keep, CancellationToken ct);
+
+    /// <summary>„Link erhalten“: öffentlicher Link (vorhanden oder neu); bei Erfolg steht die Adresse in <see cref="ShellResult.Message"/>.</summary>
+    Task<ShellResult> GetLinkAsync(string localPath, CancellationToken ct);
 }
 
 public sealed class ShellService(
@@ -73,6 +79,23 @@ public sealed class ShellService(
     IClientSetup setup,
     ICloudFolders? cloudFolders = null) : IShellActions
 {
+    public async Task<ShellResult> GetLinkAsync(string localPath, CancellationToken ct)
+    {
+        if (await RemoteAsync(localPath, ct) is not { } remote)
+        {
+            return new ShellResult(false, ShellErrors.NotInSyncFolder);
+        }
+
+        var link = await server.GetOrCreateLinkAsync(remote.Login, remote.Task.SpaceId, remote.Path, ct);
+        if (!link.IsSuccess)
+        {
+            // Richtlinien verlangen Passwort oder Ablaufdatum: das lässt sich nur im Freigabedialog der Weboberfläche angeben
+            return link.Error!.Code == ErrorCode.InvalidRequest ? new ShellResult(false, ShellErrors.LinkNeedsWeb, link.Error.Message) : Failed(link.Error);
+        }
+
+        return new ShellResult(true, Message: new Uri(remote.Login.Server, "s/" + link.Value!.Token).ToString());
+    }
+
     public async Task<ShellResult> SetPinnedAsync(string localPath, bool keep, CancellationToken ct)
     {
         if (await LocateAsync(localPath, ct) is not { } found)

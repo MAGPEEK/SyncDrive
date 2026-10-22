@@ -299,6 +299,8 @@ public sealed record Texts
 
     public required string ShellVersions { get; init; }
 
+    public required string ShellGetLink { get; init; }
+
     public required string ShellKeep { get; init; }
 
     public required string ShellFreeUp { get; init; }
@@ -338,6 +340,10 @@ public sealed record Texts
     public required string NotPossibleForRoot { get; init; }
 
     public required string NotOnDemand { get; init; }
+
+    public required string LinkCopied { get; init; }
+
+    public required string LinkNeedsWeb { get; init; }
 
     public required string ActionFailed { get; init; }
 
@@ -514,6 +520,7 @@ public sealed record Texts
         ExcludedNamesLabel = "Skip file names (e.g. Thumbs.db)",
         ConnectionUpdated = "Signed in again.",
         ShellVersions = "Browse previous versions",
+        ShellGetLink = "Get link",
         ShellKeep = "Always keep on this device",
         ShellFreeUp = "Free up space",
         ShellStopSync = "Stop syncing this folder",
@@ -534,6 +541,8 @@ public sealed record Texts
         NotInSyncFolder = "This item is not in a SyncDrive folder.",
         NotPossibleForRoot = "The sync folder itself can only be removed as a whole task.",
         NotOnDemand = "Only available in sync tasks with files on demand.",
+        LinkCopied = "The link was copied to the clipboard:\n{0}",
+        LinkNeedsWeb = "The server requires a password or an expiry date for links. Please create the link in the web interface (Share → Public link).",
         ActionFailed = "That did not work:",
         TooManyTasks = "You already have the maximum number of sync tasks.",
         FolderOverlaps = "This folder cannot be synced because it is, contains or lies in a folder of another sync task. Please choose a different folder.",
@@ -678,6 +687,7 @@ public sealed record Texts
         ExcludedNamesLabel = "Dateinamen auslassen (z. B. Thumbs.db)",
         ConnectionUpdated = "Erneut angemeldet.",
         ShellVersions = "Frühere Versionen durchsuchen",
+        ShellGetLink = "Link erhalten",
         ShellKeep = "Immer auf diesem Gerät behalten",
         ShellFreeUp = "Speicherplatz freigeben",
         ShellStopSync = "Diesen Ordner nicht mehr synchronisieren",
@@ -698,6 +708,8 @@ public sealed record Texts
         NotInSyncFolder = "Dieses Element liegt in keinem SyncDrive-Ordner.",
         NotPossibleForRoot = "Der Sync-Ordner selbst lässt sich nur als ganze Aufgabe entfernen.",
         NotOnDemand = "Nur in Sync-Aufgaben mit Dateien auf Abruf möglich.",
+        LinkCopied = "Der Link wurde in die Zwischenablage kopiert:\n{0}",
+        LinkNeedsWeb = "Der Server verlangt für Links ein Passwort oder Ablaufdatum. Bitte den Link in der Weboberfläche anlegen (Freigeben → Öffentlicher Link).",
         ActionFailed = "Das hat nicht geklappt:",
         TooManyTasks = "Sie haben bereits die größtmögliche Zahl an Sync-Aufgaben.",
         FolderOverlaps = "Dieser Ordner kann nicht synchronisiert werden, weil er Ordner einer anderen Sync-Aufgabe ist, enthält oder darin liegt. Bitte wählen Sie einen anderen Ordner.",

@@ -14,7 +14,7 @@ namespace SyncDrive.Client.Ui;
 /// </summary>
 public sealed class ShellCommand(IShellActions shell, IUiServices ui, Texts texts)
 {
-    public static readonly IReadOnlyList<string> Verbs = ["versions", "keep", "freeup", "stopsync", "resumesync"];
+    public static readonly IReadOnlyList<string> Verbs = ["versions", "getlink", "keep", "freeup", "stopsync", "resumesync"];
 
     public async Task RunAsync(string verb, string path, CancellationToken ct)
     {
@@ -30,6 +30,18 @@ public sealed class ShellCommand(IShellActions shell, IUiServices ui, Texts text
                 var versions = new VersionsViewModel(shell, ui, texts, path);
                 await versions.LoadAsync(ct);
                 await ui.ShowVersionsAsync(versions);
+                break;
+            case "getlink":
+                var link = await shell.GetLinkAsync(path, ct);
+                if (link is { Succeeded: true, Message: { } url })
+                {
+                    await ui.CopyAndShowAsync(url, string.Format(CultureInfo.CurrentCulture, texts.LinkCopied, url));
+                }
+                else
+                {
+                    await ui.ShowMessageAsync(Explain(link, texts));
+                }
+
                 break;
             case "keep" or "freeup":
                 if (await shell.SetPinnedAsync(path, keep: verb == "keep", ct) is { Succeeded: false } pinned)
@@ -58,6 +70,7 @@ public sealed class ShellCommand(IShellActions shell, IUiServices ui, Texts text
         ShellErrors.NotInSyncFolder => texts.NotInSyncFolder,
         ShellErrors.NotPossible => texts.NotPossibleForRoot,
         ShellErrors.NotOnDemand => texts.NotOnDemand,
+        ShellErrors.LinkNeedsWeb => texts.LinkNeedsWeb,
         ShellErrors.Unreachable => texts.ErrorUnreachable,
         _ => $"{texts.ActionFailed} {result.Message ?? result.ErrorCode}",
     };

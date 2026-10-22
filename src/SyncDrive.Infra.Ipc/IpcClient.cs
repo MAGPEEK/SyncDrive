@@ -135,6 +135,9 @@ public sealed class IpcClient : IDaemonClient
     public async Task<ShellResult> SetPinnedAsync(string localPath, bool keep, CancellationToken ct) =>
         Result<ShellResult>(await CallAsync(IpcProtocol.Methods.Pin, new PinParams(localPath, keep), ct));
 
+    public async Task<ShellResult> GetLinkAsync(string localPath, CancellationToken ct) =>
+        Result<ShellResult>(await CallAsync(IpcProtocol.Methods.Link, new PathParams(localPath), ct));
+
     public async IAsyncEnumerable<OverallStatus> WatchStatusAsync([EnumeratorCancellation] CancellationToken ct)
     {
         var channel = Channel.CreateBounded<OverallStatus>(new BoundedChannelOptions(1) { FullMode = BoundedChannelFullMode.DropOldest });

@@ -66,9 +66,10 @@ public sealed class ShellMenuRegistrar(IRegistryWriter registry, IClientConfigSt
         IReadOnlyList<MenuEntry> pins = onDemand.Count == 0
             ? []
             : [new("keep", texts.ShellKeep, "keep", AppliesTo(onDemand)), new("freeup", texts.ShellFreeUp, "freeup", AppliesTo(onDemand))];
-        Register(FileKey, appliesTo, texts.AppName, [new("versions", texts.ShellVersions, "versions"), .. pins]);
+        var link = new MenuEntry("getlink", texts.ShellGetLink, "getlink");
+        Register(FileKey, appliesTo, texts.AppName, [link, new("versions", texts.ShellVersions, "versions"), .. pins]);
         Register(FolderKey, appliesTo, texts.AppName,
-            [.. pins, new("stopsync", texts.ShellStopSync, "stopsync"), new("resumesync", texts.ShellResumeSync, "resumesync")]);
+            [link, .. pins, new("stopsync", texts.ShellStopSync, "stopsync"), new("resumesync", texts.ShellResumeSync, "resumesync")]);
     }
 
     /// <summary>Nur innerhalb der Sync-Ordner dieser Aufgaben.</summary>

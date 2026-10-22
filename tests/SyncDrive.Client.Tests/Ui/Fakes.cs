@@ -187,6 +187,12 @@ internal sealed class FakeDaemon : IDaemonClient
         return Next();
     }
 
+    public async Task<ShellResult> GetLinkAsync(string localPath, CancellationToken ct)
+    {
+        await Record($"link {localPath}");
+        return Next();
+    }
+
     private ShellResult Next() => ShellResults.Count > 0 ? ShellResults.Dequeue() : ShellResult.Ok;
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
@@ -207,6 +213,8 @@ internal sealed class FakeUi : IUiServices
 {
     public List<string> Messages { get; } = [];
 
+    public List<string> Copied { get; } = [];
+
     public List<string> Opened { get; } = [];
 
     public List<string> Actions { get; } = [];
@@ -226,6 +234,13 @@ internal sealed class FakeUi : IUiServices
 
     public Task ShowMessageAsync(string message)
     {
+        Messages.Add(message);
+        return Task.CompletedTask;
+    }
+
+    public Task CopyAndShowAsync(string text, string message)
+    {
+        Copied.Add(text);
         Messages.Add(message);
         return Task.CompletedTask;
     }

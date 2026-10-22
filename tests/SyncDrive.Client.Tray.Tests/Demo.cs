@@ -160,6 +160,9 @@ internal sealed class DemoDaemon : IDaemonClient
     public Task<ShellResult> SetPinnedAsync(string localPath, bool keep, CancellationToken ct) =>
         System.Threading.Tasks.Task.FromResult(ShellResult.Ok);
 
+    public Task<ShellResult> GetLinkAsync(string localPath, CancellationToken ct) =>
+        System.Threading.Tasks.Task.FromResult(new ShellResult(true, Message: "https://drive.example.lan:8443/s/demo"));
+
     public ValueTask DisposeAsync()
     {
         Disconnected?.Invoke();
@@ -178,6 +181,8 @@ internal sealed class SilentUi : IUiServices
         System.Threading.Tasks.Task.FromResult<(string, string, string)?>(("s1", "Dokumente", "My Drive/Dokumente"));
 
     public Task ShowMessageAsync(string message) => System.Threading.Tasks.Task.CompletedTask;
+
+    public Task CopyAndShowAsync(string text, string message) => System.Threading.Tasks.Task.CompletedTask;
 
     public Task<bool> ConfirmAsync(string message) => System.Threading.Tasks.Task.FromResult(false);
 

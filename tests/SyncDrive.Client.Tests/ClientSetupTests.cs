@@ -195,6 +195,24 @@ public sealed class ClientSetupTests : IDisposable
     }
 
     [Fact]
+    public async Task Get_link_returns_the_public_address_of_the_server_item_and_explains_policy_limits()
+    {
+        var connection = (await _setup.SignInAsync(new SignInRequest("nas", "anna", "pw"), default)).ConnectionId!;
+        var local = Path.Combine(_root, "Team");
+        await _config.SaveTaskAsync(new SyncTaskDefinition("t1", connection, "s1", RelativePath.Parse("Projekte/Team"), local), default);
+        var shell = new ShellService(_config, _secrets, _server, new DaemonController(), _setup);
+
+        var link = await shell.GetLinkAsync(Path.Combine(local, "Plan", "a.txt"), default);
+        _server.Link = Result.Fail<LinkInfo>(SyncErrorKind.Permanent, ErrorCode.InvalidRequest, "Für diesen Link ist ein Passwort vorgeschrieben.");
+        var policy = await shell.GetLinkAsync(Path.Combine(local, "a.txt"), default);
+        var outside = await shell.GetLinkAsync(Path.Combine(_root, "fremd.txt"), default);
+
+        Assert.Equal((true, "https://nas:8443/s/tok123"), (link.Succeeded, link.Message));
+        Assert.Equal("https://nas:8443/ s1 Projekte/Team/Plan/a.txt", _server.LinkRequests[0]);
+        Assert.Equal((ShellErrors.LinkNeedsWeb, ShellErrors.NotInSyncFolder), (policy.ErrorCode, outside.ErrorCode));
+    }
+
+    [Fact]
     public async Task Keep_and_free_up_only_work_in_tasks_with_files_on_demand()
     {
         var cloud = new CloudFolders(_lifecycle);
@@ -285,6 +303,16 @@ public sealed class ClientSetupTests : IDisposable
 
         public Task<Result<NodeInfo?>> GetNodeInfoAsync(ServerLogin login, string spaceId, RelativePath path, CancellationToken ct) =>
             Task.FromResult(Result.Ok<NodeInfo?>(null));
+
+        public Result<LinkInfo> Link { get; set; } = Result.Ok(new LinkInfo("l1", LinkKinds.Share, "tok123", DateTimeOffset.UnixEpoch, null, false));
+
+        public List<string> LinkRequests { get; } = [];
+
+        public Task<Result<LinkInfo>> GetOrCreateLinkAsync(ServerLogin login, string spaceId, RelativePath path, CancellationToken ct)
+        {
+            LinkRequests.Add($"{login.Server} {spaceId} {path.Value}");
+            return Task.FromResult(Link);
+        }
 
         public Task<Result<Stream>> DownloadBlockAsync(ServerLogin login, string spaceId, string hash, CancellationToken ct) =>
             Task.FromResult(Result.Ok<Stream>(new MemoryStream()));

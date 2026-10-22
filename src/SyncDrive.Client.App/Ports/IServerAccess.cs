@@ -43,6 +43,9 @@ public interface IServerAccess
     /// <summary>Knoten mit Revision; null, wenn es ihn nicht gibt.</summary>
     Task<Result<NodeInfo?>> GetNodeInfoAsync(ServerLogin login, string spaceId, RelativePath path, CancellationToken ct);
 
+    /// <summary>„Link erhalten“: der vorhandene öffentliche Link des Elements oder ein neuer ohne Passwort und Ablauf.</summary>
+    Task<Result<LinkInfo>> GetOrCreateLinkAsync(ServerLogin login, string spaceId, RelativePath path, CancellationToken ct);
+
     /// <summary>Inhalt eines Blocks; der Aufrufer gibt den Strom frei.</summary>
     Task<Result<Stream>> DownloadBlockAsync(ServerLogin login, string spaceId, string hash, CancellationToken ct);
 

@@ -430,7 +430,21 @@ public sealed class ViewModelTests : IAsyncDisposable
         Assert.Empty(_ui.Messages);
     }
 
+    [Fact]
+    public async Task Get_link_copies_the_address_and_says_so()
+    {
+        _daemon.ShellResults.Enqueue(new ShellResult(true, Message: "https://nas:8443/s/tok123"));
+
+        await new ShellCommand(_daemon, _ui, En).RunAsync("getlink", @"C:\Sync\Drive\a.txt", CancellationToken.None);
+
+        Assert.Equal([@"link C:\Sync\Drive\a.txt"], _daemon.Calls);
+        Assert.Equal(["https://nas:8443/s/tok123"], _ui.Copied);
+        Assert.Equal("The link was copied to the clipboard:\nhttps://nas:8443/s/tok123", Assert.Single(_ui.Messages));
+    }
+
     [Theory]
+    [InlineData("getlink", "link_needs_web", "The server requires a password or an expiry date for links. Please create the link in the web interface (Share → Public link).")]
+    [InlineData("getlink", "forbidden", "You are not allowed to do this.")]
     [InlineData("keep", "not_on_demand", "Only available in sync tasks with files on demand.")]
     [InlineData("stopsync", "not_possible", "The sync folder itself can only be removed as a whole task.")]
     [InlineData("resumesync", "forbidden", "You are not allowed to do this.")]

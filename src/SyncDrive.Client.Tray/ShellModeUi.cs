@@ -19,6 +19,20 @@ public sealed class ShellModeUi(Texts texts) : IUiServices
 
     public async Task ShowMessageAsync(string message) => await ShowAndWaitAsync(new MessageDialog(message, texts, confirm: false));
 
+    /// <summary>Die Zwischenablage gehört zu einem Fenster: kopiert wird, sobald die Meldung offen ist.</summary>
+    public async Task CopyAndShowAsync(string text, string message)
+    {
+        var dialog = new MessageDialog(message, texts, confirm: false);
+        dialog.Opened += async (_, _) =>
+        {
+            if (dialog.Clipboard is { } clipboard)
+            {
+                await clipboard.SetTextAsync(text);
+            }
+        };
+        await ShowAndWaitAsync(dialog);
+    }
+
     public async Task<bool> ConfirmAsync(string message)
     {
         var dialog = new MessageDialog(message, texts, confirm: true);

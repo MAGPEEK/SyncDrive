@@ -5,6 +5,18 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.23.0] – 2026-10-22 – „Link erhalten“ im Explorer
+
+### Hinzugefügt
+- Windows-Client, Explorer-Untermenü **SyncDrive → Link erhalten** (Dateien und Ordner): nimmt den vorhandenen öffentlichen Link oder legt
+  einen ohne Passwort und Ablauf an, kopiert die Adresse in die Zwischenablage und zeigt sie an. Die Adresse lautet wie die Serveradresse
+  des Clients plus `/s/<token>`.
+- Schreiben die Freigabe-Richtlinien Passwort oder Ablaufdatum vor, erklärt die Meldung, dass der Link in der Weboberfläche anzulegen ist;
+  ohne Freigaberecht oder bei abgeschalteten Links: „Nicht erlaubt“.
+- Daemon: `IShellActions.GetLinkAsync` (IPC `shell.link`), `IServerAccess.GetOrCreateLinkAsync`; Oberfläche: `CopyAndShowAsync`.
+- Tests: Menü, Explorer-Befehl, Daemon (Pfad samt Aufgaben-Unterordner, Richtlinie), Ende-zu-Ende gegen den echten Server (zweimal derselbe
+  Link, die Linkseite antwortet).
+
 ## [0.22.0] – 2026-10-22 – Speicher und Kontingent im Konto-Menü
 
 ### Hinzugefügt

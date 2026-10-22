@@ -71,6 +71,7 @@ Right-click a file or folder inside a sync folder → **SyncDrive**:
 
 | Entry | For | What it does |
 |---|---|---|
+| Get link | files, folders | Copy the public link to the clipboard (creates one without password if there is none; needs the right to share) |
 | Browse previous versions | files | List, save or restore earlier versions |
 | Always keep on this device | files, folders (files on demand only) | Download now and keep the content locally |
 | Free up space | files, folders (files on demand only) | Remove the local content; the file stays visible and is fetched again when opened |
