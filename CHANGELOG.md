@@ -5,6 +5,15 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.18.2] – 2026-10-22 – Docker Hub
+
+### Geändert
+- Das Server-Image erscheint auf Docker Hub als `magpeek/syncdrive-server` mit den Tags `<version>` und `latest` (statt in der GitHub
+  Container Registry). Die Pipeline braucht dafür das Repository-Secret `DOCKERHUB_TOKEN`.
+
+### Behoben
+- Die Tests ließen sich nur im Debug-Build übersetzen: im Release-Build (CI) brach eine Nullable-Warnung in `ClientSetupTests` den Bau ab.
+
 ## [0.18.1] – 2026-10-22 – Veröffentlichung
 
 ### Hinzugefügt

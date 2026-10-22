@@ -117,7 +117,7 @@ public sealed class ClientSetupTests : IDisposable
         Assert.Equal(("nas", "nas:8443", local), (summary.ServerName, summary.ServerAddress, summary.LocalPath));
 
         await _setup.DeleteTaskAsync(created.TaskId!, default);
-        Assert.Equal([created.TaskId], _lifecycle.Stopped);
+        Assert.Equal([created.TaskId!], _lifecycle.Stopped);
         Assert.DoesNotContain(await _setup.GetTasksAsync(default), t => t.TaskId == created.TaskId);
         Assert.True(Directory.Exists(local)); // lokale Dateien bleiben
     }
@@ -150,7 +150,7 @@ public sealed class ClientSetupTests : IDisposable
         var stored = Assert.Single(await _config.ListConnectionsAsync(default));
         Assert.Equal(("https://nas-neu:9000/", "d2"), (stored.ServerUrl.ToString(), stored.DeviceId));
         Assert.Equal("token-2", await _secrets.GetAsync(CredentialKeys.DeviceToken(connection), default));
-        Assert.Equal([created.TaskId], _lifecycle.Stopped);
+        Assert.Equal([created.TaskId!], _lifecycle.Stopped);
         Assert.Equal(2, _lifecycle.Started.Count(t => t.Id == created.TaskId));
     }
 
@@ -170,7 +170,7 @@ public sealed class ClientSetupTests : IDisposable
         Assert.True(ok.Succeeded);
         var stored = (await _setup.GetTaskAsync(created.TaskId!, default))!;
         Assert.Equal((local, true, "Archiv"), (stored.LocalPath, stored.AdvancedConsistencyCheck, stored.Filters!.ExcludedFolders!.Single().Value));
-        Assert.Equal([created.TaskId], _lifecycle.Stopped);
+        Assert.Equal([created.TaskId!], _lifecycle.Stopped);
         Assert.Equal(SetupErrors.UnknownTask, (await _setup.UpdateTaskAsync(task with { Id = "t_x" }, default)).ErrorCode);
     }
 

@@ -52,10 +52,10 @@ CPU and processes, rotating JSON logs.
 ## Plain `docker run`
 
 Without the proxy (for example behind an existing reverse proxy that already terminates TLS). Every release also publishes a
-prebuilt multi-arch image (`linux/amd64`, `linux/arm64`) as `ghcr.io/magpeek/syncdrive-server:<version>`; use it instead of building:
+prebuilt multi-arch image (`linux/amd64`, `linux/arm64`) on Docker Hub as `magpeek/syncdrive-server` with the tags `<version>` and `latest`; use it instead of building:
 
 ```bash
-docker build -t syncdrive-server .     # or: docker pull ghcr.io/magpeek/syncdrive-server:latest
+docker build -t syncdrive-server .     # or: docker pull magpeek/syncdrive-server:latest
 
 docker run -d --name syncdrive \
   --restart unless-stopped \
@@ -175,4 +175,4 @@ new minor version may require updating the clients as well (see [CHANGELOG.md](.
 | Endpoint | Purpose |
 |---|---|
 | `GET /healthz` | `200` when the server is up (used by the Docker health check, works without TLS) |
-| `GET /api/v1/info` | Product name and version, e.g. `{"product":"SyncDrive","version":"0.18.1"}` |
+| `GET /api/v1/info` | Product name and version, e.g. `{"product":"SyncDrive","version":"0.18.2"}` |

@@ -1,11 +1,12 @@
-# Ein Tag vX.Y.Z baut die Windows-Pakete und das Server-Image und legt ein GitHub-Release an.
+# Ein Tag vX.Y.Z baut die Windows-Pakete und das Server-Image (Docker Hub magpeek/syncdrive-server, Tags <version> und latest) und legt ein GitHub-Release an.
 name: release
 on:
   push:
     tags: ['v*']
+env:
+  DOCKERHUB_USER: magpeek
 permissions:
   contents: write
-  packages: write
 jobs:
   client:
     runs-on: windows-latest
@@ -28,14 +29,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
+      # Docker Hub: Zugriffstoken (Read & Write) als Repository-Secret DOCKERHUB_TOKEN hinterlegen.
       - uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ env.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - id: names
         run: |
-          echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/syncdrive-server" >> "$GITHUB_OUTPUT"
+          echo "image=docker.io/${DOCKERHUB_USER}/syncdrive-server" >> "$GITHUB_OUTPUT"
           echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
       - uses: docker/build-push-action@v6
         with:
@@ -59,7 +60,7 @@ jobs:
         run: |
           version="${GITHUB_REF_NAME#v}"
           awk -v v="$version" '$0 ~ "^## \[" v "\]" {on=1; next} /^## \[/ {on=0} on' CHANGELOG.md > notes.md
-          printf '\n---\nServer image: `ghcr.io/%s/syncdrive-server:%s`\n' "${GITHUB_REPOSITORY_OWNER,,}" "$version" >> notes.md
+          printf '\n---\nServer image: `docker pull %s/syncdrive-server:%s`\n' "$DOCKERHUB_USER" "$version" >> notes.md
       - run: gh release create "$GITHUB_REF_NAME" dist/* --title "SyncDrive $GITHUB_REF_NAME" --notes-file notes.md --prerelease
         env:
           GH_TOKEN: ${{ github.token }}
