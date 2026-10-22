@@ -15,19 +15,19 @@
         <TextBlock Text="{Binding Texts.AppName}" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center" />
       </StackPanel>
       <Button Classes="nav" Classes.active="{Binding IsSyncTasks}" Command="{Binding NavigateCommand}" CommandParameter="{x:Static ui:MainPage.SyncTasks}">
-        <StackPanel Orientation="Horizontal" Spacing="10"><TextBlock Text="⟳" /><TextBlock Text="{Binding Texts.NavSyncTasks}" /></StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="10"><PathIcon Classes="nav-icon" Data="{StaticResource IconSyncTasks}" /><TextBlock Text="{Binding Texts.NavSyncTasks}" /></StackPanel>
       </Button>
       <Button Classes="nav" Classes.active="{Binding IsBackup}" Command="{Binding NavigateCommand}" CommandParameter="{x:Static ui:MainPage.BackupTask}">
-        <StackPanel Orientation="Horizontal" Spacing="10"><TextBlock Text="⤓" /><TextBlock Text="{Binding Texts.NavBackupTask}" /></StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="10"><PathIcon Classes="nav-icon" Data="{StaticResource IconBackupTask}" /><TextBlock Text="{Binding Texts.NavBackupTask}" /></StackPanel>
       </Button>
       <Button Classes="nav" Classes.active="{Binding IsLogs}" Command="{Binding NavigateCommand}" CommandParameter="{x:Static ui:MainPage.Logs}">
-        <StackPanel Orientation="Horizontal" Spacing="10"><TextBlock Text="≡" /><TextBlock Text="{Binding Texts.NavLogs}" /></StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="10"><PathIcon Classes="nav-icon" Data="{StaticResource IconLogs}" /><TextBlock Text="{Binding Texts.NavLogs}" /></StackPanel>
       </Button>
       <Button Classes="nav" Classes.active="{Binding IsNotifications}" Command="{Binding NavigateCommand}" CommandParameter="{x:Static ui:MainPage.Notifications}">
-        <StackPanel Orientation="Horizontal" Spacing="10"><TextBlock Text="✉" /><TextBlock Text="{Binding Texts.NavNotifications}" /></StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="10"><PathIcon Classes="nav-icon" Data="{StaticResource IconNotifications}" /><TextBlock Text="{Binding Texts.NavNotifications}" /></StackPanel>
       </Button>
       <Button Classes="nav" Classes.active="{Binding IsSettings}" Command="{Binding NavigateCommand}" CommandParameter="{x:Static ui:MainPage.GlobalSettings}">
-        <StackPanel Orientation="Horizontal" Spacing="10"><TextBlock Text="⚙" /><TextBlock Text="{Binding Texts.NavGlobalSettings}" /></StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="10"><PathIcon Classes="nav-icon" Data="{StaticResource IconSettings}" /><TextBlock Text="{Binding Texts.NavGlobalSettings}" /></StackPanel>
       </Button>
     </StackPanel>
     <Border Grid.Column="1" Background="{StaticResource Line}" />
