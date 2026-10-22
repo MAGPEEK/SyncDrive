@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SyncDrive.Client.App.Control;
@@ -17,7 +18,7 @@ public enum WizardStep
 
 /// <summary>
 /// Assistent „Create a new sync task“: Verbindung (frühere oder neue; die nicht gewählte Gruppe ist gesperrt),
-/// Prüfen mit Sperre über der Seite, Ordner (Server oben, Computer unten, „Not yet selected“ bis zur Wahl), Optionen. Regelverstöße kommen
+/// Prüfen mit Sperre über der Seite, Ordner (Server oben, Computer unten; ohne eigene Wahl „SyncDrive“ im Benutzerordner), Optionen. Regelverstöße kommen
 /// als Meldung mit Grund, sobald ein Ordner gewählt ist.
 /// </summary>
 public sealed partial class WizardViewModel : ObservableObject
@@ -79,9 +80,6 @@ public sealed partial class WizardViewModel : ObservableObject
     private string _excludedExtensions = string.Empty;
 
     [ObservableProperty]
-    private bool _advancedConsistency;
-
-    [ObservableProperty]
     private bool _onDemand;
 
     public WizardViewModel(IClientSetup setup, IUiServices ui, Texts texts, string suggestedLocalFolder)
@@ -123,7 +121,8 @@ public sealed partial class WizardViewModel : ObservableObject
         _ => Texts.WizardOptionsHeading,
     };
 
-    public string LocalFolderText => LocalFolder ?? Texts.NotYetSelected;
+    /// <summary>Ohne eigene Wahl der Standardordner, der beim Weiter angelegt wird.</summary>
+    public string LocalFolderText => LocalFolder ?? string.Format(CultureInfo.CurrentCulture, Texts.DefaultLocalFolder, _suggestedLocalFolder);
 
     /// <summary>Fingerabdruck in Vierergruppen, damit man ihn mit dem auf dem Server vergleichen kann.</summary>
     public string FingerprintText => Fingerprints.Grouped(CertificateFingerprint);
@@ -190,7 +189,7 @@ public sealed partial class WizardViewModel : ObservableObject
                 await ConnectAsync(trustedFingerprint: null);
                 break;
             case WizardStep.Folders:
-                if (_remotePath is null || LocalFolder is null)
+                if (_remotePath is null || (LocalFolder ??= await DefaultLocalFolderAsync()) is null)
                 {
                     Error = Texts.ErrorChooseFolders;
                     return;
@@ -255,6 +254,21 @@ public sealed partial class WizardViewModel : ObservableObject
         }
 
         LocalFolder = path;
+    }
+
+    /// <summary>„SyncDrive“ im Benutzerordner; gehört er schon zu einer Aufgabe, „SyncDrive 2“, „SyncDrive 3“ … Angelegt wird er mit der Aufgabe.</summary>
+    private async Task<string?> DefaultLocalFolderAsync()
+    {
+        for (var n = 1; n <= 9; n++)
+        {
+            var candidate = n == 1 ? _suggestedLocalFolder : $"{_suggestedLocalFolder} {n}";
+            if ((await _setup.CheckLocalFolderAsync(candidate, onDemand: false, CancellationToken.None)).Count == 0)
+            {
+                return candidate;
+            }
+        }
+
+        return null;
     }
 
     private async Task ConnectAsync(string? trustedFingerprint)
@@ -324,7 +338,7 @@ public sealed partial class WizardViewModel : ObservableObject
             var outcome = await _setup.CreateTaskAsync(
                 new NewTaskRequest(
                     _connectionId!, _spaceId!, _remotePath!, LocalFolder!, Direction, KeepLocallyDeleted && IsUploadOnly, OnDemand && !IsUploadOnly,
-                    AdvancedConsistency, filters),
+                    AdvancedConsistencyCheck: true, filters), // immer an: Inhalte werden gehasht statt Größe und Datum zu vertrauen
                 CancellationToken.None);
             if (outcome.Succeeded)
             {

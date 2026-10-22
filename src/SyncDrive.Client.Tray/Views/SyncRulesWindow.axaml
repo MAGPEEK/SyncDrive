@@ -51,7 +51,6 @@
           <RadioButton GroupName="rules-mode" Content="{Binding Texts.DownloadOnly}" IsChecked="{Binding DownloadOnly}" />
           <RadioButton GroupName="rules-mode" Content="{Binding Texts.UploadOnly}" IsChecked="{Binding UploadOnly}" />
           <CheckBox Margin="26,2,0,2" Content="{Binding Texts.KeepLocallyDeleted}" IsChecked="{Binding KeepLocallyDeleted}" IsEnabled="{Binding IsUploadOnly}" />
-          <CheckBox Margin="0,10,0,0" Content="{Binding Texts.AdvancedConsistency}" IsChecked="{Binding AdvancedConsistency}" />
         </StackPanel>
       </TabItem>
     </TabControl>

@@ -2,7 +2,7 @@
   <PropertyGroup>
     <!-- Einzige Quelle der Produktversion (Semantic Versioning, siehe ../CHANGELOG.md). Vor 1.0.0 darf sich das Protokoll noch ändern.
          Jeder Meilenstein hebt MINOR, reine Korrekturen PATCH; dazu ein Eintrag im CHANGELOG und ein Git-Tag vX.Y.Z. -->
-    <Version>0.24.0</Version>
+    <Version>0.25.0</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>

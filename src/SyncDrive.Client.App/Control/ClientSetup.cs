@@ -42,7 +42,7 @@ public sealed record NewTaskRequest(
     SyncDirection Direction = SyncDirection.TwoWay,
     bool KeepLocallyDeletedOnServer = true,
     bool OnDemand = false,
-    bool AdvancedConsistencyCheck = false,
+    bool AdvancedConsistencyCheck = true,
     TaskFilterSettings? Filters = null);
 
 /// <summary>Angelegt (<see cref="TaskId"/>) oder abgelehnt (Regelverstöße bzw. Fehler).</summary>

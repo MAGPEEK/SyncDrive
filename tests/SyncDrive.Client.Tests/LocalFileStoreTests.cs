@@ -24,6 +24,14 @@ public sealed class LocalFileStoreTests : IDisposable
 
     private static RelativePath P(string path) => RelativePath.Parse(path);
 
+    [Fact]
+    public void The_internal_folder_is_hidden()
+    {
+        var attributes = File.GetAttributes(Path.Combine(_root, LocalFileStore.InternalFolder));
+
+        Assert.True(attributes.HasFlag(FileAttributes.Hidden)); // Windows: Attribut; Linux meldet Namen mit Punkt als versteckt
+    }
+
     private string Full(string relative) => Path.Combine(_root, relative.Replace('/', Path.DirectorySeparatorChar));
 
     private void Write(string relative, string content = "x")

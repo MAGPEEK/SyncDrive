@@ -5,6 +5,20 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.25.0] – 2026-10-22 – Einfachere Einrichtung des Clients
+
+### Geändert
+- Assistent: Wählt man keinen eigenen lokalen Ordner, legt der Client `%USERPROFILE%\SyncDrive` an (ist er schon einer Aufgabe zugeordnet,
+  `SyncDrive 2`, `SyncDrive 3` …); die Seite zeigt ihn vorab mit „(wird automatisch angelegt)“.
+- „Erweiterte Konsistenzprüfung“ ist keine Option mehr (Assistent und Sync-Regeln): neue Aufgaben, auch per `syncdrive_cli`, prüfen immer
+  den Inhalt; wer die Sync-Regeln einer bestehenden Aufgabe speichert, schaltet sie ebenfalls ein.
+- Der Arbeitsordner `.syncdrive` im Sync-Ordner ist unter Windows versteckt (bestehende Sync-Ordner beim nächsten Start).
+
+### Behoben
+- Seite „Logs“: über dem Filter stand „System.InvalidCastException: Could not convert '(null)' … KeyValuePair“. Beim Neuladen leert die
+  Auswahlbox ihre Liste und meldet „nichts gewählt“; Aufgaben-, Ereignis- und Sprachauswahl nehmen das jetzt an. Ein Render-Test lädt die
+  Seite neu und prüft die Auswahlboxen auf Fehler (ohne Korrektur schlägt er mit genau dieser Meldung fehl).
+
 ## [0.24.0] – 2026-10-22 – Neue Anmeldeseite
 
 ### Geändert

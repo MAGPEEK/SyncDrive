@@ -27,6 +27,22 @@ public sealed class LocalFileStore : ILocalStore
         _clock = clock ?? TimeProvider.System;
         Directory.CreateDirectory(_staging);
         Directory.CreateDirectory(_trash);
+        HideInternalFolder(Path.Combine(_root, InternalFolder));
+    }
+
+    /// <summary>Unter Windows unsichtbar wie andere Verwaltungsordner (auch bei bestehenden Sync-Ordnern beim nächsten Start).</summary>
+    private static void HideInternalFolder(string path)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return; // unter Linux und macOS versteckt schon der Punkt am Anfang
+        }
+
+        var info = new DirectoryInfo(path);
+        if (!info.Attributes.HasFlag(FileAttributes.Hidden))
+        {
+            info.Attributes |= FileAttributes.Hidden;
+        }
     }
 
     public async IAsyncEnumerable<ScanItem> ScanAsync(

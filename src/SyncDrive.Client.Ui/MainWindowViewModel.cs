@@ -349,7 +349,7 @@ public sealed partial class LogsViewModel(ShellViewModel shell) : ObservableObje
     private List<LogRow> _all = [];
 
     [ObservableProperty]
-    private KeyValuePair<string, string> _taskFilter;
+    private KeyValuePair<string, string>? _taskFilter; // null, solange die Auswahlbox beim Neuladen leer ist: alle Aufgaben
 
     [ObservableProperty]
     private EventFilter _eventFilter = EventFilter.All;
@@ -366,10 +366,17 @@ public sealed partial class LogsViewModel(ShellViewModel shell) : ObservableObje
     /// <summary>Auswahlliste „All events“ mit Texten.</summary>
     public IReadOnlyList<KeyValuePair<EventFilter, string>> EventChoices => [.. EventOptions.Select(e => new KeyValuePair<EventFilter, string>(e, EventFilterText(e)))];
 
-    public KeyValuePair<EventFilter, string> EventChoice
+    /// <summary>Null schreibt die Auswahlbox, wenn ihre Liste neu entsteht (z. B. Sprachwechsel); dann bleibt der Filter, wie er ist.</summary>
+    public KeyValuePair<EventFilter, string>? EventChoice
     {
-        get => new(EventFilter, EventFilterText(EventFilter));
-        set => EventFilter = value.Key;
+        get => new KeyValuePair<EventFilter, string>(EventFilter, EventFilterText(EventFilter));
+        set
+        {
+            if (value is { } choice)
+            {
+                EventFilter = choice.Key;
+            }
+        }
     }
 
     public ObservableCollection<LogRow> Rows { get; } = [];
@@ -396,7 +403,7 @@ public sealed partial class LogsViewModel(ShellViewModel shell) : ObservableObje
         {
             var tasks = await client.GetTasksAsync(CancellationToken.None);
             var activity = await client.GetRecentActivityAsync(MaxEntries, CancellationToken.None);
-            var selected = TaskFilter.Key;
+            var selected = TaskFilter?.Key;
             TaskOptions.Clear();
             TaskOptions.Add(new(string.Empty, Texts.AllTasks));
             foreach (var task in tasks)
@@ -421,7 +428,7 @@ public sealed partial class LogsViewModel(ShellViewModel shell) : ObservableObje
         }
     }
 
-    partial void OnTaskFilterChanged(KeyValuePair<string, string> value) => Apply();
+    partial void OnTaskFilterChanged(KeyValuePair<string, string>? value) => Apply();
 
     partial void OnEventFilterChanged(EventFilter value)
     {
@@ -441,7 +448,7 @@ public sealed partial class LogsViewModel(ShellViewModel shell) : ObservableObje
     }
 
     private bool Matches(LogRow row) =>
-        (string.IsNullOrEmpty(TaskFilter.Key) || row.TaskId == TaskFilter.Key)
+        (string.IsNullOrEmpty(TaskFilter?.Key) || row.TaskId == TaskFilter?.Key)
         && (Search.Length == 0 || row.FullName.Contains(Search, StringComparison.CurrentCultureIgnoreCase))
         && EventFilter switch
         {
@@ -523,10 +530,17 @@ public sealed partial class SettingsViewModel(ShellViewModel shell) : Observable
 
     public IReadOnlyList<KeyValuePair<string, string>> Languages => [new("system", Texts.LanguageSystem), new("en", "English"), new("de", "Deutsch")];
 
-    public KeyValuePair<string, string> LanguageChoice
+    /// <summary>Null schreibt die Auswahlbox, wenn ihre Liste neu entsteht (Sprachwechsel); dann bleibt die Sprache.</summary>
+    public KeyValuePair<string, string>? LanguageChoice
     {
         get => Languages.FirstOrDefault(l => l.Key == Language, Languages[0]);
-        set => Language = value.Key ?? "system";
+        set
+        {
+            if (value is { } choice)
+            {
+                Language = choice.Key ?? "system";
+            }
+        }
     }
 
     public ObservableCollection<string> ShortcutFolders { get; } = [];

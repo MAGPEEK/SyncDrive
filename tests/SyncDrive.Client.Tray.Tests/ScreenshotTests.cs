@@ -92,6 +92,25 @@ public sealed class ScreenshotTests
         Assert.Equal(6, model.Logs.Rows.Count);
     }
 
+    [AvaloniaFact]
+    public async Task Reloading_the_logs_leaves_the_filter_boxes_without_errors()
+    {
+        var (shell, _) = Shell(TrayState.UpToDate, Texts.German);
+        var model = new MainWindowViewModel(shell, new SilentUi()) { Page = MainPage.Logs };
+        await model.RefreshAsync();
+        var window = new MainWindow { DataContext = model };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        await model.Logs.LoadAsync(); // leert und füllt die Aufgabenliste der Auswahlbox
+        Dispatcher.UIThread.RunJobs();
+
+        var boxes = window.GetVisualDescendants().OfType<ComboBox>().Where(c => c.IsEffectivelyVisible).ToList();
+        Assert.NotEmpty(boxes);
+        Assert.All(boxes, box => Assert.False(DataValidationErrors.GetHasErrors(box), string.Join(" | ", DataValidationErrors.GetErrors(box) ?? [])));
+        window.Close();
+    }
+
     [AvaloniaTheory]
     [InlineData(1, "display")]
     [InlineData(3, "proxy")]

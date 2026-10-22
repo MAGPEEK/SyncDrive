@@ -201,6 +201,14 @@ public sealed class ViewModelTests : IAsyncDisposable
         logs.TaskFilter = logs.TaskOptions[0];
         logs.Search = "BERICHT";
         Assert.Equal(2, logs.Rows.Count);
+
+        // Beim Neuladen leert die Auswahlbox ihre Liste und meldet „nichts gewählt“ (null): das darf nicht scheitern
+        logs.Search = string.Empty;
+        logs.EventFilter = EventFilter.Download;
+        logs.TaskFilter = null;
+        logs.EventChoice = null;
+        await logs.LoadAsync();
+        Assert.Equal((EventFilter.Download, "All tasks", "urlaub.jpg"), (logs.EventFilter, logs.TaskFilter?.Value, Assert.Single(logs.Rows).Name));
     }
 
     [Fact]
@@ -288,7 +296,7 @@ public sealed class ViewModelTests : IAsyncDisposable
         await wizard.ChooseServerFolderCommand.ExecuteAsync(null);
         _ui.LocalFolderAnswer = @"C:\Belegt";
         await wizard.ChooseLocalFolderCommand.ExecuteAsync(null);
-        Assert.Equal((En.FolderOverlaps, "Not yet selected"), (Assert.Single(_ui.Messages), wizard.LocalFolderText));
+        Assert.Equal((En.FolderOverlaps, @"C:\Users\x\SyncDrive (created automatically)"), (Assert.Single(_ui.Messages), wizard.LocalFolderText));
 
         _ui.LocalFolderAnswer = @"C:\Frei";
         await wizard.ChooseLocalFolderCommand.ExecuteAsync(null);
@@ -304,7 +312,31 @@ public sealed class ViewModelTests : IAsyncDisposable
         Assert.Equal(("c1", "s1", string.Empty, @"C:\Frei", SyncDirection.UploadOnly, true), (created.ConnectionId, created.SpaceId, created.RemotePath, created.LocalPath, created.Direction, created.KeepLocallyDeletedOnServer));
         Assert.Equal(2L * 1024 * 1024, created.Filters!.MaxFileSizeBytes);
         Assert.Equal(["iso", "tmp"], created.Filters.ExcludedExtensions!);
+        Assert.True(created.AdvancedConsistencyCheck);
         Assert.True(finished);
+    }
+
+    [Fact]
+    public async Task Without_a_chosen_local_folder_the_wizard_takes_a_free_SyncDrive_folder_in_the_profile()
+    {
+        _daemon.Connections.Add(new("c1", "NAS", "nas:8443", "anna"));
+        _daemon.Folders[":"] = [new("s1", string.Empty, "My Drive", true, true)];
+        _daemon.CheckFolder = path => path == @"C:\Users\x\SyncDrive" ? [TaskRuleViolation.LocalFolderOverlapsTask] : []; // schon eine Aufgabe
+        _ui.ServerFolderAnswer = async picker =>
+        {
+            picker.Selected = picker.Roots[0];
+            await System.Threading.Tasks.Task.Yield();
+            return picker.Result;
+        };
+        var wizard = new WizardViewModel(_daemon, _ui, En, @"C:\Users\x\SyncDrive");
+        await wizard.LoadAsync(CancellationToken.None);
+        await wizard.NextCommand.ExecuteAsync(null);
+        await wizard.ChooseServerFolderCommand.ExecuteAsync(null);
+
+        await wizard.NextCommand.ExecuteAsync(null);
+        await wizard.NextCommand.ExecuteAsync(null);
+
+        Assert.Equal(@"C:\Users\x\SyncDrive 2", Assert.Single(_daemon.Created).LocalPath);
     }
 
     [Fact]

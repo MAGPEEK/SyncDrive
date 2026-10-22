@@ -233,6 +233,8 @@ public sealed record Texts
 
     public required string NotYetSelected { get; init; }
 
+    public required string DefaultLocalFolder { get; init; }
+
     public required string Select { get; init; }
 
     public required string WizardOptionsHeading { get; init; }
@@ -246,8 +248,6 @@ public sealed record Texts
     public required string MaxFileSize { get; init; }
 
     public required string ExcludedExtensions { get; init; }
-
-    public required string AdvancedConsistency { get; init; }
 
     public required string OnDemandOption { get; init; }
 
@@ -487,6 +487,7 @@ public sealed record Texts
         ServerSide = "Server",
         YourComputer = "Your computer",
         NotYetSelected = "Not yet selected",
+        DefaultLocalFolder = "{0} (created automatically)",
         Select = "Select…",
         WizardOptionsHeading = "Options",
         SyncMode = "Sync mode",
@@ -494,7 +495,6 @@ public sealed record Texts
         FileFilter = "File filter",
         MaxFileSize = "Maximum file size in MB (0 = no limit)",
         ExcludedExtensions = "Skip file extensions (e.g. iso, tmp)",
-        AdvancedConsistency = "Advanced consistency check (more exact, slower)",
         OnDemandOption = "Enable On-demand Sync to save local storage space",
         OnDemandHint = "Files stay on the server and are downloaded when you open them.",
         Back = "Back",
@@ -655,6 +655,7 @@ public sealed record Texts
         WizardFoldersQuestion = "Wählen Sie, welcher Ordner auf dem Server mit welchem Ordner dieses Computers abgeglichen wird.",
         YourComputer = "Ihr Computer",
         NotYetSelected = "Noch nicht gewählt",
+        DefaultLocalFolder = "{0} (wird automatisch angelegt)",
         Select = "Wählen …",
         WizardOptionsHeading = "Optionen",
         SyncMode = "Sync-Modus",
@@ -662,7 +663,6 @@ public sealed record Texts
         FileFilter = "Dateifilter",
         MaxFileSize = "Höchste Dateigröße in MB (0 = unbegrenzt)",
         ExcludedExtensions = "Dateiendungen auslassen (z. B. iso, tmp)",
-        AdvancedConsistency = "Erweiterte Konsistenzprüfung (genauer, langsamer)",
         OnDemandOption = "On-Demand-Sync aktivieren, um lokalen Speicherplatz zu sparen",
         OnDemandHint = "Dateien bleiben auf dem Server und werden beim Öffnen heruntergeladen.",
         Back = "Zurück",

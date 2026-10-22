@@ -118,9 +118,6 @@ public sealed partial class SyncRulesViewModel : ObservableObject
     private bool _keepLocallyDeleted;
 
     [ObservableProperty]
-    private bool _advancedConsistency;
-
-    [ObservableProperty]
     private decimal _maxFileSizeMb;
 
     [ObservableProperty]
@@ -141,7 +138,6 @@ public sealed partial class SyncRulesViewModel : ObservableObject
         var filters = task.Filters ?? new TaskFilterSettings();
         _direction = task.Direction;
         _keepLocallyDeleted = task.KeepLocallyDeletedOnServer;
-        _advancedConsistency = task.AdvancedConsistencyCheck;
         _maxFileSizeMb = filters.MaxFileSizeBytes / (1024m * 1024m);
         _excludedExtensions = string.Join(", ", filters.ExcludedExtensions ?? []);
         _excludedNames = string.Join(", ", filters.ExcludedNames ?? []);
@@ -203,7 +199,7 @@ public sealed partial class SyncRulesViewModel : ObservableObject
         {
             Direction = Direction,
             KeepLocallyDeletedOnServer = KeepLocallyDeleted && IsUploadOnly,
-            AdvancedConsistencyCheck = AdvancedConsistency,
+            AdvancedConsistencyCheck = true, // keine Option mehr: wer eine Aufgabe ändert, bekommt die genaue Prüfung
             Filters = filters,
         };
     }

@@ -60,7 +60,11 @@ The setup `.exe` accepts the usual switches as well: `/quiet`, `/passive`, `/log
 2. Enter user name and password. If the server uses a self-signed certificate, the client shows its SHA-256 fingerprint; compare it
    with the server and confirm. The client then pins this certificate.
 3. Choose a folder on the server and a local folder, the sync direction (two-way, upload only, download only) and whether files
-   should be downloaded on demand.
+   should be downloaded on demand. Without a choice the client creates `%USERPROFILE%\SyncDrive` (or `SyncDrive 2` … if that one is
+   already in use). Files are always compared by content, not only by size and date.
+
+The client keeps its working data (staging area, local recycle bin) in a hidden folder `.syncdrive` inside each sync folder; leave it
+alone.
 
 The password is not stored: the client registers itself as a device and keeps only a device token, protected with Windows DPAPI.
 You can revoke the device at any time in the web interface (account menu → *Client list* → *Unlink*).
