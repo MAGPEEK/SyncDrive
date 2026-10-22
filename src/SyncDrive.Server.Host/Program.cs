@@ -62,6 +62,7 @@ services.AddSingleton<INotificationStore>(sp => new SqliteNotificationStore(Data
 services.AddSingleton<IShareStore>(sp => new SqliteShareStore(DatabasePath(sp)));
 services.AddSingleton<IPolicyStore>(sp => new SqlitePolicyStore(DatabasePath(sp)));
 services.AddSingleton<PolicyService>();
+services.AddSingleton<AccountEvents>();
 services.AddSingleton<SharingService>();
 services.AddSingleton<PublicLinkService>();
 services.AddDataProtection(); // Cookies für eingegebene Link-Passwörter; Schlüssel flüchtig: nach einem Neustart fragt der Link erneut

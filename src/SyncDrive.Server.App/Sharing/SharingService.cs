@@ -14,7 +14,8 @@ namespace SyncDrive.Server.App.Sharing;
 /// <see cref="PublicLinkService"/>.
 /// </summary>
 public sealed class SharingService(
-    IShareStore shares, AccountService accounts, SpaceService spaces, IPasswordHasher hasher, TimeProvider clock, PolicyService policies)
+    IShareStore shares, AccountService accounts, SpaceService spaces, IPasswordHasher hasher, TimeProvider clock, PolicyService policies,
+    AccountEvents events)
 {
     public const string SharePrefix = "sh_";
     public const int MinLinkPasswordLength = 4;
@@ -70,6 +71,14 @@ public sealed class SharingService(
         return new SpacesResponse(list);
     }
 
+    /// <summary>Echtzeit: die Spaces, deren Änderungen der Benutzer sieht (eigene, Team-Ordner, Spaces der mit ihm geteilten Ordner).</summary>
+    public async Task<string> WaitForAccountChangesAsync(Principal caller, string? after, TimeSpan timeout, CancellationToken ct)
+    {
+        var spaceIds = (await accounts.ListSpacesAsync(caller, ct)).Spaces.Select(s => s.Id)
+            .Concat((await shares.ListSharesForUserAsync(caller.UserId, ct)).Select(s => s.SpaceId));
+        return await events.WaitAsync(caller.UserId, spaceIds, after, timeout, ct);
+    }
+
     /// <summary>Freigabedialog: Eingeladene, öffentlicher Link und Dateianfrage eines Elements.</summary>
     public async Task<ServiceResult<SharingResponse>> GetSharingAsync(Principal caller, string accessId, string path, CancellationToken ct)
     {
@@ -116,6 +125,7 @@ public sealed class SharingService(
 
         var saved = await shares.SaveShareAsync(
             new ShareRecord(SharePrefix + Guid.NewGuid().ToString("N"), view.SpaceId, node.NodeId, userId, role, caller.UserId, clock.GetUtcNow()), ct);
+        events.Touch(userId);
         return ServiceResult.Ok(new InviteeInfo(saved.Id, await accounts.UserNameOfAsync(userId, ct) ?? "?", RoleText(saved.Role)));
     }
 
@@ -129,6 +139,7 @@ public sealed class SharingService(
         }
 
         await shares.DeleteShareAsync(shareId, ct);
+        events.Touch(share.UserId);
         return null;
     }
 

@@ -6,7 +6,8 @@ using SyncDrive.Server.App.Spaces;
 namespace SyncDrive.Server.App.Items;
 
 /// <summary>Benachrichtigungen (Tray-Reiter „Notifications“, Web „Notification Center“). Art: Freigabe an den Empfänger.</summary>
-public sealed class NotificationService(INotificationStore store, SharingService sharing, AccountService accounts, TimeProvider clock)
+public sealed class NotificationService(
+    INotificationStore store, SharingService sharing, AccountService accounts, TimeProvider clock, AccountEvents events)
 {
     /// <summary>Jemand hat einen Space oder Ordner mit dem Empfänger geteilt; im Client „Person shared Ordner“.</summary>
     public const string Shared = "shared";
@@ -25,6 +26,7 @@ public sealed class NotificationService(INotificationStore store, SharingService
 
         await store.AddAsync(new NotificationRecord(
             "nt_" + Guid.NewGuid().ToString("N"), recipient, Shared, clock.GetUtcNow(), caller.UserId, spaceId, null, string.Empty, Read: false), ct);
+        events.Touch(recipient);
     }
 
     public async Task<NotificationsResponse> ListAsync(Principal caller, CancellationToken ct)

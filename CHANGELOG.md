@@ -5,6 +5,29 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.32.1] – 2026-10-23 – Umriss-Symbole der Verwaltung
+
+### Geändert
+- Weboberfläche: Zahnrad in der linken Leiste und die Symbole im Verwaltungsmenü (Organisationseinstellungen, Benutzer & Gruppen,
+  Anmeldeseite) als schlanke Umriss-Symbole statt gefüllter Flächen.
+
+### Behoben
+- Freigabe-Richtlinie „Höchstdauer“: In der Woche vor der Umstellung auf Winterzeit lehnte der Server kurz nach Mitternacht einen Link
+  mit dem letzten erlaubten Tag als Ablaufdatum ab (Tagesende eine Stunde später in UTC). Der Spielraum umfasst jetzt die Zeitumstellung.
+
+## [0.32.0] – 2026-10-22 – Echtzeit in der Weboberfläche
+
+### Hinzugefügt
+- Weboberfläche in **Echtzeit**: Was sich ändert – Dateien und Ordner (auch vom Desktop-Client oder anderen Benutzern in geteilten
+  Ordnern), neue Freigaben, Benachrichtigungen, Favoriten und Labels –, erscheint ohne Neuladen in der offenen Ansicht (Ordner, Zuletzt,
+  Papierkorb, Von mir geteilt, Dateianfragen), in der Seitenleiste und an der Glocke. Viele Änderungen kurz hintereinander lösen ein
+  einziges Neuladen aus.
+- API: `GET /api/v1/account/changes/wait` (Long-Poll über alle Spaces des Benutzers und ein persönliches Signal, `AccountEvents`).
+
+### Geändert
+- Die Weboberfläche hält statt eines Long-Polls je geöffnetem Space und dem minütlichen Abfragen der Benachrichtigungen nur noch eine
+  Verbindung (`LiveUpdatesViewModel`).
+
 ## [0.31.0] – 2026-10-22 – Hell und Dunkel
 
 ### Hinzugefügt

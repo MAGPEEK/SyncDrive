@@ -10,6 +10,7 @@
 @inject AccountViewModel Account
 @inject ShareViewModel Share
 @inject SharedByMeViewModel SharedByMe
+@inject LiveUpdatesViewModel Live
 @inject NavigationManager Navigation
 
 @* Rahmen: schmale Leiste (Logo, Benachrichtigungen, Konto), Kategorien samt „My Labels“, Kopf mit Pfadleiste bzw. Titel
@@ -34,21 +35,21 @@
             @* Verwaltung nur für Administratoren: eigenes Zahnrad über dem Profil, getrennt von den persönlichen Einstellungen. *@
             <button class="rail-button @(_adminOpen ? "open" : "")" title="@T.Administration" aria-label="@T.Administration" aria-expanded="@_adminOpen"
                     @onclick="ToggleAdmin" @onclick:stopPropagation>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M10.3 2h3.4l.5 2.6 1.6.9 2.5-.9 1.7 2.9-2 1.7v1.8l2 1.7-1.7 2.9-2.5-.9-1.6.9-.5 2.6h-3.4l-.5-2.6-1.6-.9-2.5.9-1.7-2.9 2-1.7V9.2l-2-1.7 1.7-2.9 2.5.9 1.6-.9zM12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z" transform="translate(0 1.5)" /></svg>
+                <svg class="outline" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.95 10.14L21.41 10.68L21.41 13.32L18.95 13.86L18.24 15.6L19.59 17.72L17.72 19.59L15.6 18.24L13.86 18.95L13.32 21.41L10.68 21.41L10.14 18.95L8.4 18.24L6.28 19.59L4.41 17.72L5.76 15.6L5.05 13.86L2.59 13.32L2.59 10.68L5.05 10.14L5.76 8.4L4.41 6.28L6.28 4.41L8.4 5.76L10.14 5.05L10.68 2.59L13.32 2.59L13.86 5.05L15.6 5.76L17.72 4.41L19.59 6.28L18.24 8.4Z" /><circle cx="12" cy="12" r="3" /></svg>
             </button>
             @if (_adminOpen)
             {
                 <div class="menu admin-menu" role="menu" @onclick:stopPropagation>
                     <button class="menu-item" role="menuitem" @onclick="() => OpenAdmin(AdminPage.Section.Organisation)">
-                        <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9.2a2.5 2.5 0 0 1 4.6 0H20v2h-2.2a2.5 2.5 0 0 1-4.6 0H4zm0 10h2.2a2.5 2.5 0 0 1 4.6 0H20v2h-9.2a2.5 2.5 0 0 1-4.6 0H4zm0-5h9.2a2.5 2.5 0 0 1 4.6 0H20v2h-2.2a2.5 2.5 0 0 1-4.6 0H4z" /></svg>
+                        <svg class="menu-icon outline" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h8M16 6h4M14 3.5v5M4 12h3M11 12h9M9 9.5v5M4 18h10M18 18h2M16 15.5v5" /></svg>
                         <span class="menu-label">@T.OrganisationSettings</span>
                     </button>
                     <button class="menu-item" role="menuitem" @onclick="() => OpenAdmin(AdminPage.Section.People)">
-                        <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4a4 4 0 1 1 0 8 4 4 0 0 1 0-8zm0 9.5c3.6 0 6.5 1.8 6.5 4V20h-13v-2.5c0-2.2 2.9-4 6.5-4zM16.5 5a3.5 3.5 0 0 1 0 7c-.4 0-.8-.1-1.2-.2a5.5 5.5 0 0 0 0-6.6c.4-.1.8-.2 1.2-.2zm1 9c2.6.4 4.5 1.8 4.5 3.5V20h-4.5v-2.5c0-1.4-.7-2.6-1.8-3.5z" /></svg>
+                        <svg class="menu-icon outline" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5" /><path d="M2.5 19.5v-.5a5 5 0 0 1 5-5h3a5 5 0 0 1 5 5v.5M15 4.7a3.5 3.5 0 0 1 0 6.6M17.5 14.2a5 5 0 0 1 4 4.8v.5" /></svg>
                         <span class="menu-label">@T.ManageUsersGroups</span>
                     </button>
                     <button class="menu-item" role="menuitem" @onclick="() => { _adminOpen = false; _portalOpen = true; }">
-                        <svg class="menu-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm1 2v12h14V6zm4 3h6v1.5H9zm-1 3h8v2.5H8z" /></svg>
+                        <svg class="menu-icon outline" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2" /><path d="M8.5 11h7M8.5 14.5h7" /></svg>
                         <span class="menu-label">@T.LoginPortal</span>
                     </button>
                 </div>
@@ -290,8 +291,6 @@
 </div>
 
 @code {
-    private static readonly TimeSpan NotificationInterval = TimeSpan.FromMinutes(1);
-
     private enum View
     {
         Folder,
@@ -343,12 +342,40 @@
 
         Notes.Changed += NotesChanged;
         await Browser.InitializeAsync(Token);
-        _ = Browser.RunLiveUpdatesAsync(Token); // Änderungen anderer Geräte ohne Neuladen
-        _ = Notes.RunPollingAsync(NotificationInterval, Token);
+        _ = Live.RunAsync(() => InvokeAsync(ReloadAsync), Token); // Änderungen, auch von anderen Geräten, ohne Neuladen der Seite
+        await Notes.LoadAsync(Token);
         await Marks.LoadAsync(Token);
     }
 
-    private IEnumerable<ViewModel> Models => [Browser, Search, Recent, Versions, Trash, Marks, Notes, Account, Share, SharedByMe];
+    private IEnumerable<ViewModel> Models => [Browser, Search, Recent, Versions, Trash, Marks, Notes, Account, Share, SharedByMe, Live];
+
+    /// <summary>Echtzeit: Seitenleiste, Glocke, Sterne und die offene Ansicht frisch vom Server.</summary>
+    private async Task ReloadAsync()
+    {
+        await Browser.ReloadSpacesAsync(Token);
+        await Notes.LoadAsync(Token);
+        await Marks.LoadAsync(Token);
+        switch (_view)
+        {
+            case View.Folder when Browser.Space is not null:
+                await Browser.LoadAsync(Token);
+                break;
+            case View.Recent:
+                await Recent.LoadAsync(Browser.Spaces, Token);
+                break;
+            case View.Trash:
+                await Trash.LoadAsync(Browser.Spaces, Token);
+                break;
+            case View.SharedByMe or View.FileRequests:
+                await SharedByMe.LoadAsync(Browser.Spaces, Token);
+                break;
+        }
+
+        if (_accountOpen)
+        {
+            await Account.LoadStorageAsync(Token);
+        }
+    }
 
     private void Refresh() => InvokeAsync(StateHasChanged);
 

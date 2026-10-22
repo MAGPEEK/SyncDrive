@@ -233,7 +233,7 @@ public sealed class BrowserViewModelTests(HostFactory factory) : IClassFixture<H
         var page = await OpenPageAsync();
         var browser = page.Browser;
         using var stop = new CancellationTokenSource();
-        var live = browser.RunLiveUpdatesAsync(stop.Token);
+        var live = new LiveUpdatesViewModel(page.Api, WebTexts.English).RunAsync(() => browser.LoadAsync(stop.Token), stop.Token);
         var other = await factory.LoginAsync(page.User, Password);
 
         await Task.Delay(300); // der Long-Poll wartet schon

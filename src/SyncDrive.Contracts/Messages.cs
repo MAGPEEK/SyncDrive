@@ -236,3 +236,9 @@ public sealed record SharingPolicies(
     bool FileRequests = true,
     bool RequestPasswordRequired = false,
     int? RequestMaxDays = null);
+
+/// <summary>
+/// Echtzeit (<c>GET /account/changes/wait?after=…</c>): undurchsichtiger Stand über alles, was der Benutzer sieht. Weicht er vom
+/// mitgeschickten ab, hat sich etwas geändert.
+/// </summary>
+public sealed record AccountChangesResponse(string Stamp);

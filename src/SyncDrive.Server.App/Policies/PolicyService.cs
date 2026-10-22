@@ -62,8 +62,9 @@ public sealed class PolicyService(IPolicyStore store)
             return new ServiceError(ErrorCode.InvalidRequest, "Für diesen Link ist ein Passwort vorgeschrieben.");
         }
 
-        // Kalendertage bis Tagesende: ein Tag Spielraum, damit das letzte erlaubte Datum nicht von Uhrzeit und Zeitzone abhängt
-        if (maxDays is { } days && (expiresAt is not { } expires || expires > now.AddDays(days + 1)))
+        // Kalendertage bis Tagesende: ein Tag Spielraum, damit das letzte erlaubte Datum nicht von Uhrzeit und Zeitzone abhängt, und eine
+        // Stunde, falls dazwischen die Uhr auf Winterzeit umgestellt wird (Tagesende dann eine Stunde später in UTC)
+        if (maxDays is { } days && (expiresAt is not { } expires || expires > now.AddDays(days + 1).AddHours(1)))
         {
             return new ServiceError(ErrorCode.InvalidRequest, $"Der Link braucht ein Ablaufdatum innerhalb von {days} Tagen.");
         }

@@ -170,10 +170,11 @@ public interface IDriveApi
 
     Task<TeamFolderInfo> RemoveTeamMemberAsync(string spaceId, string kind, string id, CancellationToken ct);
 
-    Task<long> CursorAsync(string spaceId, CancellationToken ct);
-
-    /// <summary>Wartet (Long-Poll) auf Änderungen nach <paramref name="after"/>; liefert den neuen Stand, bei Zeitablauf den alten.</summary>
-    Task<long> WaitForChangesAsync(string spaceId, long after, CancellationToken ct);
+    /// <summary>
+    /// Wartet (Long-Poll) auf eine Änderung in allem, was der Benutzer sieht; liefert den neuen Stand, bei Zeitablauf den alten. Ohne
+    /// <paramref name="after"/> sofort den aktuellen.
+    /// </summary>
+    Task<string> WaitForAccountChangesAsync(string? after, CancellationToken ct);
 }
 
 /// <summary>Öffentliche Links ohne Anmeldung (Seite <c>/s/{token}</c>).</summary>
@@ -605,17 +606,11 @@ public sealed class HttpDriveApi : IDriveApi, IPublicLinkApi
         return await ReadAsync<PublicUploadResponse>(response, ct);
     }
 
-    public async Task<long> CursorAsync(string spaceId, CancellationToken ct)
+    public async Task<string> WaitForAccountChangesAsync(string? after, CancellationToken ct)
     {
-        using var response = await _http.GetAsync($"api/v1/spaces/{Escape(spaceId)}/cursor", ct);
-        return (await ReadAsync<CursorResponse>(response, ct)).Latest;
-    }
-
-    public async Task<long> WaitForChangesAsync(string spaceId, long after, CancellationToken ct)
-    {
-        using var response = await _http.GetAsync($"api/v1/spaces/{Escape(spaceId)}/changes/wait?after={after}&limit=1", ct);
-        var page = await ReadAsync<ChangesResponse>(response, ct);
-        return page.Changes.Count == 0 ? after : page.NextCursor;
+        using var response = await _http.GetAsync(
+            after is null ? "api/v1/account/changes/wait" : $"api/v1/account/changes/wait?after={Uri.EscapeDataString(after)}", ct);
+        return (await ReadAsync<AccountChangesResponse>(response, ct)).Stamp;
     }
 
     /// <summary>Zerlegt im Browser und schickt nur Blöcke, die der Server für dieses Ziel noch nicht hat (<paramref name="missing"/>, dann <c>{blocks}/{hash}</c>).</summary>

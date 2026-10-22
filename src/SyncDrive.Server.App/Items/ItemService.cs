@@ -10,7 +10,7 @@ namespace SyncDrive.Server.App.Items;
 /// Favoriten und Labels (B8). Gemerkt wird die Knoten-Id, angezeigt der aktuelle Pfad: Nach Umbenennen oder Verschieben bleiben Favoriten
 /// und Labels erhalten; gelöschte oder nicht mehr zugängliche Elemente erscheinen nicht.
 /// </summary>
-public sealed partial class ItemService(IUserItemStore items, SharingService sharing)
+public sealed partial class ItemService(IUserItemStore items, SharingService sharing, AccountEvents events)
 {
     private const int MaxLabelName = 64;
     private const string DefaultColor = "#7f8c8d";
@@ -23,6 +23,7 @@ public sealed partial class ItemService(IUserItemStore items, SharingService sha
         }
 
         await items.SetStarAsync(caller.UserId, node, starred, ct);
+        events.Touch(caller.UserId);
         return null;
     }
 
@@ -40,14 +41,19 @@ public sealed partial class ItemService(IUserItemStore items, SharingService sha
         var color = request.Color is { } c && ColorPattern().IsMatch(c) ? c.ToLowerInvariant() : DefaultColor;
         var label = new LabelRecord("l_" + Guid.NewGuid().ToString("N"), caller.UserId, name, color);
         await items.SaveLabelAsync(label, ct);
+        events.Touch(caller.UserId);
         return ServiceResult.Ok(new LabelInfo(label.Id, label.Name, label.Color));
     }
 
     public async Task<LabelsResponse> ListLabelsAsync(Principal caller, CancellationToken ct) =>
         new([.. (await items.ListLabelsAsync(caller.UserId, ct)).Select(l => new LabelInfo(l.Id, l.Name, l.Color))]);
 
-    public Task<bool> DeleteLabelAsync(Principal caller, string labelId, CancellationToken ct) =>
-        items.DeleteLabelAsync(caller.UserId, labelId, ct);
+    public async Task<bool> DeleteLabelAsync(Principal caller, string labelId, CancellationToken ct)
+    {
+        var deleted = await items.DeleteLabelAsync(caller.UserId, labelId, ct);
+        events.Touch(caller.UserId);
+        return deleted;
+    }
 
     public async Task<ServiceError?> SetLabelAsync(
         Principal caller, string labelId, string spaceId, string path, bool assigned, CancellationToken ct)
@@ -63,6 +69,7 @@ public sealed partial class ItemService(IUserItemStore items, SharingService sha
         }
 
         await items.SetLabelAsync(labelId, node, assigned, ct);
+        events.Touch(caller.UserId);
         return null;
     }
 

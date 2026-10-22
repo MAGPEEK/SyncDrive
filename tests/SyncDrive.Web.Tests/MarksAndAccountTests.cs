@@ -142,11 +142,12 @@ public sealed class MarksAndAccountTests(HostFactory factory) : IClassFixture<Ho
     }
 
     [Fact]
-    public async Task Polling_picks_up_new_notifications_and_stops_with_the_page()
+    public async Task New_notifications_arrive_in_real_time_and_the_loop_stops_with_the_page()
     {
         var owner = await OpenPageAsync();
         var member = await OpenPageAsync();
         var notes = new NotificationsViewModel(member.Api, WebTexts.English);
+        var live = new LiveUpdatesViewModel(member.Api, WebTexts.English);
         using var stop = new CancellationTokenSource();
         var arrived = new TaskCompletionSource();
         notes.Changed += () =>
@@ -156,7 +157,8 @@ public sealed class MarksAndAccountTests(HostFactory factory) : IClassFixture<Ho
                 arrived.TrySetResult();
             }
         };
-        var polling = notes.RunPollingAsync(TimeSpan.FromMilliseconds(50), stop.Token);
+        var polling = live.RunAsync(() => notes.LoadAsync(stop.Token), stop.Token);
+        await Task.Delay(300); // der Long-Poll wartet schon
 
         using (var add = await owner.Http.PostAsJsonAsync(
             $"api/v1/spaces/{owner.Browser.Space!.Id}/members", new AddMemberRequest(member.User, "viewer")))
@@ -170,6 +172,31 @@ public sealed class MarksAndAccountTests(HostFactory factory) : IClassFixture<Ho
 
         Assert.Equal(1, notes.Unread);
         Assert.Null(notes.Message);
+    }
+
+    [Fact]
+    public async Task A_star_set_in_another_browser_appears_in_real_time()
+    {
+        var page = await OpenPageAsync();
+        await page.Browser.UploadAsync([new UploadFile("plan.txt", 1, DateTimeOffset.UtcNow, () => new MemoryStream("x"u8.ToArray()))], default);
+        var other = await OpenPageAsync(page.User); // zweiter Browser desselben Benutzers
+        var marks = new MarksViewModel(page.Api, WebTexts.English);
+        await marks.LoadAsync(default);
+        using var stop = new CancellationTokenSource();
+        var live = new LiveUpdatesViewModel(page.Api, WebTexts.English).RunAsync(() => marks.LoadAsync(stop.Token), stop.Token);
+        await Task.Delay(300); // der Long-Poll wartet schon
+
+        await new MarksViewModel(other.Api, WebTexts.English).ToggleStarAsync(
+            [new LocatedItem(other.Browser.Space!, other.Browser.Items.Single())], default);
+        var deadline = DateTime.UtcNow.AddSeconds(15);
+        while (marks.Starred(page.Browser.Spaces).Count == 0 && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(50);
+        }
+
+        await stop.CancelAsync();
+        await live.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal("plan.txt", Assert.Single(marks.Starred(page.Browser.Spaces)).Item.Name);
     }
 
     [Fact]

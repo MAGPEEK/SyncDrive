@@ -1,7 +1,9 @@
+using Microsoft.Extensions.Options;
 using SyncDrive.Contracts;
 using SyncDrive.Server.App.Accounts;
 using SyncDrive.Server.App.Portal;
 using SyncDrive.Server.App.Previews;
+using SyncDrive.Server.App.Sharing;
 using SyncDrive.Server.App.Spaces;
 
 namespace SyncDrive.Server.Host;
@@ -13,6 +15,22 @@ public static partial class ApiEndpoints
     public const string CsrfHeader = "X-SyncDrive-Web";
     private const string WebClientType = "web";
 
+    /// <summary>Echtzeit der Weboberfläche: wartet auf eine Änderung in allem, was der Benutzer sieht (Long-Poll wie <c>changes/wait</c>).</summary>
+    private static async Task<IResult> WaitForAccountChanges(
+        string? after, int? timeout, HttpContext http, SharingService sharing, IOptions<ServerOptions> options, CancellationToken ct)
+    {
+        var seconds = Math.Clamp(timeout ?? DefaultLongPollSeconds, 1, options.Value.MaxLongPollSeconds);
+        try
+        {
+            return Results.Ok(new AccountChangesResponse(
+                await sharing.WaitForAccountChangesAsync(Caller(http), after, TimeSpan.FromSeconds(seconds), ct)));
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return Results.StatusCode(StatusCodes.Status499ClientClosedRequest);
+        }
+    }
+
     private static void MapWeb(RouteGroupBuilder api, RouteGroupBuilder secured)
     {
         api.MapPost("/web/session", SignInWeb);
@@ -21,6 +39,7 @@ public static partial class ApiEndpoints
         secured.MapDelete("/web/session", SignOutWeb);
         secured.MapGet("/account/storage", async (HttpContext http, AdminService admin, CancellationToken ct) =>
             Results.Ok(await admin.StorageOfAsync(Caller(http).UserId, ct)));
+        secured.MapGet("/account/changes/wait", WaitForAccountChanges);
         secured.MapGet("/spaces/{spaceId}/download", Download);
         secured.MapGet("/spaces/{spaceId}/zip", Zip);
         secured.MapGet("/spaces/{spaceId}/thumbnail", (string spaceId, string? path, string? size, HttpContext http, PreviewService previews, CancellationToken ct) =>

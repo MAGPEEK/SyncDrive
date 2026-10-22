@@ -17,6 +17,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(WebTexts.For(CultureInfo.CurrentUICulture));
 builder.Services.AddScoped<SessionViewModel>();
 builder.Services.AddScoped<BrowserViewModel>();
+builder.Services.AddScoped<LiveUpdatesViewModel>();
 builder.Services.AddScoped<SearchViewModel>();
 builder.Services.AddScoped<RecentViewModel>();
 builder.Services.AddScoped<TrashViewModel>();

@@ -486,49 +486,6 @@ public sealed class BrowserViewModel(IDriveApi api, WebTexts texts) : ViewModel(
         _uploads.Remove(entry);
     }
 
-    /// <summary>
-    /// Hält die Liste aktuell, solange die Seite offen ist: wartet per Long-Poll auf Änderungen im Space und lädt den Ordner dann neu.
-    /// Endet mit <paramref name="ct"/>; Fehler (kurz offline) überbrückt eine Pause.
-    /// </summary>
-    public async Task RunLiveUpdatesAsync(CancellationToken ct)
-    {
-        string? space = null;
-        long cursor = 0;
-        while (!ct.IsCancellationRequested)
-        {
-            try
-            {
-                if (Space is null)
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(1), ct);
-                    continue;
-                }
-
-                if (Space.Id != space)
-                {
-                    space = Space.Id;
-                    cursor = await api.CursorAsync(space, ct);
-                }
-
-                var next = await api.WaitForChangesAsync(space, cursor, ct);
-                if (next != cursor && Space?.Id == space)
-                {
-                    cursor = next;
-                    await LoadAsync(ct);
-                }
-            }
-            catch (DriveException e) when (e.Code == ErrorCode.Unauthorized)
-            {
-                OnSignedOut();
-                return;
-            }
-            catch (Exception e) when (e is DriveException or HttpRequestException)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(5), ct);
-            }
-        }
-    }
-
     private string? ChildPath(string name)
     {
         var trimmed = name.Trim();

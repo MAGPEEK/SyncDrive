@@ -185,7 +185,9 @@ button:disabled { cursor: default; opacity: .45; }
 .menu-item:hover:not(:disabled) { background: var(--nav); }
 .menu-item.danger { color: var(--error); }
 .menu-line { height: 1px; background: var(--line); margin: 4px 0; }
-.menu-icon { width: 20px; height: 20px; fill: var(--text-sub); flex: none; }
+.menu-icon { width: 20px; height: 20px; fill: var(--text-sub); color: var(--text-sub); flex: none; }
+/* Umriss-Symbole (Verwaltung): Linien statt Flächen, Farbe aus color */
+svg.outline, .rail-button svg.outline { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .menu-label { flex: 1; }
 .menu-shortcut { margin-left: 28px; color: var(--text-sub); font-size: 12px; white-space: nowrap; }
 label.menu-item { cursor: pointer; }

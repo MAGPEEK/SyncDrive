@@ -5,7 +5,7 @@ namespace SyncDrive.Web.App;
 
 /// <summary>
 /// „Notification Center“ (Glocke in der linken Leiste): neueste zuerst, ungelesene hervorgehoben und gezählt. Ein Klick markiert gelesen;
-/// wohin er führt (geteilter Space), entscheidet die Oberfläche. Neue Einträge holt ein ruhiges Abfragen nach.
+/// wohin er führt (geteilter Space), entscheidet die Oberfläche. Neue Einträge kommen über die Echtzeit (<see cref="LiveUpdatesViewModel"/>).
 /// </summary>
 public sealed class NotificationsViewModel(IDriveApi api, WebTexts texts) : ViewModel(texts)
 {
@@ -57,45 +57,6 @@ public sealed class NotificationsViewModel(IDriveApi api, WebTexts texts) : View
         }
 
         await LoadAsync(ct);
-    }
-
-    /// <summary>
-    /// Holt in Abständen neue Benachrichtigungen, solange die Seite offen ist. Fehler (kurz offline) bleiben still, damit keine Meldung
-    /// aufblinkt, die der Nutzer nicht ausgelöst hat; nur eine abgelaufene Sitzung meldet sich ab.
-    /// </summary>
-    public async Task RunPollingAsync(TimeSpan interval, CancellationToken ct)
-    {
-        while (!ct.IsCancellationRequested)
-        {
-            try
-            {
-                Items = await api.ListNotificationsAsync(ct);
-                State = Items.Count == 0 ? ListState.Empty : ListState.Ready;
-                OnChanged();
-            }
-            catch (DriveException e) when (e.Code == ErrorCode.Unauthorized)
-            {
-                OnSignedOut();
-                return;
-            }
-            catch (Exception e) when (e is DriveException or HttpRequestException)
-            {
-                // beim nächsten Durchlauf wieder
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                return;
-            }
-
-            try
-            {
-                await Task.Delay(interval, ct);
-            }
-            catch (OperationCanceledException)
-            {
-                return;
-            }
-        }
     }
 }
 
