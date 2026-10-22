@@ -5,6 +5,12 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.18.7] – 2026-10-22 – Compose ohne .env
+
+### Behoben
+- Das Compose-Beispiel brach ohne `.env` ab (Pflichtvariable `SYNCDRIVE_ADMIN_PASSWORD`); Portainer und NAS-Oberflächen lesen keine `.env`.
+  Alle Werte stehen jetzt direkt in `docker/docker-compose.yml` (Port `8080:8080`, Passwort ersetzen), `.env.example` entfällt.
+
 ## [0.18.6] – 2026-10-22 – Schlankes README, Kubernetes und Ansible
 
 ### Hinzugefügt

@@ -1,18 +1,18 @@
-# SyncDrive server from the Docker Hub image, without reverse proxy. Usage: see README.md in this folder.
+# SyncDrive server from the Docker Hub image. Usage: see README.md in this folder.
 services:
   syncdrive:
-    image: magpeek/syncdrive-server:${SYNCDRIVE_VERSION:-latest}
+    image: magpeek/syncdrive-server:latest
     container_name: syncdrive
     restart: unless-stopped
     ports:
-      - "${SYNCDRIVE_PORT:-8080}:8080"          # the application listens on 8080 (HTTP) inside the container
+      - "8080:8080"                                          # host port : container port (the app listens on 8080)
     environment:
-      TZ: ${TZ:-Europe/Berlin}
-      SYNCDRIVE_Server__AdminUserName: ${SYNCDRIVE_ADMIN_USER:-admin}
-      SYNCDRIVE_Server__AdminPassword: ${SYNCDRIVE_ADMIN_PASSWORD:?set SYNCDRIVE_ADMIN_PASSWORD in .env}
-      SYNCDRIVE_Server__RequireTls: "false"     # plain HTTP; HTTPS: see docs/server.md
+      TZ: Europe/Berlin
+      SYNCDRIVE_Server__AdminUserName: admin
+      SYNCDRIVE_Server__AdminPassword: change-me-to-a-long-password   # read on the first start only
+      SYNCDRIVE_Server__RequireTls: "false"                  # plain HTTP; HTTPS: see docs/server.md
       SYNCDRIVE_Server__BackupDirectory: /backup
-      SYNCDRIVE_Server__BackupTime: ${SYNCDRIVE_BACKUP_TIME:-02:30}
+      SYNCDRIVE_Server__BackupTime: "02:30"
     volumes:
       - syncdrive-data:/data
       - syncdrive-backup:/backup

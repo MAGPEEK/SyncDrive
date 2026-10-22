@@ -11,26 +11,12 @@ Reference for running the server. Installation with Docker Compose or `docker ru
 | **8080** | HTTP | always (also used by the health check) |
 | **8443** | HTTPS | only when a certificate is configured, see [HTTPS](#https) |
 
-- [Docker Compose variables](#docker-compose-variables)
 - [HTTPS](#https)
 - [Configuration variables](#configuration-variables)
 - [Backup and restore](#backup-and-restore)
 - [Updating](#updating)
 - [Health and version](#health-and-version)
 - [Troubleshooting](#troubleshooting)
-
-## Docker Compose variables
-
-Variables in `.env` of the [Compose example](../docker):
-
-| Variable | Default | Meaning |
-|---|---|---|
-| `SYNCDRIVE_PORT` | `8080` | Port on the host |
-| `SYNCDRIVE_ADMIN_USER` | `admin` | Administrator created on the first start |
-| `SYNCDRIVE_ADMIN_PASSWORD` | — (required) | Its password; only read on the first start |
-| `TZ` | `Europe/Berlin` | Time zone (backup time, log timestamps) |
-| `SYNCDRIVE_BACKUP_TIME` | `02:30` | Time of the nightly backup (`HH:mm`, in `TZ`) |
-| `SYNCDRIVE_VERSION` | `latest` | Image tag; pin a version for controlled updates |
 
 The data volume must be on a local disk (ext4, btrfs, xfs …), not on an NFS or SMB share.
 
@@ -175,7 +161,7 @@ Docker Compose:
 
 ```bash
 cd /opt/syncdrive
-docker compose pull        # with SYNCDRIVE_VERSION=latest, or set the new version in .env first
+docker compose pull        # with :latest, or set the new version in docker-compose.yml first
 docker compose up -d
 docker image prune -f      # optional: remove the old image
 ```
@@ -202,8 +188,7 @@ curl http://localhost:8080/api/v1/info
 | Symptom | Cause and fix |
 |---|---|
 | Container stays `unhealthy` / restarts | `docker compose logs syncdrive`. Most often `/data` or `/backup` is a bind mount not writable for UID 1654, or the certificate is not readable for UID 1654. |
-| `docker compose up` says `SYNCDRIVE_ADMIN_PASSWORD` is missing | Create `.env` from `.env.example` and set the password. |
-| Sign-in as `admin` fails | The administrator is only created when the database has no users yet; changing the password in `.env` later has no effect. Another administrator can set a new password (*Administration → Users*); on a fresh installation run `docker compose down -v` and start again. |
+| Sign-in as `admin` fails | The administrator is only created when the database has no users yet; changing the password in `docker-compose.yml` later has no effect. Another administrator can set a new password (*Administration → Users*); on a fresh installation run `docker compose down -v` and start again. |
 | Every request returns `400 invalid_request` (TLS) | `RequireTls` is `true`, but the request came via plain HTTP. Use HTTPS, set `RequireTls=false`, or behind a proxy set `TrustForwardedHeaders=true` and forward `X-Forwarded-Proto`. |
 | The client cannot connect to an HTTP server | Enter the address with `http://` and the port; without a scheme the client uses HTTPS on port 8443. |
 | Clients disconnect every minute | A proxy buffers or times out long-poll requests: disable buffering, read timeout above 60 s. |

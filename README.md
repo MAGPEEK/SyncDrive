@@ -41,11 +41,10 @@ port **8080** and serves the web interface and the API for the clients.
 
 ## Docker Compose
 
-Copy [`docker/docker-compose.yml`](docker/docker-compose.yml) and [`docker/.env.example`](docker/.env.example) to your server, then:
+Copy [`docker/docker-compose.yml`](docker/docker-compose.yml) to your server (or paste it into Portainer / your NAS as a stack),
+replace `change-me-to-a-long-password` with your administrator password, then:
 
 ```bash
-cp .env.example .env
-nano .env                  # set SYNCDRIVE_ADMIN_PASSWORD
 docker compose up -d
 ```
 
