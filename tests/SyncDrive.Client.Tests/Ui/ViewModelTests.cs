@@ -339,6 +339,30 @@ public sealed class ViewModelTests : IAsyncDisposable
         Assert.Equal(@"C:\Users\x\SyncDrive 2", Assert.Single(_daemon.Created).LocalPath);
     }
 
+    /// <summary>macOS bis zur File-Provider-Erweiterung: keine Dateien auf Abruf, auch wenn das Häkchen noch gesetzt wäre.</summary>
+    [Fact]
+    public async Task Where_files_on_demand_are_not_available_the_wizard_never_creates_such_a_task()
+    {
+        _daemon.Connections.Add(new("c1", "NAS", "nas:8443", "anna"));
+        _daemon.Folders[":"] = [new("s1", string.Empty, "My Drive", true, true)];
+        _ui.ServerFolderAnswer = async picker =>
+        {
+            picker.Selected = picker.Roots[0];
+            await System.Threading.Tasks.Task.Yield();
+            return picker.Result;
+        };
+        var wizard = new WizardViewModel(_daemon, _ui, En, @"C:\Users\x\SyncDrive") { OnDemandAvailable = false };
+        await wizard.LoadAsync(CancellationToken.None);
+        await wizard.NextCommand.ExecuteAsync(null);
+        await wizard.ChooseServerFolderCommand.ExecuteAsync(null);
+        wizard.OnDemand = true;
+
+        await wizard.NextCommand.ExecuteAsync(null);
+        await wizard.NextCommand.ExecuteAsync(null);
+
+        Assert.False(Assert.Single(_daemon.Created).OnDemand);
+    }
+
     [Fact]
     public async Task Sync_rules_show_the_task_and_unchecking_a_folder_excludes_it_with_its_subfolders()
     {

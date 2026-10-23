@@ -82,6 +82,12 @@ public sealed partial class WizardViewModel : ObservableObject
     [ObservableProperty]
     private bool _onDemand;
 
+    /// <summary>
+    /// Dateien auf Abruf gibt es bisher nur unter Windows (Cloud-Files-API); unter macOS folgen sie mit der File-Provider-Erweiterung
+    /// (ADR-14, Stufe 2). Bis dahin zeigt der Assistent die Option dort nicht.
+    /// </summary>
+    public bool OnDemandAvailable { get; init; } = OperatingSystem.IsWindows();
+
     public WizardViewModel(IClientSetup setup, IUiServices ui, Texts texts, string suggestedLocalFolder)
     {
         _setup = setup;
@@ -337,7 +343,7 @@ public sealed partial class WizardViewModel : ObservableObject
         {
             var outcome = await _setup.CreateTaskAsync(
                 new NewTaskRequest(
-                    _connectionId!, _spaceId!, _remotePath!, LocalFolder!, Direction, KeepLocallyDeleted && IsUploadOnly, OnDemand && !IsUploadOnly,
+                    _connectionId!, _spaceId!, _remotePath!, LocalFolder!, Direction, KeepLocallyDeleted && IsUploadOnly, OnDemand && OnDemandAvailable && !IsUploadOnly,
                     AdvancedConsistencyCheck: true, filters), // immer an: Inhalte werden gehasht statt Größe und Datum zu vertrauen
                 CancellationToken.None);
             if (outcome.Succeeded)
