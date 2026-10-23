@@ -5,6 +5,13 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.40.2] – 2026-10-23 – Mac: Menüleisten-Symbol wieder bedienbar
+
+### Behoben
+- **Mac: Ein Klick auf das Symbol in der Menüleiste tat nichts** (seit 0.39.2): macOS meldet dort keinen Klick, es zeigt nur ein Menü, und
+  das Symbol hatte keins mehr. Jetzt wieder ein Menü, oben mit **SyncDrive öffnen** (Panel), **Sync-Ordner öffnen** und
+  **Sync-Aufgaben**, darunter Pause, Einstellungen, Info, Fehlersuche und Beenden. Windows unverändert (Klick: Panel, Rechtsklick: Menü).
+
 ## [0.40.1] – 2026-10-23 – Mac: Start nach Beenden, Dock, Programmsymbol
 
 ### Behoben

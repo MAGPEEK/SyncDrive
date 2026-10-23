@@ -120,9 +120,20 @@ public partial class App : Application
         var troubleshoot = new NativeMenuItem(texts.MenuTroubleshoot) { Command = shell.TroubleshootCommand };
         var exit = new NativeMenuItem(texts.MenuExit) { Command = shell.ExitCommand };
         var menu = new NativeMenu { pause, settings, new NativeMenuItemSeparator(), about, troubleshoot, new NativeMenuItemSeparator(), exit };
-        // macOS zeigt bei einem Menü am Symbol nur das Menü und meldet keinen Klick: dort öffnet der Klick das Panel wie unter Windows,
-        // Pause, Info, Fehlersuche und Beenden stehen im „⋯“-Menü des Panels.
-        var tray = new TrayIcon { Menu = OperatingSystem.IsMacOS() ? null : menu, ToolTipText = shell.Tooltip, IsVisible = true };
+        var openApp = new NativeMenuItem(texts.MenuOpenApp) { Command = new CommunityToolkit.Mvvm.Input.RelayCommand(windows.TogglePanel) };
+        var openFolder = new NativeMenuItem(texts.MenuOpenFolder) { Command = shell.Panel.OpenSyncFolderCommand };
+        var tasks = new NativeMenuItem(texts.NavSyncTasks) { Command = shell.OpenMainWindowCommand };
+        if (OperatingSystem.IsMacOS())
+        {
+            // macOS meldet am Menüleisten-Symbol keinen Klick, es zeigt nur ein Menü (ohne Menü geschah beim Klick nichts): dort führt
+            // das Menü oben zum Panel, zum Sync-Ordner und zu den Aufgaben, darunter wie unter Windows.
+            menu.Items.Insert(0, openApp);
+            menu.Items.Insert(1, openFolder);
+            menu.Items.Insert(2, tasks);
+            menu.Items.Insert(3, new NativeMenuItemSeparator());
+        }
+
+        var tray = new TrayIcon { Menu = menu, ToolTipText = shell.Tooltip, IsVisible = true };
         tray.Clicked += (_, _) => windows.TogglePanel();
         MacOSProperties.SetIsTemplateIcon(tray, true); // nur macOS: Vorlagenbild, hell oder dunkel wie die Menüleiste
         TrayIcon.SetIcons(this, [tray]);
@@ -156,6 +167,9 @@ public partial class App : Application
                 about.Header = shell.Texts.MenuAbout;
                 troubleshoot.Header = shell.Texts.MenuTroubleshoot;
                 exit.Header = shell.Texts.MenuExit;
+                openApp.Header = shell.Texts.MenuOpenApp;
+                openFolder.Header = shell.Texts.MenuOpenFolder;
+                tasks.Header = shell.Texts.NavSyncTasks;
             }
         };
     }
