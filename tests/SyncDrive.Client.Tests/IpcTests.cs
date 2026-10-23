@@ -147,7 +147,7 @@ public sealed class IpcTests : IAsyncDisposable
     public async Task Other_versions_and_garbage_are_rejected_without_closing_the_connection()
     {
         _server = new IpcServer(_pipe, _daemon).RunAsync(_stop.Token);
-        await using var pipe = new NamedPipeClientStream(".", _pipe, PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+        await using var pipe = new NamedPipeClientStream(".", IpcProtocol.Endpoint(_pipe), PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
         await pipe.ConnectAsync(Wait, _stop.Token);
         using var reader = new StreamReader(pipe, Encoding.UTF8, leaveOpen: true);
         await using var writer = new StreamWriter(pipe, new UTF8Encoding(false), leaveOpen: true) { AutoFlush = true };

@@ -37,7 +37,7 @@ public static class IpcProtocol
     /// ist das ein langer Pfad (<c>/var/folders/…/T/</c>), und Socket-Pfade dürfen höchstens 104 Zeichen lang sein. Deshalb ein kurzer fester
     /// Pfad unter <c>/tmp</c>; dass nur der eigene Benutzer spricht, prüft <see cref="PipeOptions.CurrentUserOnly"/> auf beiden Seiten.
     /// </summary>
-    internal static string Endpoint(string pipeName) =>
+    public static string Endpoint(string pipeName) =>
         OperatingSystem.IsWindows() || Path.IsPathRooted(pipeName) ? pipeName : Path.Combine("/tmp", pipeName);
 
     /// <summary>Pipe-Name je Benutzer; der Name selbst verrät den Benutzernamen nicht.</summary>
