@@ -28,6 +28,7 @@ public static class Palette
 {
     public static readonly Color Accent = Color.Parse("#0F8B8D");      // accent
     public static readonly Color AccentLight = Color.Parse("#E4F2F2"); // accent-light
+    public static readonly Color AccentDark = Color.Parse("#0B7577");  // accent-hover: kleine Symbole, mehr Kontrast
     public static readonly Color Green = Color.Parse("#2E9B57");       // status-ok
     public static readonly Color Blue = Color.Parse("#2F78D0");        // link
     public static readonly Color Grey = Color.Parse("#8C9199");        // status-idle
@@ -159,8 +160,9 @@ public static class Badges
         {
             var px = r.Width;
             double At(double f) => Math.Round(f * px); // auf ganze Pixel, sonst verschwimmen die Kanten
-            ctx.DrawRectangle(new SolidColorBrush(Palette.Accent), null, new Rect(r.X, r.Y, px, px), px * 0.2, px * 0.2);
-            ctx.DrawGeometry(Brushes.White, null, Folder(r.X, r.Y, At(0.19), At(0.25), At(0.81), At(0.78), At(0.36), At(0.33)));
+            // Dunklere Kachel und größerer Ordner: neben anderen Symbolen im Navigationsbereich sonst zu blass
+            ctx.DrawRectangle(new SolidColorBrush(Palette.AccentDark), null, new Rect(r.X, r.Y, px, px), px * 0.16, px * 0.16);
+            ctx.DrawGeometry(Brushes.White, null, Folder(r.X, r.Y, At(0.13), At(0.2), At(0.87), At(0.81), At(0.42), At(0.32)));
             return;
         }
 
