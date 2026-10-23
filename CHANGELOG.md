@@ -5,6 +5,19 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.39.2] – 2026-10-23 – Mac: Panel wie unter Windows
+
+### Geändert
+- Mac-Vorschau: Ein Klick auf das Symbol in der Menüleiste öffnet jetzt das **Panel wie unter Windows** (Status, Zuletzt geändert,
+  Benachrichtigungen, Schnellzugriffe) unter der Menüleiste, statt nur ein Menü zu zeigen. Pause, Fehlersuche und Beenden stehen im
+  neuen „⋯“-Knopf der Fußleiste (nur auf dem Mac; unter Windows bleibt das Rechtsklick-Menü).
+
+### Behoben
+- Mac: Aus dem geöffneten Disk-Image gestartet, legte die App einen Autostart auf das Disk-Image an, der nach dem Auswerfen ins Leere
+  lief. Jetzt nur noch aus „Programme“; beim Start aus dem Disk-Image erscheint ein Hinweis, die App in „Programme“ zu ziehen.
+- Test auf dem Mac-Runner: Vom Sync geschriebene Dateien sind im Finder normal (nicht versteckt, lesbar, kein „in Arbeit“-Datum,
+  keine Zusatzattribute).
+
 ## [0.39.1] – 2026-10-23 – Mac: kein „On-Demand braucht NTFS“ mehr
 
 ### Behoben

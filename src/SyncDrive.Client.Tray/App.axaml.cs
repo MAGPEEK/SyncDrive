@@ -103,6 +103,12 @@ public partial class App : Application
             {
                 windows.OpenMainWindow(MainPage.SyncTasks);
             }
+
+            // macOS: direkt aus dem Disk-Image gestartet – dort fehlt SyncDrive in „Programme“, und der Autostart bliebe aus
+            if (OperatingSystem.IsMacOS() && SyncDrive.Client.Daemon.MacLaunchAgent.RunsFromDiskImage(AppContext.BaseDirectory))
+            {
+                _ = windows.ShowMessageAsync(shell.Texts.MoveToApplications);
+            }
         });
     }
 
@@ -114,7 +120,9 @@ public partial class App : Application
         var troubleshoot = new NativeMenuItem(texts.MenuTroubleshoot) { Command = shell.TroubleshootCommand };
         var exit = new NativeMenuItem(texts.MenuExit) { Command = shell.ExitCommand };
         var menu = new NativeMenu { pause, settings, new NativeMenuItemSeparator(), about, troubleshoot, new NativeMenuItemSeparator(), exit };
-        var tray = new TrayIcon { Menu = menu, ToolTipText = shell.Tooltip, IsVisible = true };
+        // macOS zeigt bei einem Menü am Symbol nur das Menü und meldet keinen Klick: dort öffnet der Klick das Panel wie unter Windows,
+        // Pause, Info, Fehlersuche und Beenden stehen im „⋯“-Menü des Panels.
+        var tray = new TrayIcon { Menu = OperatingSystem.IsMacOS() ? null : menu, ToolTipText = shell.Tooltip, IsVisible = true };
         tray.Clicked += (_, _) => windows.TogglePanel();
         MacOSProperties.SetIsTemplateIcon(tray, true); // nur macOS: Vorlagenbild, hell oder dunkel wie die Menüleiste
         TrayIcon.SetIcons(this, [tray]);

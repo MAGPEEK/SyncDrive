@@ -38,6 +38,18 @@
           <Button Classes="tool" ToolTip.Tip="{Binding Texts.MenuAbout}" Command="{Binding HelpCommand}">
             <PathIcon Classes="tool-icon" Data="{StaticResource IconHelp}" />
           </Button>
+          <!-- macOS: kein Rechtsklick-Menü am Symbol, daher hier -->
+          <Button Classes="tool" IsVisible="{Binding ShowMoreMenu}" ToolTip.Tip="{Binding Texts.More}">
+            <PathIcon Classes="tool-icon" Data="{StaticResource IconMore}" />
+            <Button.Flyout>
+              <MenuFlyout Placement="TopEdgeAlignedRight">
+                <MenuItem Header="{Binding Shell.PauseMenuText}" Command="{Binding Shell.TogglePauseCommand}" />
+                <MenuItem Header="{Binding Texts.MenuTroubleshoot}" Command="{Binding Shell.TroubleshootCommand}" />
+                <Separator />
+                <MenuItem Header="{Binding Texts.MenuExit}" Command="{Binding Shell.ExitCommand}" />
+              </MenuFlyout>
+            </Button.Flyout>
+          </Button>
         </StackPanel>
       </Border>
 

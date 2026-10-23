@@ -297,6 +297,9 @@ public sealed partial class PanelViewModel : ObservableObject
 
     public bool ShowNotifications => !ShowRecent;
 
+    /// <summary>„⋯“ mit Pause, Fehlersuche, Beenden: unter macOS, wo das Symbol in der Menüleiste kein eigenes Menü hat.</summary>
+    public bool ShowMoreMenu { get; init; } = OperatingSystem.IsMacOS();
+
     public ObservableCollection<ActivityItemViewModel> Recent { get; } = [];
 
     public ObservableCollection<NotificationItemViewModel> Notifications { get; } = [];

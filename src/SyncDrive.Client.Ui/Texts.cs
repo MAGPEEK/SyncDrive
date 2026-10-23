@@ -39,6 +39,11 @@ public sealed record Texts
 
     public required string MenuExit { get; init; }
 
+    public required string More { get; init; }
+
+    /// <summary>macOS: aus dem Disk-Image gestartet.</summary>
+    public required string MoveToApplications { get; init; }
+
     // Panel
     public required string TabRecentlyChanged { get; init; }
 
@@ -390,6 +395,8 @@ public sealed record Texts
         MenuAbout = "About",
         MenuTroubleshoot = "Troubleshoot",
         MenuExit = "Exit",
+        More = "More",
+        MoveToApplications = "SyncDrive is running from the disk image. Quit it, drag SyncDrive into the Applications folder and start it from there – only then does it open at login.",
         TabRecentlyChanged = "Recently Changed",
         TabNotifications = "Notifications",
         EmptyRecent = "Nothing has changed yet",
@@ -560,6 +567,8 @@ public sealed record Texts
         MenuAbout = "Info",
         MenuTroubleshoot = "Fehlersuche",
         MenuExit = "Beenden",
+        More = "Weitere",
+        MoveToApplications = "SyncDrive läuft aus dem Disk-Image. Beenden Sie es, ziehen Sie SyncDrive in den Ordner „Programme“ und starten Sie es dort – nur dann öffnet es sich beim Anmelden.",
         TabRecentlyChanged = "Zuletzt geändert",
         TabNotifications = "Benachrichtigungen",
         EmptyRecent = "Noch keine Änderungen",
