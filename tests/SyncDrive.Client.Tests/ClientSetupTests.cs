@@ -232,6 +232,29 @@ public sealed class ClientSetupTests : IDisposable
         Assert.Equal((ShellErrors.NotOnDemand, ShellErrors.NotInSyncFolder), (notOnDemand.ErrorCode, outside.ErrorCode));
     }
 
+    /// <summary>
+    /// Die Oberfläche fragt bei jedem Statuswechsel; der Server (und unter macOS der Schlüsselbund) wird trotzdem nur gefragt, wenn der gemerkte
+    /// Stand älter ist als das Intervall. Vorher wurde daraus eine Schleife mit zehn Abfragen je Sekunde.
+    /// </summary>
+    [Fact]
+    public async Task The_notification_center_answers_repeated_questions_from_its_current_state()
+    {
+        await _setup.SignInAsync(new SignInRequest("nas", "anna", "pw"), default);
+        _server.Notes.Add(new NotificationInfo("n1", "shared", DateTimeOffset.UnixEpoch, "ben", "team", string.Empty, Read: false));
+        var clock = new SteppingClock();
+        using var center = new NotificationCenter(_config, _secrets, _server, new DaemonController(), TimeSpan.FromMinutes(1), clock);
+
+        for (var i = 0; i < 20; i++)
+        {
+            Assert.Single(await center.GetAsync(default));
+        }
+
+        Assert.Equal(1, _server.NotificationQueries);
+        clock.Advance(TimeSpan.FromSeconds(16));
+        await center.GetAsync(default);
+        Assert.Equal(2, _server.NotificationQueries); // nach 15 s wieder frisch
+    }
+
     [Fact]
     public async Task The_notification_center_collects_all_servers_sets_the_red_dot_and_marks_read()
     {
@@ -252,6 +275,16 @@ public sealed class ClientSetupTests : IDisposable
 
         Assert.False(daemon.HasNotifications);
         Assert.All(_server.Notes, n => Assert.True(n.Read));
+    }
+
+    /// <summary>Uhr, die nur auf Anweisung weitergeht.</summary>
+    private sealed class SteppingClock : TimeProvider
+    {
+        private DateTimeOffset _now = DateTimeOffset.UnixEpoch;
+
+        public void Advance(TimeSpan step) => _now += step;
+
+        public override DateTimeOffset GetUtcNow() => _now;
     }
 
     private sealed class FakeServer : IServerAccess
@@ -284,8 +317,13 @@ public sealed class ClientSetupTests : IDisposable
 
         public List<NotificationInfo> Notes { get; } = [];
 
-        public Task<Result<IReadOnlyList<NotificationInfo>>> ListNotificationsAsync(ServerLogin login, CancellationToken ct) =>
-            Task.FromResult(Result.Ok<IReadOnlyList<NotificationInfo>>([.. Notes]));
+        public int NotificationQueries { get; private set; }
+
+        public Task<Result<IReadOnlyList<NotificationInfo>>> ListNotificationsAsync(ServerLogin login, CancellationToken ct)
+        {
+            NotificationQueries++;
+            return Task.FromResult(Result.Ok<IReadOnlyList<NotificationInfo>>([.. Notes]));
+        }
 
         public Task<Result<bool>> MarkNotificationReadAsync(ServerLogin login, string notificationId, CancellationToken ct)
         {

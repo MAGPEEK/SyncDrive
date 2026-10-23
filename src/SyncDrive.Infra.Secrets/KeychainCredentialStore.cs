@@ -14,8 +14,15 @@ namespace SyncDrive.Infra.Secrets;
 [SupportedOSPlatform("macos")]
 public sealed class KeychainCredentialStore(string service = "SyncDrive") : ICredentialStore
 {
+    /// <summary>
+    /// Gelesene Geheimnisse bleiben im Speicher des Daemons, der sie ohnehin benutzt: jede Anfrage an den Schlüsselbund ist ein Aufruf an
+    /// <c>securityd</c>. Nur dieser Prozess schreibt die Einträge, Speichern und Löschen halten den Zwischenspeicher aktuell.
+    /// </summary>
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _cache = new(StringComparer.Ordinal);
+
     public Task SaveAsync(string key, string secret, CancellationToken ct)
     {
+        _cache.TryRemove(key, out _);
         using var query = Query(key);
         using var data = CoreFoundation.Data(Encoding.UTF8.GetBytes(secret));
         using var update = CoreFoundation.Dictionary();
@@ -28,11 +35,17 @@ public sealed class KeychainCredentialStore(string service = "SyncDrive") : ICre
         }
 
         Keychain.Check(status, "speichern");
+        _cache[key] = secret;
         return Task.CompletedTask;
     }
 
     public Task<string?> GetAsync(string key, CancellationToken ct)
     {
+        if (_cache.TryGetValue(key, out var cached))
+        {
+            return Task.FromResult<string?>(cached);
+        }
+
         using var query = Query(key);
         query.Set(Keychain.ReturnData, CoreFoundation.True);
         query.Set(Keychain.MatchLimit, Keychain.MatchLimitOne);
@@ -44,11 +57,14 @@ public sealed class KeychainCredentialStore(string service = "SyncDrive") : ICre
 
         Keychain.Check(status, "lesen");
         using var data = new CoreFoundation.Owned(result);
-        return Task.FromResult<string?>(Encoding.UTF8.GetString(CoreFoundation.Bytes(data.Handle)));
+        var secret = Encoding.UTF8.GetString(CoreFoundation.Bytes(data.Handle));
+        _cache[key] = secret;
+        return Task.FromResult<string?>(secret);
     }
 
     public Task DeleteAsync(string key, CancellationToken ct)
     {
+        _cache.TryRemove(key, out _);
         using var query = Query(key);
         var status = Keychain.SecItemDelete(query.Handle);
         if (status != Keychain.ItemNotFound)

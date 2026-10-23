@@ -339,6 +339,21 @@ public sealed class ViewModelTests : IAsyncDisposable
         Assert.Equal(@"C:\Users\x\SyncDrive 2", Assert.Single(_daemon.Created).LocalPath);
     }
 
+    /// <summary>Viele Statusmeldungen ohne Abgleich (z. B. ein Server, der nicht antwortet) lösen kein Dauer-Nachladen des Panels aus.</summary>
+    [Fact]
+    public async Task A_stream_of_status_updates_reloads_the_panel_at_most_once_per_interval()
+    {
+        await ConnectedShellAsync();
+        for (var i = 0; i < 30; i++)
+        {
+            _daemon.Publish(Status(("t1", i % 2 == 0 ? TaskState.Done : TaskState.Error)));
+        }
+
+        await System.Threading.Tasks.Task.Delay(300);
+
+        Assert.InRange(_daemon.NotificationQueries, 1, 2);
+    }
+
     /// <summary>macOS bis zur File-Provider-Erweiterung: keine Dateien auf Abruf, auch wenn das Häkchen noch gesetzt wäre.</summary>
     [Fact]
     public async Task Where_files_on_demand_are_not_available_the_wizard_never_creates_such_a_task()

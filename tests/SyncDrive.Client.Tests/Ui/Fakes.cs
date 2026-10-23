@@ -139,8 +139,13 @@ internal sealed class FakeDaemon : IDaemonClient
         return Task.CompletedTask;
     }
 
-    public Task<IReadOnlyList<ServerNotification>> GetNotificationsAsync(CancellationToken ct) =>
-        Task.FromResult<IReadOnlyList<ServerNotification>>([.. Notifications]);
+    public int NotificationQueries { get; private set; }
+
+    public Task<IReadOnlyList<ServerNotification>> GetNotificationsAsync(CancellationToken ct)
+    {
+        NotificationQueries++;
+        return Task.FromResult<IReadOnlyList<ServerNotification>>([.. Notifications]);
+    }
 
     public Task MarkNotificationsReadAsync(CancellationToken ct)
     {

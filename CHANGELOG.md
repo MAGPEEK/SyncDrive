@@ -5,6 +5,16 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.40.3] – 2026-10-23 – Kein Dauer-Nachladen mehr (Schlüsselbund, Server)
+
+### Behoben
+- **Oberfläche lud das Panel bei jeder Statusmeldung nach** (seit 0.37.0), sobald gerade kein Abgleich lief – jedes Mal mit Abfrage der
+  Benachrichtigungen beim Server und Lesen des Geräte-Tokens. Auf dem Mac (Diagnose am echten Gerät) wurde daraus eine Schleife mit rund
+  zehn Schlüsselbund-Abfragen je Sekunde und ständig neuen Verbindungen. Jetzt höchstens einmal je Sekunde, dazu genau einmal am Ende eines
+  Abgleichs.
+- Benachrichtigungen beantwortet der Daemon aus seinem gemerkten Stand, solange dieser jünger als 15 Sekunden ist (sonst frisch vom Server).
+- Mac: gelesene Anmeldedaten bleiben im Speicher des Daemons, statt bei jeder Anfrage den Schlüsselbund zu fragen.
+
 ## [0.40.2] – 2026-10-23 – Mac: Menüleisten-Symbol wieder bedienbar
 
 ### Behoben
