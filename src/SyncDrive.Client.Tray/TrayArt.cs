@@ -18,6 +18,7 @@ internal static class TrayArt
     /// <summary>Menüleiste: 18 Punkt hoch, auf Retina-Bildschirmen (alle M-Macs) doppelt.</summary>
     private const int MenuBarSize = 36;
     private static readonly Dictionary<(TrayState, bool, bool, int, bool, int), WindowIcon> Cache = [];
+    private static readonly Dictionary<(TrayState, bool, int), byte[]> MacCache = [];
 
     public static WindowIcon Icon(ShellViewModel shell, int spin)
     {
@@ -26,16 +27,29 @@ internal static class TrayArt
         if (!Cache.TryGetValue(key, out var icon))
         {
             using var stream = new MemoryStream();
-            var bitmap = OperatingSystem.IsMacOS()
-                ? Badges.TemplateTrayBitmap(key.state, key.Item2, MenuBarSize, key.Item6) // macOS färbt das Vorlagenbild selbst
-                : Badges.TrayBitmap(key.state, key.Item2, key.Item3, key.Item4, key.Item5, key.Item6);
-            bitmap.Save(stream);
+            Badges.TrayBitmap(key.state, key.Item2, key.Item3, key.Item4, key.Item5, key.Item6).Save(stream);
             stream.Position = 0;
             icon = new WindowIcon(stream);
             Cache[key] = icon;
         }
 
         return icon;
+    }
+
+    /// <summary>macOS: Vorlagenbild der Menüleiste als PNG für <see cref="MacStatusItem"/>; je Zustand einmal gezeichnet.</summary>
+    public static byte[] MacImage(ShellViewModel shell, int spin)
+    {
+        var state = shell.TrayState;
+        var key = (state, shell.HasNotifications, state == TrayState.Syncing ? spin : 0);
+        if (!MacCache.TryGetValue(key, out var png))
+        {
+            using var stream = new MemoryStream();
+            Badges.TemplateTrayBitmap(state, shell.HasNotifications, MenuBarSize, key.Item3).Save(stream);
+            png = stream.ToArray();
+            MacCache[key] = png;
+        }
+
+        return png;
     }
 
     /// <summary>Kantenlänge eines kleinen Symbols bei der aktuellen Skalierung (16 bei 100 %, 24 bei 150 %, 32 bei 200 %).</summary>

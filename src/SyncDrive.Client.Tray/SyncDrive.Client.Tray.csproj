@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>syncdrive</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks> <!-- macOS: Objective-C-Laufzeit (MacStatusItem) -->
     <RootNamespace>SyncDrive.Client.Tray</RootNamespace>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <ApplicationManifest>app.manifest</ApplicationManifest>

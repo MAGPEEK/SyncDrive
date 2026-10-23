@@ -323,7 +323,8 @@ public sealed partial class PanelViewModel : ObservableObject
             var activity = await client.GetRecentActivityAsync(RecentCount, ct);
             var notifications = await client.GetNotificationsAsync(ct);
             var now = _clock.GetUtcNow();
-            var items = activity.Select(a => ToItem(a, now)).ToList();
+            // „Zuletzt geändert“ zeigt Änderungen; bewusst Ausgelassenes (z. B. .DS_Store, Thumbs.db) steht nur im Protokoll
+            var items = activity.Where(a => a.Entry.Result != App.Ports.ActivityResult.Unsynced).Select(a => ToItem(a, now)).ToList();
             var notes = notifications.Select(n => NotificationItemViewModel.From(n, Texts, now)).ToList();
             AnnounceNews(activity, notifications);
             _ui.Post(() =>

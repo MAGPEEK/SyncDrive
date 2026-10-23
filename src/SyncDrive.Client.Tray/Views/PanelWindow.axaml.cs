@@ -10,8 +10,15 @@ public partial class PanelWindow : Window
     public PanelWindow()
     {
         InitializeComponent();
-        Deactivated += (_, _) => Hide();
+        Deactivated += (_, _) =>
+        {
+            Hide();
+            HiddenAt = DateTimeOffset.UtcNow;
+        };
     }
+
+    /// <summary>Wann das Panel zuletzt durch Fokusverlust zuging (ein Klick aufs Symbol soll es dann nicht sofort neu öffnen).</summary>
+    public DateTimeOffset HiddenAt { get; private set; } = DateTimeOffset.MinValue;
 
     public void ShowNearTray(PanelViewModel viewModel)
     {

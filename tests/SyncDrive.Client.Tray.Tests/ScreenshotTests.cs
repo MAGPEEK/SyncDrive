@@ -60,7 +60,7 @@ public sealed class ScreenshotTests
 
         Save(window, $"panel-{state.ToString().ToLowerInvariant()}");
 
-        Assert.Equal(6, shell.Panel.Recent.Count);
+        Assert.Equal(5, shell.Panel.Recent.Count); // die bewusst ausgelassene Office-Sperrdatei steht nur im Protokoll
     }
 
     [AvaloniaFact]

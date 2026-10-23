@@ -112,44 +112,55 @@ public partial class App : Application
         });
     }
 
+    /// <summary>
+    /// Windows: Symbol im Infobereich, Klick öffnet das Panel, Rechtsklick das Menü. macOS: Symbol in der Menüleiste direkt über AppKit
+    /// (<see cref="MacStatusItem"/>), jeder Klick öffnet das Panel; Pause, Fehlersuche und Beenden stehen dort im „⋯“ des Panels.
+    /// </summary>
     private void SetUpTray(ShellViewModel shell, WindowManager windows, Texts texts)
     {
-        var pause = new NativeMenuItem(shell.PauseMenuText) { Command = shell.TogglePauseCommand };
-        var settings = new NativeMenuItem(texts.MenuSettings) { Command = shell.OpenSettingsCommand };
-        var about = new NativeMenuItem(texts.MenuAbout) { Command = shell.AboutCommand };
-        var troubleshoot = new NativeMenuItem(texts.MenuTroubleshoot) { Command = shell.TroubleshootCommand };
-        var exit = new NativeMenuItem(texts.MenuExit) { Command = shell.ExitCommand };
-        var menu = new NativeMenu { pause, settings, new NativeMenuItemSeparator(), about, troubleshoot, new NativeMenuItemSeparator(), exit };
-        var openApp = new NativeMenuItem(texts.MenuOpenApp) { Command = new CommunityToolkit.Mvvm.Input.RelayCommand(windows.TogglePanel) };
-        var openFolder = new NativeMenuItem(texts.MenuOpenFolder) { Command = shell.Panel.OpenSyncFolderCommand };
-        var tasks = new NativeMenuItem(texts.NavSyncTasks) { Command = shell.OpenMainWindowCommand };
+        var spin = 0;
+        Action<int> showIcon;
+        Action refreshTexts;
         if (OperatingSystem.IsMacOS())
         {
-            // macOS meldet am Menüleisten-Symbol keinen Klick, es zeigt nur ein Menü (ohne Menü geschah beim Klick nichts): dort führt
-            // das Menü oben zum Panel, zum Sync-Ordner und zu den Aufgaben, darunter wie unter Windows.
-            menu.Items.Insert(0, openApp);
-            menu.Items.Insert(1, openFolder);
-            menu.Items.Insert(2, tasks);
-            menu.Items.Insert(3, new NativeMenuItemSeparator());
+            (showIcon, refreshTexts) = MacTray(shell, windows);
+        }
+        else
+        {
+            var pause = new NativeMenuItem(shell.PauseMenuText) { Command = shell.TogglePauseCommand };
+            var settings = new NativeMenuItem(texts.MenuSettings) { Command = shell.OpenSettingsCommand };
+            var about = new NativeMenuItem(texts.MenuAbout) { Command = shell.AboutCommand };
+            var troubleshoot = new NativeMenuItem(texts.MenuTroubleshoot) { Command = shell.TroubleshootCommand };
+            var exit = new NativeMenuItem(texts.MenuExit) { Command = shell.ExitCommand };
+            var menu = new NativeMenu { pause, settings, new NativeMenuItemSeparator(), about, troubleshoot, new NativeMenuItemSeparator(), exit };
+            var tray = new TrayIcon { Menu = menu, ToolTipText = shell.Tooltip, IsVisible = true };
+            tray.Clicked += (_, _) => windows.TogglePanel();
+            TrayIcon.SetIcons(this, [tray]);
+            showIcon = s => tray.Icon = TrayArt.Icon(shell, s);
+            refreshTexts = () =>
+            {
+                tray.ToolTipText = shell.Tooltip;
+                pause.Header = shell.PauseMenuText;
+                settings.Header = shell.Texts.MenuSettings; // Sprache kann gewechselt haben
+                about.Header = shell.Texts.MenuAbout;
+                troubleshoot.Header = shell.Texts.MenuTroubleshoot;
+                exit.Header = shell.Texts.MenuExit;
+            };
         }
 
-        var tray = new TrayIcon { Menu = menu, ToolTipText = shell.Tooltip, IsVisible = true };
-        tray.Clicked += (_, _) => windows.TogglePanel();
-        MacOSProperties.SetIsTemplateIcon(tray, true); // nur macOS: Vorlagenbild, hell oder dunkel wie die Menüleiste
-        TrayIcon.SetIcons(this, [tray]);
-        var spin = 0;
         var spinner = new DispatcherTimer(TimeSpan.FromMilliseconds(110), DispatcherPriority.Background, (_, _) =>
         {
             spin = (spin + 30) % 360; // zwölf Bilder je Umdrehung
-            tray.Icon = TrayArt.Icon(shell, spin);
+            showIcon(spin);
         });
         void UpdateIcon()
         {
-            tray.Icon = TrayArt.Icon(shell, spin);
+            showIcon(spin);
             spinner.IsEnabled = shell.TrayState == TrayState.Syncing; // kreisende Pfeile, solange abgeglichen wird
         }
 
         UpdateIcon();
+        refreshTexts();
         shell.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName is nameof(ShellViewModel.Settings))
@@ -161,17 +172,17 @@ public partial class App : Application
                 or nameof(ShellViewModel.IsConnected))
             {
                 UpdateIcon();
-                tray.ToolTipText = shell.Tooltip;
-                pause.Header = shell.PauseMenuText;
-                settings.Header = shell.Texts.MenuSettings; // Sprache kann gewechselt haben
-                about.Header = shell.Texts.MenuAbout;
-                troubleshoot.Header = shell.Texts.MenuTroubleshoot;
-                exit.Header = shell.Texts.MenuExit;
-                openApp.Header = shell.Texts.MenuOpenApp;
-                openFolder.Header = shell.Texts.MenuOpenFolder;
-                tasks.Header = shell.Texts.NavSyncTasks;
+                refreshTexts();
             }
         };
+    }
+
+    [System.Runtime.Versioning.SupportedOSPlatform("macos")]
+    private static (Action<int> ShowIcon, Action RefreshTexts) MacTray(ShellViewModel shell, WindowManager windows)
+    {
+        var item = new MacStatusItem();
+        item.Clicked += () => Dispatcher.UIThread.Post(windows.TogglePanel);
+        return (s => item.SetImage(TrayArt.MacImage(shell, s)), () => item.SetToolTip(shell.Tooltip));
     }
 
     /// <summary>Startet <c>syncdrive-daemon</c> aus dem Programmordner (als .exe oder, in der Entwicklung, per <c>dotnet</c>).</summary>

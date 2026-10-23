@@ -5,6 +5,20 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.41.0] – 2026-10-23 – Mac: Klick aufs Symbol öffnet das Panel wie unter Windows
+
+### Geändert
+- **Mac: Ein Klick auf das Menüleisten-Symbol öffnet sofort das Panel** (Status, Zuletzt geändert, Benachrichtigungen, Schnellzugriffe)
+  wie unter Windows; die Menüliste entfällt. Avalonia meldet den Klick unter macOS nicht, deshalb legt SyncDrive das Symbol dort selbst
+  über AppKit an (`NSStatusItem`, Klick über ein kleines Objective-C-Ziel). Pause, Fehlersuche und Beenden stehen im „⋯“ des Panels.
+  Ein zweiter Klick schließt das offene Panel.
+- „Zuletzt geändert“ zeigt nur noch Änderungen; bewusst Ausgelassenes (z. B. `.DS_Store`, Office-Sperrdateien) steht weiter im Protokoll.
+- Mac-Build: Rauchtest auch für die Oberfläche (Menüleisten-Symbol anlegen, laufen lassen).
+
+### Bestätigt
+- Auf einem echten Mac (macOS 27, M1) gemessen: Mit 0.40.3 fragt der Daemon den Schlüsselbund nur noch einmal beim Start ab (vorher
+  326–568 Abfragen je Minute) und baut etwa eine Verbindung je Minute auf.
+
 ## [0.40.3] – 2026-10-23 – Kein Dauer-Nachladen mehr (Schlüsselbund, Server)
 
 ### Behoben
