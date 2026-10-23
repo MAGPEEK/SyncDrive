@@ -5,6 +5,17 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.37.1] – 2026-10-23 – „Speicherplatz freigeben“ wirklich behoben
+
+### Behoben
+- **„Speicherplatz freigeben“** blieb weiter bei „Synchronisierung ausstehend“ stehen statt die Wolke zu zeigen. Ursache: Dateien, die
+  vollständig auf den Rechner kamen (hochgeladen oder vom Sync geholt), wurden beim Abgleich ohne **Kennung** zu Platzhaltern; solche lehnt
+  Windows beim Freigeben ab (0.36: „nicht erlaubt“, 0.37.0: „ungültig“). Neue Platzhalter bekommen jetzt eine Kennung, vorhandene beim
+  Freigeben; der Abruf beim Öffnen prüft solche Dateien über die Größe.
+- Erneutes Wählen von „Speicherplatz freigeben“ wirkt jetzt auch, wenn sich dabei kein Attribut ändert (vorher geschah nichts). Dateien, die
+  noch aus einem früheren Versuch hängen, gibt der Client beim Start frei.
+- Echter Windows-Test für genau diesen Fall (`SYNCDRIVE_CFAPI_TESTS=1`); er scheitert ohne die Korrektur.
+
 ## [0.37.0] – 2026-10-23 – Windows-Client: Tray-Symbol, Benachrichtigungen, Autostart; ohne Sicherungsfunktion
 
 ### Entfernt

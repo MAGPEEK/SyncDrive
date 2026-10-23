@@ -102,6 +102,49 @@ public sealed class CloudFilesTests
         }
     }
 
+    /// <summary>
+    /// Der häufige Fall: Die Datei kam vollständig auf den Rechner (hochgeladen oder vom Sync geholt) und wurde beim Abgleich zum Platzhalter.
+    /// Ohne Kennung hing „Speicherplatz freigeben“ bei „Synchronisierung ausstehend“; auch ein zweiter Versuch muss greifen. Danach holt
+    /// der Hydrator sie beim Öffnen wieder.
+    /// </summary>
+    [CloudFilesFact]
+    public async Task A_converted_full_file_can_be_freed_and_read_again()
+    {
+        using var cluster = new Cluster();
+        var a = cluster.AddClient("A");
+        a.Write("b.txt", "fully downloaded");
+        await a.SyncOkAsync();
+
+        var root = Path.Combine(Path.GetTempPath(), "syncdrive-cfapi-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        var task = new SyncTaskDefinition("cfapi-free", "c", Cluster.Space, RelativePath.Root, root, OnDemand: true);
+        var log = new System.Collections.Concurrent.ConcurrentQueue<string>();
+        var folders = Folders(log.Enqueue);
+        try
+        {
+            var folder = await folders.AttachAsync(task, new Hydrator(a.Remote), default);
+            await using (folder.Connection)
+            {
+                var file = Path.Combine(root, "b.txt");
+                await File.WriteAllTextAsync(file, "fully downloaded");
+                await folder.Placeholders.SetInSyncAsync(RelativePath.Parse("b.txt"), true, default); // gewöhnliche Datei → Platzhalter
+
+                await folders.SetPinnedAsync(file, keep: false, default);
+                var freed = await WaitForAsync(() => IsCloudOnly(file));
+                await folders.SetPinnedAsync(file, keep: false, default); // erneut wählen schadet nicht
+                var content = await ReadInOtherProcessAsync(file);
+
+                Assert.Equal((true, "fully downloaded", ""), (freed, content, string.Join(" | ", log)));
+            }
+        }
+        finally
+        {
+            await folders.DetachAsync(task, default);
+            RemoveNavigationEntry(root);
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
     [CloudFilesFact]
     public async Task The_provider_process_itself_never_fetches_a_placeholder_implicitly()
     {

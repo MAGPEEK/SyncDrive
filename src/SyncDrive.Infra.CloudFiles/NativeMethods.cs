@@ -219,6 +219,13 @@ internal static unsafe class NativeMethods
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     public static extern int CfRevertPlaceholder(SafeFileHandle file, uint flags, IntPtr overlapped);
 
+    public const int PlaceholderInfoBasic = 0;
+
+    /// <summary>Liefert auch bei zu kleinem Puffer den Anfang (ERROR_MORE_DATA); für die Länge der Kennung genügt der.</summary>
+    [DllImport(CldApi, ExactSpelling = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    public static extern int CfGetPlaceholderInfo(SafeFileHandle file, int infoClass, byte* info, uint length, out uint returned);
+
     public const uint UpdateVerifyInSync = 0x1;
     public const uint UpdateDehydrate = 0x4;
 

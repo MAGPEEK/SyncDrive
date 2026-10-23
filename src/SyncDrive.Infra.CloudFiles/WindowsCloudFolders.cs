@@ -59,12 +59,19 @@ public sealed class WindowsCloudFolders(
         }
     }
 
-    /// <summary>Setzt den Pin-Zustand (bei Ordnern rekursiv); die Attributänderung löst im <see cref="PinWatcher"/> Holen oder Freigeben aus.</summary>
+    /// <summary>
+    /// Setzt den Pin-Zustand (bei Ordnern rekursiv) und holt oder gibt gleich frei. Auf die Attributänderung allein ist kein Verlass: Wählt man
+    /// dasselbe noch einmal (nach einem gescheiterten Versuch), ändert sich kein Attribut und der <see cref="PinWatcher"/> erfährt nichts.
+    /// </summary>
     public Task SetPinnedAsync(string localPath, bool keep, CancellationToken ct)
     {
-        using var handle = OpenForCloudOperation(localPath);
-        var recurse = Directory.Exists(localPath) ? SetPinRecurse : 0;
-        Check(CfSetPinState(handle, keep ? PinStatePinned : PinStateUnpinned, recurse, IntPtr.Zero), $"{localPath} anheften");
+        using (var handle = OpenForCloudOperation(localPath))
+        {
+            var recurse = Directory.Exists(localPath) ? SetPinRecurse : 0;
+            Check(CfSetPinState(handle, keep ? PinStatePinned : PinStateUnpinned, recurse, IntPtr.Zero), $"{localPath} anheften");
+        }
+
+        _ = Task.Run(() => PinWatcher.ApplyTree(localPath, log), CancellationToken.None);
         return Task.CompletedTask;
     }
 
@@ -246,11 +253,22 @@ internal sealed class WindowsPlaceholders(string root) : IPlaceholders
         if (hr == NotACloudFile)
         {
             // Gewöhnliche Datei (neu angelegt oder vom Sync vollständig geholt): zum Platzhalter mit Inhalt machen; nicht abgeglichen bleibt sie so.
-            hr = inSync ? CfConvertToPlaceholder(handle, IntPtr.Zero, 0, ConvertMarkInSync, IntPtr.Zero, IntPtr.Zero) : 0;
+            // Dateien brauchen eine Kennung, sonst lässt Windows sie später nicht freigeben (Ordner nicht).
+            hr = inSync ? Convert(handle, File.Exists(full)) : 0;
         }
 
         Check(hr, $"Status von {path} setzen");
         return Task.CompletedTask;
+    }
+
+    private static unsafe int Convert(Microsoft.Win32.SafeHandles.SafeFileHandle handle, bool isFile)
+    {
+        fixed (byte* identity = PinWatcher.UnknownVersion)
+        {
+            return isFile
+                ? CfConvertToPlaceholder(handle, (IntPtr)identity, (uint)PinWatcher.UnknownVersion.Length, ConvertMarkInSync, IntPtr.Zero, IntPtr.Zero)
+                : CfConvertToPlaceholder(handle, IntPtr.Zero, 0, ConvertMarkInSync, IntPtr.Zero, IntPtr.Zero);
+        }
     }
 
     private string Full(RelativePath path) =>
