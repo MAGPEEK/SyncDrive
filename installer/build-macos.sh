@@ -23,6 +23,12 @@ for project in SyncDrive.Client.Cli SyncDrive.Client.Tray; do
     -p:PublishDir="$app/Contents/MacOS/" -p:DebugType=none -p:UseAppHost=true --nologo
 done
 
+# Alle drei Programme müssen im Paket liegen; die Oberfläche startet den Daemon von dort
+for program in syncdrive syncdrive-daemon syncdrive_cli; do
+  test -x "$app/Contents/MacOS/$program" || { echo "Fehlt im App-Paket: $program" >&2; exit 1; }
+done
+"$app/Contents/MacOS/syncdrive_cli" --help > /dev/null
+
 # 2. Programmsymbol aus dem Grundzeichen (dieselbe Zeichnung wie unter Windows)
 SYNCDRIVE_WRITE_ICONSET="$work/SyncDrive.iconset" \
   dotnet test "$root/tests/SyncDrive.Client.Tray.Tests" -c Release --filter "FullyQualifiedName~The_mac_icon_set" --nologo
