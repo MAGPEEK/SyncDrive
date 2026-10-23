@@ -120,6 +120,8 @@ button:disabled { cursor: default; opacity: .45; }
 .category:hover { background: var(--hover-surface); }
 .category.active { background: var(--accent-light); color: var(--accent-hover); font-weight: 600; }
 .category-heading { margin: 16px 10px 6px; font-size: 12px; color: var(--text-sub); text-transform: uppercase; letter-spacing: .04em; }
+.category-line { height: 1px; background: var(--line); margin: 8px 10px; }
+.category-line + .category-heading { margin-top: 12px; }
 
 .content { display: flex; flex-direction: column; min-width: 0; }
 .content-head { display: flex; align-items: center; gap: 16px; padding: 12px 20px 6px; flex-wrap: wrap; }

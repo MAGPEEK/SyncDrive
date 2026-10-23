@@ -5,6 +5,12 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.41.2] – 2026-10-23 – Web: Trennstriche in der Seitenleiste
+
+### Geändert
+- Web: Die Seitenleiste ist durch **Trennstriche** gegliedert – zwischen „Meine Dateien“ und „Mit mir geteilt“, vor dem Papierkorb und
+  vor „Meine Labels“.
+
 ## [0.41.1] – 2026-10-23 – Mac: Panel genau unter dem Symbol
 
 ### Geändert

@@ -119,6 +119,7 @@
                 }
             }
         }
+        <div class="category-line"></div>
         <button class="category @(SharedWithMeActive ? "active" : "")" @onclick="ShowSharedWithMeAsync">
             <Icon Class="category-icon" Name="people" /><span>@T.SharedWithMe</span>
         </button>
@@ -134,9 +135,11 @@
         <button class="category @(_view == View.Starred ? "active" : "")" @onclick="ShowStarredAsync">
             <Icon Class="category-icon" Name="star" /><span>@T.Starred</span>
         </button>
+        <div class="category-line"></div>
         <button class="category @(_view == View.Trash ? "active" : "")" @onclick="() => Show(View.Trash)">
             <Icon Class="category-icon" Name="trash" /><span>@T.RecycleBin</span>
         </button>
+        <div class="category-line"></div>
         <div class="category-heading with-action">
             <span>@T.MyLabels</span>
             <button class="heading-add" title="@T.NewLabel" aria-label="@T.NewLabel" @onclick="() => _labelDialogFor = []">＋</button>
