@@ -366,7 +366,7 @@ public sealed class ClientSetup(
     }
 
     public Task<IReadOnlyList<ServerNotification>> GetNotificationsAsync(CancellationToken ct) =>
-        notifications?.RefreshAsync(ct) ?? Task.FromResult<IReadOnlyList<ServerNotification>>([]);
+        notifications?.GetAsync(ct) ?? Task.FromResult<IReadOnlyList<ServerNotification>>([]);
 
     public Task MarkNotificationsReadAsync(CancellationToken ct) => notifications?.MarkAllReadAsync(ct) ?? Task.CompletedTask;
 

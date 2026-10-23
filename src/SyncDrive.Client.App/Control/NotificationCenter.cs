@@ -19,7 +19,19 @@ public sealed class NotificationCenter(
     private readonly SemaphoreSlim _gate = new(1, 1);
     private IReadOnlyList<ServerNotification> _current = [];
 
+    private DateTimeOffset _refreshed = DateTimeOffset.MinValue;
+
     public IReadOnlyList<ServerNotification> Current => _current;
+
+    /// <summary>
+    /// Für die Oberfläche: der gemerkte Stand, solange er jünger ist als das Abfrageintervall (höchstens 15 s), sonst frisch vom Server. Die
+    /// Oberfläche fragt bei jedem Statuswechsel; jedes Mal den Server und den Anmeldedatenspeicher zu fragen, wurde zur Dauerschleife.
+    /// </summary>
+    public Task<IReadOnlyList<ServerNotification>> GetAsync(CancellationToken ct)
+    {
+        var maxAge = _interval < TimeSpan.FromSeconds(15) ? _interval : TimeSpan.FromSeconds(15);
+        return _clock.GetUtcNow() - _refreshed < maxAge ? Task.FromResult(_current) : RefreshAsync(ct);
+    }
 
     public void Dispose() => _gate.Dispose();
 
@@ -67,6 +79,7 @@ public sealed class NotificationCenter(
             }
 
             _current = [.. all.OrderByDescending(n => n.CreatedAt)];
+            _refreshed = _clock.GetUtcNow();
             controller.HasNotifications = _current.Any(n => !n.Read);
             return _current;
         }

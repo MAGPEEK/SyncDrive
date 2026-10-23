@@ -143,11 +143,16 @@ public sealed partial class ShellViewModel : ObservableObject
             });
             try
             {
+                var previous = TrayState.Disconnected;
                 await foreach (var status in client.WatchStatusAsync(ct))
                 {
                     _ui.Post(() => Apply(status));
-                    // Während des Abgleichs höchstens einmal je Intervall; der Abschluss immer, sonst fehlen die letzten Dateien in Liste und Meldung
-                    if (_clock.GetUtcNow() - _lastActivityRefresh >= ActivityRefreshInterval || status.Tray != TrayState.Syncing)
+
+                    // Höchstens einmal je Intervall – jedes Nachladen fragt den Server und liest den Geräte-Token (unter macOS aus dem
+                    // Schlüsselbund). Dazu genau einmal beim Ende eines Abgleichs, sonst fehlen die letzten Dateien in Liste und Meldung.
+                    var finished = previous == TrayState.Syncing && status.Tray != TrayState.Syncing;
+                    previous = status.Tray;
+                    if (finished || _clock.GetUtcNow() - _lastActivityRefresh >= ActivityRefreshInterval)
                     {
                         _lastActivityRefresh = _clock.GetUtcNow();
                         await Panel.RefreshAsync(ct);
