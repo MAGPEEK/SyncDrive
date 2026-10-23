@@ -82,8 +82,6 @@ services.AddSingleton<IThumbnailCache>(sp =>
     new FileThumbnailCache(Path.Combine(sp.GetRequiredService<IOptions<ServerOptions>>().Value.DataDirectory, "thumbnails")));
 services.AddSingleton<PreviewService>();
 services.AddHostedService<AdminBootstrap>();
-services.AddSingleton<ServerBackup>();
-services.AddHostedService<BackupScheduler>();
 
 var app = builder.Build();
 

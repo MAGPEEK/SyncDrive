@@ -13,7 +13,6 @@ Reference for running the server. Installation with Docker Compose or `docker ru
 
 - [HTTPS](#https)
 - [Configuration variables](#configuration-variables)
-- [Backup and restore](#backup-and-restore)
 - [Updating](#updating)
 - [Health and version](#health-and-version)
 - [Troubleshooting](#troubleshooting)
@@ -111,9 +110,6 @@ All settings are environment variables with the prefix `SYNCDRIVE_Server__` (two
 | `SYNCDRIVE_Server__AdminUserName` | — | Creates this administrator on the first start (only if no user exists yet). |
 | `SYNCDRIVE_Server__AdminPassword` | — | Password for that administrator. |
 | `SYNCDRIVE_Server__AdminPasswordFile` | — | Alternative: file containing the password (Docker or Kubernetes secret; must be readable for UID 1654). |
-| `SYNCDRIVE_Server__BackupDirectory` | — (off) | Target of the nightly backup, ideally another disk. Empty disables the backup. |
-| `SYNCDRIVE_Server__BackupTime` | `02:30` | Time of day for the backup in the container time zone (`TZ`). |
-| `SYNCDRIVE_Server__BackupsToKeep` | `7` | Number of database snapshots to keep; blocks are only ever added. |
 | `SYNCDRIVE_Server__DesktopClientUrl` | project release page | Where "Desktop & mobile apps → Download" in the web interface leads. Set it if you host the Windows packages yourself. |
 | `SYNCDRIVE_Server__MaxBlockBytes` | `8388608` (8 MiB) | Largest accepted block upload. Clients send at most 4 MiB. |
 | `SYNCDRIVE_Server__MaxLongPollSeconds` | `60` | Longest wait of a change long-poll request. Keep it below a proxy's read timeout. |
@@ -134,9 +130,8 @@ Variables of the ASP.NET base image:
 | `TZ` | `UTC` | Time zone |
 | `DOTNET_gcServer` | `0` | Workstation GC keeps memory use low on small machines |
 
-Volumes: `/data` (required) and `/backup` (optional). The process runs as the unprivileged user `app` (UID 1654); a bind-mounted
-directory must be writable for that UID (`sudo chown 1654 /path/to/dir`). To put the backup on another disk, replace the volume,
-e.g. `- /mnt/usb/syncdrive-backup:/backup`.
+Volume: `/data` (required). The process runs as the unprivileged user `app` (UID 1654); a bind-mounted
+directory must be writable for that UID (`sudo chown 1654 /path/to/dir`).
 
 Settings that live in the database and are changed in the web interface (account menu → *Administration*): users, quotas,
 groups, team folders, sharing policies (public links, file requests, password requirement, maximum validity), sign-in through an
@@ -161,22 +156,8 @@ The first sign-in links the provider account (`sub`) to the SyncDrive account. F
 account with the same name cannot take the account over. Accounts created this way have a random password; they sign in to the
 web interface through the provider. For the desktop client, an administrator sets a password for them.
 
-The client secret is stored in the server database in the data volume and is part of the backups. It is never sent back to the
+The client secret is stored in the server database in the data volume. It is never sent back to the
 browser.
-
-## Backup and restore
-
-With `BackupDirectory` set, the server writes a consistent snapshot every night:
-
-```
-/backup/
-  db/server-20261022-003000.db   # database snapshots (VACUUM INTO, UTC time), the newest BackupsToKeep are kept
-  blocks/ab/cd/<hash>             # file content, incremental — only new blocks are copied
-  portal/                         # sign-in page settings and background
-```
-
-Restore: stop the server, copy the newest `db/server-*.db` to `/data/server.db`, copy `blocks/` to `/data/blocks/`
-(and `portal/` to `/data/portal/`), start the server. Thumbnails are a cache and are rebuilt on demand.
 
 ## Updating
 
@@ -210,7 +191,7 @@ curl http://localhost:8080/api/v1/info
 
 | Symptom | Cause and fix |
 |---|---|
-| Container stays `unhealthy` / restarts | `docker compose logs syncdrive`. Most often `/data` or `/backup` is a bind mount not writable for UID 1654, or the certificate is not readable for UID 1654. |
+| Container stays `unhealthy` / restarts | `docker compose logs syncdrive`. Most often `/data` is a bind mount not writable for UID 1654, or the certificate is not readable for UID 1654. |
 | Sign-in as `admin` fails | The administrator is only created when the database has no users yet; changing the password in `docker-compose.yml` later has no effect. Another administrator can set a new password (*Administration → Users*); on a fresh installation run `docker compose down -v` and start again. |
 | Every request returns `400 invalid_request` (TLS) | `RequireTls` is `true`, but the request came via plain HTTP. Use HTTPS, set `RequireTls=false`, or behind a proxy set `TrustForwardedHeaders=true` and forward `X-Forwarded-Proto`. |
 | The client cannot connect to an HTTP server | Enter the address with `http://` and the port; without a scheme the client uses HTTPS on port 8443. |

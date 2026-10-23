@@ -38,15 +38,6 @@ public sealed class ServerOptions
     /// <summary>Größte Datei, die jemand über eine Dateianfrage (öffentlicher Link) hochladen darf; Standard 4 GiB.</summary>
     public long MaxPublicUploadBytes { get; set; } = 4L * 1024 * 1024 * 1024;
 
-    /// <summary>Ziel der täglichen Sicherung (am besten ein anderes Laufwerk); leer = keine Sicherung.</summary>
-    public string? BackupDirectory { get; set; }
-
-    /// <summary>Uhrzeit der Sicherung in der Zeitzone des Containers (<c>TZ</c>), z. B. „02:30“.</summary>
-    public string BackupTime { get; set; } = "02:30";
-
-    /// <summary>So viele Datenbank-Stände bleiben liegen; Blöcke werden nur ergänzt, nie gelöscht.</summary>
-    public int BackupsToKeep { get; set; } = 7;
-
     /// <summary>
     /// Wohin „Desktop-App herunterladen“ in der Weboberfläche führt (Profilmenü → Desktop- und Mobil-Apps). Standard: die Release-Seite
     /// des Projekts; wer die Pakete selbst bereitstellt, trägt hier seine Adresse ein.

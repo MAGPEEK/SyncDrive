@@ -23,7 +23,7 @@ Open `http://<server>:8080/` and sign in as `admin`. In the Windows client use t
 |---|---|
 | `"8080:8080"` | Use another port on the host: `"9000:8080"` (only the left number) |
 | `image: …:latest` | Pin a version, e.g. `magpeek/syncdrive-server:0.18.7` |
-| `TZ`, `BackupTime` | Your time zone and the time of the nightly backup |
+| `TZ` | Your time zone |
 
 The administrator password is only read on the first start; change it later in the web interface. All further variables are
 listed in the [README](../README.md#configuration) and in [docs/server.md](../docs/server.md#configuration-variables).
@@ -33,7 +33,7 @@ listed in the [README](../README.md#configuration) and in [docs/server.md](../do
 ```bash
 docker compose logs -f                        # logs
 docker compose pull && docker compose up -d   # update
-docker compose down                           # stop; data stays in the volumes syncdrive-data and syncdrive-backup
+docker compose down                           # stop; data stays in the volume syncdrive-data
 ```
 
 ## HTTPS

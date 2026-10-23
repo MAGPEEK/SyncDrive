@@ -416,6 +416,40 @@ public sealed class ViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task Newly_synced_files_raise_one_desktop_notification_per_refresh()
+    {
+        var shell = await ConnectedShellAsync();
+        shell.ApplySettings(new ClientSettings());
+        await shell.Panel.RefreshAsync(CancellationToken.None); // Bestand beim Start: nicht melden
+
+        var now = DateTimeOffset.UtcNow.AddMinutes(1);
+        _daemon.Activity.Add(new("t1", new(now, ActivityAction.Download, RelativePath.Parse("Bericht.pdf"), false, ActivityResult.Done)));
+        await shell.Panel.RefreshAsync(CancellationToken.None);
+        Assert.Equal(["Bericht.pdf: Downloaded"], _ui.Toasts);
+
+        _daemon.Activity.Add(new("t1", new(now.AddSeconds(1), ActivityAction.Upload, RelativePath.Parse("a.txt"), false, ActivityResult.Done)));
+        _daemon.Activity.Add(new("t1", new(now.AddSeconds(2), ActivityAction.Download, RelativePath.Parse("b.txt"), false, ActivityResult.Done)));
+        _daemon.Activity.Add(new("t1", new(now.AddSeconds(3), ActivityAction.Upload, RelativePath.Parse("Ordner"), true, ActivityResult.Done)));
+        _daemon.Activity.Add(new("t1", new(now.AddSeconds(4), ActivityAction.Upload, RelativePath.Parse("~$x.docx"), false, ActivityResult.Unsynced)));
+        await shell.Panel.RefreshAsync(CancellationToken.None);
+
+        Assert.Equal(["Bericht.pdf: Downloaded", "2 files synced"], _ui.Toasts); // Ordner und nicht Übertragenes zählen nicht
+    }
+
+    [Fact]
+    public void Changed_settings_are_announced_for_the_tray_icon()
+    {
+        var shell = new ShellViewModel(_ => System.Threading.Tasks.Task.FromResult<IDaemonClient>(_daemon), () => { }, _ui, Texts.English, "logs");
+        var changed = new List<string?>();
+        shell.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        shell.ApplySettings(new ClientSettings { Language = "en", MinimalTrayIcon = false });
+
+        Assert.Contains(nameof(ShellViewModel.Settings), changed);
+        Assert.False(shell.Settings.MinimalTrayIcon);
+    }
+
+    [Fact]
     public async Task Switching_the_language_changes_every_text_at_once()
     {
         _daemon.Tasks.Add(Task("t1"));

@@ -76,7 +76,6 @@ public interface IUiServices
 public enum MainPage
 {
     SyncTasks,
-    BackupTask,
     Logs,
     Notifications,
     GlobalSettings,

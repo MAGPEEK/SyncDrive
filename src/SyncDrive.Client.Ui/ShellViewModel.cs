@@ -69,6 +69,10 @@ public sealed partial class ShellViewModel : ObservableObject
             Texts = texts;
             OnPropertyChanged(string.Empty);
         }
+        else
+        {
+            OnPropertyChanged(nameof(Settings)); // z. B. Tray-Symbol: schlicht oder farbig
+        }
     }
 
     /// <summary>Desktop-Benachrichtigung zeigen, wenn eingestellt.</summary>
@@ -142,7 +146,8 @@ public sealed partial class ShellViewModel : ObservableObject
                 await foreach (var status in client.WatchStatusAsync(ct))
                 {
                     _ui.Post(() => Apply(status));
-                    if (_clock.GetUtcNow() - _lastActivityRefresh >= ActivityRefreshInterval)
+                    // Während des Abgleichs höchstens einmal je Intervall; der Abschluss immer, sonst fehlen die letzten Dateien in Liste und Meldung
+                    if (_clock.GetUtcNow() - _lastActivityRefresh >= ActivityRefreshInterval || status.Tray != TrayState.Syncing)
                     {
                         _lastActivityRefresh = _clock.GetUtcNow();
                         await Panel.RefreshAsync(ct);
@@ -378,6 +383,18 @@ public sealed partial class PanelViewModel : ObservableObject
             foreach (var conflict in activity.Where(a => a.Entry.At > seen && a.Entry.Action == App.Ports.ActivityAction.Conflict))
             {
                 _shell.Toast($"{Texts.Conflict}: {conflict.Entry.Path.Name}");
+            }
+
+            // Neu übertragene Dateien: eine nennt sie beim Namen, mehrere fasst eine Meldung zusammen
+            var synced = activity.Where(a => a.Entry is { IsDirectory: false, Result: App.Ports.ActivityResult.Done } && a.Entry.At > seen
+                && a.Entry.Action is App.Ports.ActivityAction.Upload or App.Ports.ActivityAction.Download).ToList();
+            if (synced.Count == 1)
+            {
+                _shell.Toast($"{synced[0].Entry.Path.Name}: {Presentation.Action(synced[0].Entry, Texts)}");
+            }
+            else if (synced.Count > 1)
+            {
+                _shell.Toast(string.Format(System.Globalization.CultureInfo.CurrentCulture, Texts.FilesSynced, synced.Count));
             }
         }
 

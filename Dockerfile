@@ -10,11 +10,11 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 COPY --from=build /app .
 
-# Daten (server.db, blocks/) liegen im Volume /data, Sicherungen in /backup; der Dienst läuft ohne Root-Rechte.
+# Daten (server.db, blocks/) liegen im Volume /data; der Dienst läuft ohne Root-Rechte.
 USER root
-RUN mkdir /data /backup && chown app:app /data /backup
+RUN mkdir /data && chown app:app /data
 USER app
-VOLUME /data /backup
+VOLUME /data
 
 ENV ASPNETCORE_HTTP_PORTS=8080 \
     SYNCDRIVE_Server__DataDirectory=/data \

@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -75,7 +76,6 @@ public sealed class ScreenshotTests
     [AvaloniaTheory]
     [InlineData(MainPage.SyncTasks, TrayState.Error)]
     [InlineData(MainPage.SyncTasks, TrayState.Syncing)]
-    [InlineData(MainPage.BackupTask, TrayState.UpToDate)]
     [InlineData(MainPage.Logs, TrayState.UpToDate)]
     [InlineData(MainPage.Notifications, TrayState.UpToDate)]
     [InlineData(MainPage.GlobalSettings, TrayState.UpToDate)]
@@ -307,7 +307,23 @@ public sealed class ScreenshotTests
                 Children =
                 {
                     new Image { Source = big, Width = 64, Height = 64 },
-                    new Image { Source = Badges.TrayBitmap(state, notify, minimal: true), Width = 16, Height = 16 },
+                    new Border
+                    {
+                        Background = Brushes.Black, // dunkle Taskleiste, echte Größen 16 / 24 / 32 Pixel
+                        Padding = new(4),
+                        Child = new StackPanel
+                        {
+                            Orientation = Avalonia.Layout.Orientation.Horizontal,
+                            Spacing = 4,
+                            Children =
+                            {
+                                new Image { Source = Badges.TrayBitmap(state, notify, minimal: true, size: 16, spin: 45), Width = 16, Height = 16 },
+                                new Image { Source = Badges.TrayBitmap(state, notify, minimal: true, size: 24), Width = 24, Height = 24 },
+                                new Image { Source = Badges.TrayBitmap(state, notify, minimal: true, size: 32), Width = 32, Height = 32 },
+                            },
+                        },
+                    },
+                    new Image { Source = Badges.TrayBitmap(state, notify, minimal: false, size: 24), Width = 24, Height = 24 },
                     new TextBlock { Text = name, FontSize = 11, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center },
                 },
             });
@@ -319,6 +335,6 @@ public sealed class ScreenshotTests
             badges.Children.Add(new FolderBadge { Kind = kind, Width = 40, Height = 40 });
         }
 
-        Save(new Window { Width = 640, Height = 220, Content = new StackPanel { Children = { row, badges } } }, "tray-icons");
+        Save(new Window { Width = 760, Height = 300, Content = new StackPanel { Children = { row, badges } } }, "tray-icons");
     }
 }

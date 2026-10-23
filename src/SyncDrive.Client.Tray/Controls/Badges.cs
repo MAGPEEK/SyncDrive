@@ -93,8 +93,11 @@ public static class Badges
         _ => Palette.Accent,
     };
 
-    /// <summary>Zeichnet das Abzeichen in <paramref name="r"/> (quadratisch gedacht).</summary>
-    public static void Draw(DrawingContext ctx, Rect r, BadgeKind kind)
+    /// <summary>
+    /// Zeichnet das Abzeichen in <paramref name="r"/> (quadratisch gedacht). <paramref name="rotation"/> dreht die Pfeile des Abgleichs (Grad,
+    /// für das kreisende Tray-Symbol); <paramref name="bold"/> zieht die Zeichen kräftiger, damit sie auch 16 Pixel klein lesbar bleiben.
+    /// </summary>
+    public static void Draw(DrawingContext ctx, Rect r, BadgeKind kind, double rotation = 0, bool bold = false)
     {
         if (kind == BadgeKind.None)
         {
@@ -105,17 +108,23 @@ public static class Badges
         var radius = Math.Min(r.Width, r.Height) / 2;
         ctx.DrawEllipse(new SolidColorBrush(ColorOf(kind)), new Pen(Brushes.White, Math.Max(1, radius * 0.12)), center, radius, radius);
         var u = radius / 10; // Raster für die Zeichen
-        var pen = new Pen(Brushes.White, 2.2 * u, lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round);
+        var pen = new Pen(Brushes.White, (bold ? 2.9 : 2.2) * u, lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round);
         switch (kind)
         {
             case BadgeKind.Done:
                 ctx.DrawGeometry(null, pen, Polyline(center, u, (-4.5, 0.2), (-1.4, 3.4), (4.6, -3.2)));
                 break;
             case BadgeKind.Sync:
-                ctx.DrawGeometry(null, pen, Arc(center, 5 * u, 200, 340));
-                ctx.DrawGeometry(null, pen, Arc(center, 5 * u, 20, 160));
-                ctx.DrawGeometry(null, pen, Polyline(center, u, (2.2, -6.4), (4.7, -1.8), (0.2, -1.2)));
-                ctx.DrawGeometry(null, pen, Polyline(center, u, (-2.2, 6.4), (-4.7, 1.8), (-0.2, 1.2)));
+                var turn = Matrix.CreateTranslation(-center.X, -center.Y) * Matrix.CreateRotation(rotation * Math.PI / 180)
+                    * Matrix.CreateTranslation(center.X, center.Y);
+                using (ctx.PushTransform(turn))
+                {
+                    ctx.DrawGeometry(null, pen, Arc(center, 5 * u, 200, 340));
+                    ctx.DrawGeometry(null, pen, Arc(center, 5 * u, 20, 160));
+                    ctx.DrawGeometry(null, pen, Polyline(center, u, (2.2, -6.4), (4.7, -1.8), (0.2, -1.2)));
+                    ctx.DrawGeometry(null, pen, Polyline(center, u, (-2.2, 6.4), (-4.7, 1.8), (-0.2, 1.2)));
+                }
+
                 break;
             case BadgeKind.Error:
                 ctx.DrawLine(pen, center + new Vector(0, -5 * u), center + new Vector(0, 1.2 * u));
@@ -138,48 +147,84 @@ public static class Badges
         }
     }
 
-    /// <summary>Grundzeichen der App: Ordner auf petrolfarbener Kachel mit einem Bogen (Abgleich).</summary>
+    /// <summary>
+    /// Grundzeichen der App: Ordner auf petrolfarbener Kachel mit einem Bogen (Abgleich). Unter 28 Pixeln (Navigationsbereich, Taskleiste)
+    /// wäre der Bogen nur noch ein Fleck: Dort füllt der Ordner die Kachel allein, mit Kanten auf ganzen Pixeln.
+    /// </summary>
     public static void DrawGlyph(DrawingContext ctx, Rect r, double opacity = 1)
     {
         using var _ = ctx.PushOpacity(opacity);
         var s = r.Width / 64;
-        ctx.DrawRectangle(new SolidColorBrush(Palette.Accent), null, new Rect(r.X + 2 * s, r.Y + 2 * s, 60 * s, 60 * s), 14 * s, 14 * s);
-        var folder = new StreamGeometry();
-        using (var g = folder.Open())
+        if (r.Width < 28)
         {
-            g.BeginFigure(new Point(r.X + 13 * s, r.Y + 20 * s), true);
-            g.LineTo(new Point(r.X + 26 * s, r.Y + 20 * s));
-            g.LineTo(new Point(r.X + 30 * s, r.Y + 25 * s));
-            g.LineTo(new Point(r.X + 51 * s, r.Y + 25 * s));
-            g.LineTo(new Point(r.X + 51 * s, r.Y + 47 * s));
-            g.LineTo(new Point(r.X + 13 * s, r.Y + 47 * s));
-            g.EndFigure(true);
+            var px = r.Width;
+            double At(double f) => Math.Round(f * px); // auf ganze Pixel, sonst verschwimmen die Kanten
+            ctx.DrawRectangle(new SolidColorBrush(Palette.Accent), null, new Rect(r.X, r.Y, px, px), px * 0.2, px * 0.2);
+            ctx.DrawGeometry(Brushes.White, null, Folder(r.X, r.Y, At(0.19), At(0.25), At(0.81), At(0.78), At(0.36), At(0.33)));
+            return;
         }
 
-        ctx.DrawGeometry(Brushes.White, null, folder);
+        ctx.DrawRectangle(new SolidColorBrush(Palette.Accent), null, new Rect(r.X + 2 * s, r.Y + 2 * s, 60 * s, 60 * s), 14 * s, 14 * s);
+        ctx.DrawGeometry(Brushes.White, null, Folder(r.X, r.Y, 13 * s, 20 * s, 51 * s, 47 * s, 26 * s, 25 * s));
         var arc = new Pen(new SolidColorBrush(Palette.Accent), 3.4 * s, lineCap: PenLineCap.Round);
         ctx.DrawGeometry(null, arc, Arc(new Point(r.X + 32 * s, r.Y + 37 * s), 7 * s, 210, 510));
         ctx.DrawGeometry(null, arc, Polyline(new Point(r.X + 32 * s, r.Y + 37 * s), s, (3.5, -9.5), (7, -6), (2.5, -3.5)));
     }
 
-    /// <summary>Tray-Symbol: Grundzeichen, Abzeichen unten rechts; getrennt = blass ohne Abzeichen; Benachrichtigung = roter Punkt oben rechts.</summary>
-    public static Bitmap TrayBitmap(TrayState state, bool hasNotifications, bool minimal)
+    /// <summary>Schlichtes Tray-Symbol: nur der Ordnerumriss, einfarbig wie die Systemsymbole der Taskleiste.</summary>
+    public static void DrawMinimalGlyph(DrawingContext ctx, Rect r, Color color, double opacity = 1)
     {
-        var bitmap = new RenderTargetBitmap(new PixelSize(64, 64));
+        using var _ = ctx.PushOpacity(opacity);
+        var px = r.Width;
+        double At(double f) => Math.Round(f * px);
+        ctx.DrawGeometry(new SolidColorBrush(color), null, Folder(r.X, r.Y, At(0.06), At(0.16), At(0.94), At(0.84), At(0.4), At(0.28)));
+    }
+
+    /// <summary>
+    /// Tray-Symbol in <paramref name="size"/> Pixeln (der echten Größe der Taskleiste, sonst verkleinert Windows unscharf). Schlicht: einfarbiger
+    /// Ordner (<paramref name="darkTaskbar"/>: weiß, sonst dunkel), farbig: die Kachel. Abzeichen unten rechts, beim Abgleich größer und um
+    /// <paramref name="spin"/> Grad gedreht; getrennt = blass ohne Abzeichen; Benachrichtigung = roter Punkt oben rechts.
+    /// </summary>
+    public static Bitmap TrayBitmap(TrayState state, bool hasNotifications, bool minimal, int size = 64, bool darkTaskbar = true, double spin = 0)
+    {
+        var bitmap = new RenderTargetBitmap(new PixelSize(size, size));
         using (var ctx = bitmap.CreateDrawingContext())
         {
             var disconnected = state == TrayState.Disconnected;
-            DrawGlyph(ctx, new Rect(0, 0, 64, 64), disconnected ? 0.4 : 1);
+            var all = new Rect(0, 0, size, size);
+            if (minimal)
+            {
+                DrawMinimalGlyph(ctx, all, darkTaskbar ? Colors.White : Palette.Text, disconnected ? 0.45 : 1);
+            }
+            else
+            {
+                DrawGlyph(ctx, all, disconnected ? 0.4 : 1);
+            }
+
             var badge = For(state);
             if (!disconnected && !(minimal && badge == BadgeKind.Done) && badge != BadgeKind.None)
             {
-                Draw(ctx, new Rect(34, 34, 30, 30), badge);
+                var side = size * (badge == BadgeKind.Sync ? 0.7 : 0.56);
+                Draw(ctx, new Rect(size - side, size - side, side, side), badge, spin, bold: size <= 32);
             }
 
             if (hasNotifications)
             {
-                Draw(ctx, new Rect(46, 0, 18, 18), BadgeKind.Notification);
+                var dot = size * 0.34;
+                Draw(ctx, new Rect(size - dot, 0, dot, dot), BadgeKind.Notification);
             }
+        }
+
+        return bitmap;
+    }
+
+    /// <summary>Grundzeichen als Bild (Fenster, Benachrichtigungen).</summary>
+    public static Bitmap GlyphBitmap(int size)
+    {
+        var bitmap = new RenderTargetBitmap(new PixelSize(size, size));
+        using (var ctx = bitmap.CreateDrawingContext())
+        {
+            DrawGlyph(ctx, new Rect(0, 0, size, size));
         }
 
         return bitmap;
@@ -188,16 +233,25 @@ public static class Badges
     /// <summary>Fenstersymbol aller Fenster: das Grundzeichen.</summary>
     public static WindowIcon AppIcon()
     {
-        var bitmap = new RenderTargetBitmap(new PixelSize(64, 64));
-        using (var ctx = bitmap.CreateDrawingContext())
-        {
-            DrawGlyph(ctx, new Rect(0, 0, 64, 64));
-        }
-
         using var stream = new MemoryStream();
-        bitmap.Save(stream);
+        GlyphBitmap(64).Save(stream);
         stream.Position = 0;
         return new WindowIcon(stream);
+    }
+
+    /// <summary>Ordner mit Reiter: links oben (<paramref name="left"/>, <paramref name="top"/>), Reiter bis <paramref name="tab"/>, Körper ab <paramref name="body"/>.</summary>
+    private static StreamGeometry Folder(double x, double y, double left, double top, double right, double bottom, double tab, double body)
+    {
+        var folder = new StreamGeometry();
+        using var g = folder.Open();
+        g.BeginFigure(new Point(x + left, y + top), true);
+        g.LineTo(new Point(x + tab, y + top));
+        g.LineTo(new Point(x + tab + ((body - top) * 0.8), y + body));
+        g.LineTo(new Point(x + right, y + body));
+        g.LineTo(new Point(x + right, y + bottom));
+        g.LineTo(new Point(x + left, y + bottom));
+        g.EndFigure(true);
+        return folder;
     }
 
     private static StreamGeometry Polyline(Point center, double u, params (double X, double Y)[] points)

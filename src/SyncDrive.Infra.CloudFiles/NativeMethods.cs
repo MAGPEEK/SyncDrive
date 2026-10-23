@@ -219,6 +219,18 @@ internal static unsafe class NativeMethods
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     public static extern int CfRevertPlaceholder(SafeFileHandle file, uint flags, IntPtr overlapped);
 
+    public const uint UpdateVerifyInSync = 0x1;
+    public const uint UpdateDehydrate = 0x4;
+
+    /// <summary>Hebt „immer vollständig“ auf, das Windows an umgewandelte Dateien hängen kann; sonst scheitert das Freigeben.</summary>
+    public const uint UpdateAllowPartial = 0x400;
+
+    [DllImport(CldApi, ExactSpelling = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    public static extern int CfUpdatePlaceholder(
+        SafeFileHandle file, IntPtr fsMetadata, IntPtr fileIdentity, uint fileIdentityLength, IntPtr dehydrateRanges, uint dehydrateRangeCount,
+        uint flags, IntPtr updateUsn, IntPtr overlapped);
+
     public const uint PinStatePinned = 1;
     public const uint PinStateUnpinned = 2;
     public const uint SetPinRecurse = 0x1;
@@ -233,10 +245,10 @@ internal static unsafe class NativeMethods
         string fileName, uint desiredAccess, FileShare shareMode, IntPtr securityAttributes, FileMode creationDisposition, uint flags, IntPtr template);
 
     /// <summary>Handle für die Platzhalter-Aufrufe; liest keine Daten, holt also auch keinen Inhalt.</summary>
-    public static SafeFileHandle OpenForCloudOperation(string path)
+    public static SafeFileHandle OpenForCloudOperation(string path, FileShare share = FileShare.ReadWrite | FileShare.Delete)
     {
         var handle = CreateFileW(
-            path, ReadAttributes | WriteDac, FileShare.ReadWrite | FileShare.Delete, IntPtr.Zero, FileMode.Open,
+            path, ReadAttributes | WriteDac, share, IntPtr.Zero, FileMode.Open,
             Directory.Exists(path) ? FlagBackupSemantics : 0, IntPtr.Zero);
         if (handle.IsInvalid)
         {

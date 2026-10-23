@@ -127,6 +127,31 @@ public sealed class DaemonEndToEndTests(HostFactory factory) : IClassFixture<Hos
     }
 
     [Fact]
+    public async Task Starting_the_daemon_applies_start_with_windows_from_the_settings()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "syncdrive-daemon-autostart-" + Guid.NewGuid().ToString("N"));
+        _directories.Add(root);
+        var paths = new ClientPaths(root);
+        paths.EnsureCreated();
+        var autostart = new RecordingAutostart();
+        var pipe = "syncdrive-e2e-" + Guid.NewGuid().ToString("N");
+        _daemons.Add(new DaemonHost(
+            paths, new SqliteClientConfigStore(paths.ConfigDatabase), new MemoryCredentialStore(), "X", pipe, SupervisorOptions.Default, Remote,
+            autostart: autostart).RunAsync(_stop.Token));
+
+        await using var ui = await IpcClient.ConnectAsync(pipe, TimeSpan.FromSeconds(10), default);
+
+        Assert.Equal([true], autostart.Applied); // ab Werk an, ohne dass jemand die Einstellungen speichert
+    }
+
+    private sealed class RecordingAutostart : IAutostart
+    {
+        public ConcurrentQueue<bool> Applied { get; } = new();
+
+        public void Apply(bool enabled) => Applied.Enqueue(enabled);
+    }
+
+    [Fact]
     public async Task The_wizard_flow_over_the_pipe_signs_in_browses_creates_a_task_and_it_syncs_at_once()
     {
         var admin = await factory.LoginAsync();

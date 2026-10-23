@@ -185,7 +185,13 @@ public sealed class WindowManager(IClassicDesktopStyleApplicationLifetime lifeti
         return file?.TryGetLocalPath();
     }
 
-    public void ShowToast(string title, string message) => new ToastWindow(title, message).ShowBriefly();
+    public void ShowToast(string title, string message)
+    {
+        if (!NativeToast.TryShow(title, message))
+        {
+            new ToastWindow(title, message).ShowBriefly();
+        }
+    }
 
     public async Task ShowEditConnectionAsync(EditConnectionViewModel dialog)
     {

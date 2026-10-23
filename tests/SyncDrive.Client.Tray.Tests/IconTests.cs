@@ -8,7 +8,7 @@ namespace SyncDrive.Client.Tray.Tests;
 /// <summary>Programmsymbol aus dem Grundzeichen; mit <c>SYNCDRIVE_WRITE_ICON=&lt;Datei&gt;</c> wird die ICO-Datei (neu) geschrieben.</summary>
 public sealed class IconTests
 {
-    private static readonly int[] Sizes = [16, 32, 48, 256];
+    private static readonly int[] Sizes = [16, 20, 24, 32, 40, 48, 64, 256]; // Zwischengrößen für 125 % und 150 %: sonst skaliert Windows unscharf
 
     [AvaloniaFact]
     public void The_app_icon_contains_all_sizes_as_png()

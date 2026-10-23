@@ -52,8 +52,12 @@ internal sealed class PinWatcher : IDisposable
             }
             else if (attributes.HasFlag(Unpinned) && !IsCloudOnly(attributes))
             {
-                using var handle = OpenForCloudOperation(path);
-                Check(CfDehydratePlaceholder(handle, 0, -1, 0, IntPtr.Zero), $"{path} freigeben"); // scheitert, solange sie nicht abgeglichen ist
+                // Exklusiv (Windows verlangt es fürs Freigeben; eine geöffnete Datei bleibt also vorerst). „Immer vollständig“ hängt Windows an
+                // umgewandelte Dateien und lehnt dann jedes Freigeben ab: ALLOW_PARTIAL hebt das auf. VERIFY_IN_SYNC: nur Abgeglichenes wird frei.
+                using var handle = OpenForCloudOperation(path, FileShare.None);
+                Check(
+                    CfUpdatePlaceholder(handle, 0, 0, 0, 0, 0, UpdateVerifyInSync | UpdateAllowPartial | UpdateDehydrate, 0, 0),
+                    $"{path} freigeben");
             }
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)

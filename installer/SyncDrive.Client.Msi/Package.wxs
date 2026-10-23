@@ -31,16 +31,17 @@
     </ComponentGroup>
 
     <ComponentGroup Id="Integration" Directory="INSTALLFOLDER">
-      <!-- Ordner aufräumen, syncdrive_cli in den PATH, beim Entfernen Autostart und Explorer-Menü löschen (legt der Client selbst an). -->
+      <!-- Ordner aufräumen, syncdrive_cli in den PATH, beim Entfernen Explorer-Menü und Benachrichtigungskennung löschen (legt der Client selbst an).
+           Den Autostart entfernt nur die Deinstallation (Daemon, uninstall): ein RemoveRegistryValue hier liefe auch bei jedem Update. -->
       <Component Id="Integration">
         <RegistryValue Root="HKCU" Key="Software\SyncDrive\Installer" Name="InstallFolder" Type="string" Value="[INSTALLFOLDER]" KeyPath="yes" />
         <RemoveFolder Id="RemoveInstallFolder" Directory="INSTALLFOLDER" On="uninstall" />
         <RemoveFolder Id="RemoveProgramsFolder" Directory="ProgramsFolder" On="uninstall" />
         <Environment Id="PathEntry" Name="PATH" Value="[INSTALLFOLDER]" Part="last" Action="set" System="no" />
-        <RemoveRegistryValue Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Run" Name="SyncDrive" />
         <RemoveRegistryKey Root="HKCU" Key="Software\Classes\*\shell\SyncDrive" Action="removeOnUninstall" />
         <RemoveRegistryKey Root="HKCU" Key="Software\Classes\Directory\shell\SyncDrive" Action="removeOnUninstall" />
         <RemoveRegistryKey Root="HKCU" Key="Software\SyncDrive" Action="removeOnUninstall" />
+        <RemoveRegistryKey Root="HKCU" Key="Software\Classes\AppUserModelId\SyncDrive.Client" Action="removeOnUninstall" />
       </Component>
     </ComponentGroup>
 

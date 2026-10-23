@@ -121,8 +121,8 @@ Get-Secret SyncDrive -AsPlainText | syncdrive_cli connect drive.example.lan -u a
 # self-signed certificate: the first attempt prints the fingerprint, repeat with --trust after checking it
 syncdrive_cli connect drive.example.lan -u alice --trust 3f:a1:...:9c
 
-# back up a folder to the server (upload only)
-syncdrive_cli sync D:\Photos -s sp_1234 -p Backup/Photos --direction upload
+# upload a folder to the server (upload only)
+syncdrive_cli sync D:\Photos -s sp_1234 -p Photos --direction upload
 
 # wait until everything is synced
 while ((syncdrive_cli status) -match 'Syncing') { Start-Sleep 5 }

@@ -4,7 +4,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using SyncDrive.Client.App.Control;
+using SyncDrive.Client.App.Status;
 using SyncDrive.Client.Tray.Controls;
 using SyncDrive.Client.Ui;
 using SyncDrive.Infra.Ipc;
@@ -115,13 +117,30 @@ public partial class App : Application
         var tray = new TrayIcon { Menu = menu, ToolTipText = shell.Tooltip, IsVisible = true };
         tray.Clicked += (_, _) => windows.TogglePanel();
         TrayIcon.SetIcons(this, [tray]);
-        UpdateIcon(tray, shell);
+        var spin = 0;
+        var spinner = new DispatcherTimer(TimeSpan.FromMilliseconds(110), DispatcherPriority.Background, (_, _) =>
+        {
+            spin = (spin + 30) % 360; // zwölf Bilder je Umdrehung
+            tray.Icon = TrayArt.Icon(shell, spin);
+        });
+        void UpdateIcon()
+        {
+            tray.Icon = TrayArt.Icon(shell, spin);
+            spinner.IsEnabled = shell.TrayState == TrayState.Syncing; // kreisende Pfeile, solange abgeglichen wird
+        }
+
+        UpdateIcon();
         shell.PropertyChanged += (_, e) =>
         {
+            if (e.PropertyName is nameof(ShellViewModel.Settings))
+            {
+                UpdateIcon(); // schlicht oder farbig
+            }
+
             if (e.PropertyName is null or "" or nameof(ShellViewModel.TrayState) or nameof(ShellViewModel.HasNotifications)
                 or nameof(ShellViewModel.IsConnected))
             {
-                UpdateIcon(tray, shell);
+                UpdateIcon();
                 tray.ToolTipText = shell.Tooltip;
                 pause.Header = shell.PauseMenuText;
                 settings.Header = shell.Texts.MenuSettings; // Sprache kann gewechselt haben
@@ -130,14 +149,6 @@ public partial class App : Application
                 exit.Header = shell.Texts.MenuExit;
             }
         };
-    }
-
-    private static void UpdateIcon(TrayIcon tray, ShellViewModel shell)
-    {
-        using var stream = new MemoryStream();
-        Badges.TrayBitmap(shell.TrayState, shell.HasNotifications, minimal: shell.Settings.MinimalTrayIcon).Save(stream);
-        stream.Position = 0;
-        tray.Icon = new WindowIcon(stream);
     }
 
     /// <summary>Startet <c>syncdrive-daemon</c> aus dem Programmordner (als .exe oder, in der Entwicklung, per <c>dotnet</c>).</summary>

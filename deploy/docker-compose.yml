@@ -7,10 +7,6 @@
 # Datenbank: SQLite im Volume syncdrive-data, im Serverprozess (gemessen schneller als ein eigener Datenbank-Container; ein Server-Prozess,
 # ADR-9). Ein Redis-Cache bringt dabei nichts Messbares (ADR-13). Erst für mehrere Server-Instanzen kämen PostgreSQL und
 # ein verteilter Benachrichtiger hinzu.
-#
-# Sicherung: täglich um SYNCDRIVE_BACKUP_TIME (Zeitzone TZ) nach syncdrive-backup: Datenbank-Stand (die letzten 7), Blöcke inkrementell,
-# Anmeldeseite. Am besten auf ein anderes Laufwerk legen, z. B. statt des Volumes:  - /mnt/usb/syncdrive-backup:/backup
-# (der Ordner muss für UID 1654 beschreibbar sein: sudo chown 1654 /mnt/usb/syncdrive-backup).
 services:
   server:
     image: magpeek/syncdrive-server:${SYNCDRIVE_VERSION:-latest}
@@ -24,13 +20,10 @@ services:
       # Der Server hört nur im internen Netz; Caddy terminiert TLS und setzt X-Forwarded-Proto.
       SYNCDRIVE_Server__TrustForwardedHeaders: "true"
       SYNCDRIVE_Server__RequireTls: "true"
-      SYNCDRIVE_Server__BackupDirectory: /backup
-      SYNCDRIVE_Server__BackupTime: ${SYNCDRIVE_BACKUP_TIME:-02:30}
     secrets:
       - admin_password
     volumes:
       - syncdrive-data:/data
-      - syncdrive-backup:/backup
     # Härtung: Dateisystem des Images nur lesbar, keine Zusatzrechte, begrenzte Ressourcen.
     read_only: true
     tmpfs:
@@ -79,7 +72,6 @@ secrets:
 
 volumes:
   syncdrive-data:
-  syncdrive-backup:
   caddy-data:
 
 networks:

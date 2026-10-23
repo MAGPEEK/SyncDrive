@@ -72,7 +72,6 @@ public sealed record Texts
     // Hauptfenster
     public required string NavSyncTasks { get; init; }
 
-    public required string NavBackupTask { get; init; }
 
     public required string NavLogs { get; init; }
 
@@ -96,11 +95,8 @@ public sealed record Texts
 
     public required string EmptySyncTasks { get; init; }
 
-    public required string EmptyBackup { get; init; }
 
-    public required string CreateBackupTask { get; init; }
 
-    public required string BackupPlanned { get; init; }
 
     public required string ConfirmDeleteTask { get; init; }
 
@@ -174,7 +170,8 @@ public sealed record Texts
 
     public required string ShowDesktopNotifications { get; init; }
 
-    public required string ShowTips { get; init; }
+    /// <summary>Desktop-Meldung für mehrere neu übertragene Dateien; {0} = Anzahl.</summary>
+    public required string FilesSynced { get; init; }
 
     public required string TrayIconStyle { get; init; }
 
@@ -408,7 +405,6 @@ public sealed record Texts
         HoursAgo = "{0} hour(s) ago",
         DaysAgo = "{0} day(s) ago",
         NavSyncTasks = "Sync Tasks",
-        NavBackupTask = "Backup Task",
         NavLogs = "Logs",
         NavNotifications = "Notifications",
         NavGlobalSettings = "Global Settings",
@@ -420,9 +416,6 @@ public sealed record Texts
         DownloadOnly = "Download only",
         UploadOnly = "Upload only",
         EmptySyncTasks = "There is no sync task yet. Create one to keep a folder on this computer in sync with the server.",
-        EmptyBackup = "Back up folders of this computer to the server, with schedule and versions.",
-        CreateBackupTask = "Create Backup Task",
-        BackupPlanned = "Backup tasks follow in a later version.",
         ConfirmDeleteTask = "Remove this sync task? Files on this computer and on the server stay where they are.",
         TaskConnecting = "Connecting",
         TaskDisabled = "Stopped",
@@ -446,7 +439,7 @@ public sealed record Texts
         TabDisplay = "Display",
         TabProxy = "Proxy",
         TabUsage = "Usage",
-        StartWithWindows = "Start SyncDrive when I sign in",
+        StartWithWindows = "Start SyncDrive with Windows",
         OnRestartHeading = "When the app restarts or the connection resumes",
         OnRestartRefetch = "Download files again that were deleted on this computer",
         OnRestartPropagate = "Delete them on the server as well",
@@ -458,7 +451,7 @@ public sealed record Texts
         Language = "Language",
         LanguageSystem = "Same as system",
         ShowDesktopNotifications = "Show desktop notifications for file events",
-        ShowTips = "Show tips at next start",
+        FilesSynced = "{0} files synced",
         TrayIconStyle = "Tray icon style",
         MinimalTrayIcon = "Use a minimal tray icon",
         LocalFolderDisplay = "In local folders",
@@ -582,7 +575,6 @@ public sealed record Texts
         HoursAgo = "vor {0} Stunde(n)",
         DaysAgo = "vor {0} Tag(en)",
         NavSyncTasks = "Sync-Aufgaben",
-        NavBackupTask = "Sicherung",
         NavLogs = "Protokoll",
         NavNotifications = "Benachrichtigungen",
         NavGlobalSettings = "Einstellungen",
@@ -594,9 +586,6 @@ public sealed record Texts
         DownloadOnly = "Nur herunterladen",
         UploadOnly = "Nur hochladen",
         EmptySyncTasks = "Es gibt noch keine Sync-Aufgabe. Legen Sie eine an, um einen Ordner dieses Computers mit dem Server abzugleichen.",
-        EmptyBackup = "Ordner dieses Computers auf dem Server sichern, mit Zeitplan und Versionen.",
-        CreateBackupTask = "Sicherung erstellen",
-        BackupPlanned = "Sicherungsaufgaben folgen in einer späteren Version.",
         ConfirmDeleteTask = "Diese Sync-Aufgabe entfernen? Dateien auf diesem Computer und auf dem Server bleiben erhalten.",
         TaskConnecting = "Verbinde",
         TaskDisabled = "Gestoppt",
@@ -618,7 +607,7 @@ public sealed record Texts
         TabGeneral = "Allgemein",
         TabDisplay = "Anzeige",
         TabUsage = "Speicher",
-        StartWithWindows = "SyncDrive beim Anmelden starten",
+        StartWithWindows = "SyncDrive mit Windows starten",
         OnRestartHeading = "Wenn die App neu startet oder die Verbindung wiederkommt",
         OnRestartRefetch = "Auf diesem Computer gelöschte Dateien erneut herunterladen",
         OnRestartPropagate = "Sie auch auf dem Server löschen",
@@ -630,7 +619,7 @@ public sealed record Texts
         Language = "Sprache",
         LanguageSystem = "Wie das System",
         ShowDesktopNotifications = "Desktop-Benachrichtigungen für Dateiereignisse anzeigen",
-        ShowTips = "Tipps beim nächsten Start anzeigen",
+        FilesSynced = "{0} Dateien synchronisiert",
         TrayIconStyle = "Tray-Symbol",
         MinimalTrayIcon = "Schlichtes Tray-Symbol verwenden",
         LocalFolderDisplay = "In lokalen Ordnern",

@@ -23,7 +23,7 @@ and links, restore earlier versions, and reach everything from the browser.
 - **Sync** folders two-way, upload-only or download-only; keep files **online-only** and fetch them when opened.
 - **Web interface** to browse, upload, download, search, preview images and restore from the recycle bin or versions.
 - **Share** with other users, groups and team folders, via public links with password and expiry, or collect files with file requests.
-- **Administer** users, quotas and sharing policies in the browser. Nightly backup included.
+- **Administer** users, quotas and sharing policies in the browser.
 
 <p align="center">
   <img src="docs/images/web-files.png" width="860" alt="SyncDrive web interface">
@@ -54,11 +54,9 @@ docker compose up -d
 docker run -d --name syncdrive --restart unless-stopped \
   -p 8080:8080 \
   -v syncdrive-data:/data \
-  -v syncdrive-backup:/backup \
   -e SYNCDRIVE_Server__RequireTls=false \
   -e SYNCDRIVE_Server__AdminUserName=admin \
   -e SYNCDRIVE_Server__AdminPassword='a-long-admin-password' \
-  -e SYNCDRIVE_Server__BackupDirectory=/backup \
   magpeek/syncdrive-server:latest
 ```
 
@@ -81,15 +79,12 @@ Environment variables of the container:
 | `SYNCDRIVE_Server__AdminPasswordFile` | — | Alternative: file containing the password (Docker/Kubernetes secret) |
 | `SYNCDRIVE_Server__RequireTls` | `true` | Reject plain HTTP requests; set `false` for HTTP |
 | `SYNCDRIVE_Server__TrustForwardedHeaders` | `false` | Trust `X-Forwarded-*` headers — only behind a reverse proxy |
-| `SYNCDRIVE_Server__BackupDirectory` | — (off) | Target of the nightly backup, ideally another disk |
-| `SYNCDRIVE_Server__BackupTime` | `02:30` | Time of the backup (`HH:mm`, in `TZ`) |
-| `SYNCDRIVE_Server__BackupsToKeep` | `7` | Number of database snapshots kept |
 | `SYNCDRIVE_Server__DesktopClientUrl` | project release page | Download link for the desktop client shown in the web interface |
 | `SYNCDRIVE_Server__MaxPublicUploadBytes` | `4294967296` | Largest file upload via file request link (4 GiB) |
 | `SYNCDRIVE_Server__MaxLongPollSeconds` | `60` | Longest wait for change notifications; keep below a proxy's timeout |
 | `TZ` | `UTC` | Time zone |
 
-Volumes: `/data` (required) and `/backup`. HTTPS variables, all further settings, backup and restore, updates and troubleshooting:
+Volume: `/data` (required). HTTPS variables, all further settings, updates and troubleshooting:
 **[docs/server.md](docs/server.md)**.
 
 # Desktop client

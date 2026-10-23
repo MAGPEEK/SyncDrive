@@ -31,6 +31,7 @@ public sealed class DaemonHost(
     public async Task RunAsync(CancellationToken ct)
     {
         paths.EnsureCreated();
+        ApplyAutostart((await config.GetSettingsAsync(ct)).StartWithWindows);
         var tasks = await config.ListTasksAsync(ct);
         var factory = new TaskComponentsFactory(paths, config, credentials, deviceName, remoteFactory, cloudFolders, log);
         var supervisor = new TaskSupervisor(Controller, factory, options);
@@ -47,5 +48,21 @@ public sealed class DaemonHost(
         }
 
         await Task.WhenAll(supervisor.RunAsync(tasks, ct), ipc.RunAsync(ct), notifications.RunAsync(ct));
+    }
+
+    /// <summary>
+    /// „Mit Windows starten“ gilt ab Werk: Der Eintrag entsteht beim Start, nicht erst beim ersten Speichern der Einstellungen, und zeigt nach
+    /// einem Update wieder auf das installierte Programm.
+    /// </summary>
+    private void ApplyAutostart(bool enabled)
+    {
+        try
+        {
+            autostart?.Apply(enabled);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.Security.SecurityException)
+        {
+            log?.Invoke($"Autostart: {e.Message}");
+        }
     }
 }

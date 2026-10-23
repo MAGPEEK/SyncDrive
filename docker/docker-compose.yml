@@ -11,11 +11,8 @@ services:
       SYNCDRIVE_Server__AdminUserName: admin
       SYNCDRIVE_Server__AdminPassword: change-me-to-a-long-password   # read on the first start only
       SYNCDRIVE_Server__RequireTls: "false"                  # plain HTTP; HTTPS: see docs/server.md
-      SYNCDRIVE_Server__BackupDirectory: /backup
-      SYNCDRIVE_Server__BackupTime: "02:30"
     volumes:
       - syncdrive-data:/data
-      - syncdrive-backup:/backup
     read_only: true
     tmpfs:
       - /tmp
@@ -25,4 +22,3 @@ services:
 
 volumes:
   syncdrive-data:
-  syncdrive-backup:

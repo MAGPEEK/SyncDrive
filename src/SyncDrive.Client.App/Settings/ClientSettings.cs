@@ -62,8 +62,6 @@ public sealed record ClientSettings
     public bool ShowDesktopNotifications { get; init; } = true;
 
     // Display
-    public bool ShowTips { get; init; } = true;
-
     public bool MinimalTrayIcon { get; init; } = true;
 
     public bool ShowContextMenu { get; init; } = true;

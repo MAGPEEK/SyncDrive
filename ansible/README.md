@@ -26,7 +26,6 @@ Variables (override with `-e` or in `group_vars/syncdrive.yml`, the password pre
 | `syncdrive_admin_user` / `syncdrive_admin_password` | `admin` / `$SYNCDRIVE_ADMIN_PASSWORD` | Administrator created on the first start |
 | `syncdrive_require_tls` | `false` | `true` behind a reverse proxy or with a certificate |
 | `syncdrive_timezone` | `Europe/Berlin` | Time zone |
-| `syncdrive_backup_time` | `02:30` | Time of the nightly backup |
-| `syncdrive_extra_env` | `{}` | Further variables, e.g. `{SYNCDRIVE_Server__BackupsToKeep: "14"}` |
+| `syncdrive_extra_env` | `{}` | Further variables, e.g. `{SYNCDRIVE_Server__MaxPublicUploadBytes: "1073741824"}` |
 
 Running the playbook again with a new `syncdrive_version` (or with `latest`) updates the server; the data stays in the volumes.

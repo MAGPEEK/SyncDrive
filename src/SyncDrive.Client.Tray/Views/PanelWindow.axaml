@@ -25,13 +25,19 @@
 
       <!-- Fußleiste: Ordner, Hauptfenster, Einstellungen, Hilfe -->
       <Border DockPanel.Dock="Bottom" Padding="8,6" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Background="{StaticResource NavBack}">
-        <StackPanel Orientation="Horizontal" Spacing="2">
-          <Button Classes="link" Padding="8,4" ToolTip.Tip="{Binding Texts.YourComputer}" Command="{Binding OpenSyncFolderCommand}">
-            <c:FolderBadge Width="18" Height="18" />
+        <StackPanel Orientation="Horizontal" Spacing="4">
+          <Button Classes="tool" ToolTip.Tip="{Binding Texts.YourComputer}" Command="{Binding OpenSyncFolderCommand}">
+            <PathIcon Classes="tool-icon" Foreground="{StaticResource FolderFill}" Data="{StaticResource IconFolder}" />
           </Button>
-          <Button Classes="link" Padding="8,4" Content="☰" ToolTip.Tip="Sync Tasks" Command="{Binding OpenMainWindowCommand}" />
-          <Button Classes="link" Padding="8,4" Content="⚙" ToolTip.Tip="{Binding Texts.MenuSettings}" Command="{Binding OpenSettingsCommand}" />
-          <Button Classes="link" Padding="8,4" Content="?" ToolTip.Tip="{Binding Texts.MenuAbout}" Command="{Binding HelpCommand}" />
+          <Button Classes="tool" ToolTip.Tip="{Binding Texts.NavSyncTasks}" Command="{Binding OpenMainWindowCommand}">
+            <PathIcon Classes="tool-icon" Data="{StaticResource IconMenu}" />
+          </Button>
+          <Button Classes="tool" ToolTip.Tip="{Binding Texts.MenuSettings}" Command="{Binding OpenSettingsCommand}">
+            <PathIcon Classes="tool-icon" Data="{StaticResource IconSettings}" />
+          </Button>
+          <Button Classes="tool" ToolTip.Tip="{Binding Texts.MenuAbout}" Command="{Binding HelpCommand}">
+            <PathIcon Classes="tool-icon" Data="{StaticResource IconHelp}" />
+          </Button>
         </StackPanel>
       </Border>
 

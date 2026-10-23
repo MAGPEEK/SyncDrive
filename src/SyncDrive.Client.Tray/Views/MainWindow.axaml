@@ -8,7 +8,7 @@
         Width="800" Height="540" MinWidth="680" MinHeight="420"
         WindowStartupLocation="CenterScreen" Title="SyncDrive">
   <Grid ColumnDefinitions="210,1,*">
-    <!-- Navigation: fünf feste Seiten -->
+    <!-- Navigation: vier feste Seiten -->
     <StackPanel Background="{StaticResource NavBack}">
       <StackPanel Orientation="Horizontal" Margin="18,16,0,14" Spacing="8">
         <c:AppGlyph Width="22" Height="22" />
@@ -16,9 +16,6 @@
       </StackPanel>
       <Button Classes="nav" Classes.active="{Binding IsSyncTasks}" Command="{Binding NavigateCommand}" CommandParameter="{x:Static ui:MainPage.SyncTasks}">
         <StackPanel Orientation="Horizontal" Spacing="10"><PathIcon Classes="nav-icon" Data="{StaticResource IconSyncTasks}" /><TextBlock Text="{Binding Texts.NavSyncTasks}" /></StackPanel>
-      </Button>
-      <Button Classes="nav" Classes.active="{Binding IsBackup}" Command="{Binding NavigateCommand}" CommandParameter="{x:Static ui:MainPage.BackupTask}">
-        <StackPanel Orientation="Horizontal" Spacing="10"><PathIcon Classes="nav-icon" Data="{StaticResource IconBackupTask}" /><TextBlock Text="{Binding Texts.NavBackupTask}" /></StackPanel>
       </Button>
       <Button Classes="nav" Classes.active="{Binding IsLogs}" Command="{Binding NavigateCommand}" CommandParameter="{x:Static ui:MainPage.Logs}">
         <StackPanel Orientation="Horizontal" Spacing="10"><PathIcon Classes="nav-icon" Data="{StaticResource IconLogs}" /><TextBlock Text="{Binding Texts.NavLogs}" /></StackPanel>
@@ -93,14 +90,6 @@
           </DataTemplate>
         </ContentControl.ContentTemplate>
       </ContentControl>
-
-      <!-- Backup Task: Leerzustand mit einer Handlung -->
-      <StackPanel IsVisible="{Binding IsBackup}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="14" MaxWidth="380">
-        <c:FolderBadge Width="96" Height="96" HorizontalAlignment="Center" Opacity="0.5" />
-        <TextBlock Text="{Binding Texts.EmptyBackup}" TextWrapping="Wrap" TextAlignment="Center" Foreground="{StaticResource TextSub}" />
-        <Button Classes="primary" HorizontalAlignment="Center" Content="{Binding Texts.CreateBackupTask}" IsEnabled="False" />
-        <TextBlock Classes="sub" Text="{Binding Texts.BackupPlanned}" HorizontalAlignment="Center" />
-      </StackPanel>
 
       <!-- Logs -->
       <ContentControl IsVisible="{Binding IsLogs}" Content="{Binding Logs}">
@@ -218,7 +207,6 @@
               </TabItem>
               <TabItem Header="{Binding Texts.TabDisplay}">
                 <StackPanel Margin="4,8" Spacing="2">
-                  <CheckBox Content="{Binding Texts.ShowTips}" IsChecked="{Binding ShowTips}" />
                   <TextBlock Classes="heading" Text="{Binding Texts.TrayIconStyle}" />
                   <CheckBox Content="{Binding Texts.MinimalTrayIcon}" IsChecked="{Binding MinimalTrayIcon}" />
                   <TextBlock Classes="heading" Text="{Binding Texts.LocalFolderDisplay}" />

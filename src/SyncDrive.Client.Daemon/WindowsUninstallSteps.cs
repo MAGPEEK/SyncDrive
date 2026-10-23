@@ -53,7 +53,12 @@ public sealed class WindowsUninstallSteps(ShellMenuRegistrar menu, WindowsAutost
         return removed;
     }
 
-    public void RemoveSettingsKey() => Registry.CurrentUser.DeleteSubKeyTree(@"Software\SyncDrive", throwOnMissingSubKey: false);
+    /// <summary>Einstellungen und die Kennung der Windows-Benachrichtigungen (legt <c>syncdrive-cloudreg notify</c> an).</summary>
+    public void RemoveSettingsKey()
+    {
+        Registry.CurrentUser.DeleteSubKeyTree(@"Software\SyncDrive", throwOnMissingSubKey: false);
+        Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\AppUserModelId\SyncDrive.Client", throwOnMissingSubKey: false);
+    }
 
     private static bool IsSyncDriveFolder(RegistryKey classes, string id)
     {

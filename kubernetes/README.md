@@ -2,7 +2,7 @@
 
 | File | Purpose |
 |---|---|
-| [`syncdrive.yaml`](syncdrive.yaml) | Namespace, volumes for data and backup, Deployment (one replica), Service on port 8080 |
+| [`syncdrive.yaml`](syncdrive.yaml) | Namespace, data volume, Deployment (one replica), Service on port 8080 |
 | [`ingress.example.yaml`](ingress.example.yaml) | Example Ingress with TLS (ingress-nginx, cert-manager) |
 
 SyncDrive keeps its database (SQLite) in the data volume, so it runs as **exactly one replica** with a `ReadWriteOnce` volume on

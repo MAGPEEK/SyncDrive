@@ -9,7 +9,6 @@
     syncdrive_admin_password: "{{ lookup('env', 'SYNCDRIVE_ADMIN_PASSWORD') }}"
     syncdrive_require_tls: false           # true behind a reverse proxy or with a certificate
     syncdrive_timezone: Europe/Berlin
-    syncdrive_backup_time: "02:30"
     syncdrive_extra_env: {}                # further SYNCDRIVE_Server__* variables
   tasks:
     - name: Check the administrator password
@@ -17,10 +16,9 @@
         that: syncdrive_admin_password | length > 0
         fail_msg: Set syncdrive_admin_password (e.g. with ansible-vault) or the environment variable SYNCDRIVE_ADMIN_PASSWORD.
 
-    - name: Create volumes
+    - name: Create the data volume
       community.docker.docker_volume:
-        name: "{{ item }}"
-      loop: [syncdrive-data, syncdrive-backup]
+        name: syncdrive-data
 
     - name: Run the SyncDrive container
       community.docker.docker_container:
@@ -33,7 +31,6 @@
         env: "{{ syncdrive_base_env | combine(syncdrive_extra_env) }}"
         volumes:
           - syncdrive-data:/data
-          - syncdrive-backup:/backup
         read_only: true
         tmpfs:
           - /tmp
@@ -45,10 +42,7 @@
           TZ: "{{ syncdrive_timezone }}"
           SYNCDRIVE_Server__AdminUserName: "{{ syncdrive_admin_user }}"
           SYNCDRIVE_Server__AdminPassword: "{{ syncdrive_admin_password }}"
-          SYNCDRIVE_Server__RequireTls: "{{ syncdrive_require_tls | string | lower }}"
-          SYNCDRIVE_Server__BackupDirectory: /backup
-          SYNCDRIVE_Server__BackupTime: "{{ syncdrive_backup_time }}"
-      no_log: true
+          SYNCDRIVE_Server__RequireTls: "{{ syncdrive_require_tls | string | lower }}"      no_log: true
 
     - name: Wait until the server is healthy
       community.docker.docker_container_info:

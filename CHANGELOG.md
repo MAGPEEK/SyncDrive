@@ -5,6 +5,33 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.37.0] – 2026-10-23 – Windows-Client: Tray-Symbol, Benachrichtigungen, Autostart; ohne Sicherungsfunktion
+
+### Entfernt
+- **Sicherung** überall: Seite „Backup Task“ im Windows-Client, tägliche Sicherung im Server (`BackupDirectory`, `BackupTime`,
+  `BackupsToKeep`), Volume `/backup` in Image, Compose-Dateien, Kubernetes und Ansible, Abschnitt in der Doku. Wer die Variablen noch
+  setzt, verliert nichts: Der Server ignoriert sie. Die Daten liegen weiter vollständig im Volume `/data`.
+- Windows-Client: Option „Tipps beim nächsten Start anzeigen“.
+
+### Geändert
+- Einstellungen → Allgemein: **„SyncDrive mit Windows starten“** (vorher „… beim Anmelden starten“). Der Daemon legt den Autostart
+  jetzt beim Start an, nicht erst beim ersten Speichern der Einstellungen.
+- **Tray-Symbol:** in der echten Größe des Infobereichs gezeichnet (vorher 64 px, von Windows unscharf verkleinert). Schlicht (Standard):
+  einfarbiger Ordner, weiß auf dunkler, dunkel auf heller Taskleiste; farbig: die Kachel. Beim Abgleich ein größeres blaues Abzeichen
+  mit **kreisenden Pfeilen**.
+- Panel am Tray-Symbol: Fußleiste mit **größeren Vektorsymbolen** (Ordner, Aufgaben, Einstellungen, Hilfe) statt Textzeichen.
+- **Programmsymbol** auch in 20, 24, 40 und 64 Pixeln; unter 28 Pixeln ohne Bogen, Kanten auf ganzen Pixeln: scharf im
+  Navigationsbereich des Explorers bei 125 und 150 %.
+
+### Behoben
+- **Benachrichtigungen:** neu übertragene Dateien melden sich jetzt als Windows-Benachrichtigung (eine Datei mit Namen, mehrere
+  zusammengefasst), über das Info-Center statt eines eigenen Fensters. Auch das Ende eines Abgleichs lädt die Liste „Zuletzt geändert“
+  sofort nach.
+- **„Tray-Symbol“:** die Option wirkte erst nach einem Neustart; jetzt sofort.
+- **„Speicherplatz freigeben“** blieb bei „Synchronisierung ausstehend“ stehen: Windows markiert umgewandelte Dateien als „immer
+  vollständig“ und lehnte das Freigeben ab. Der Client hebt die Markierung auf und gibt nur abgeglichene Dateien frei.
+- Das MSI löschte den Autostart-Eintrag bei jeder Installation, auch bei Updates; das übernimmt jetzt nur noch die Deinstallation.
+
 ## [0.36.0] – 2026-10-23 – Symbolleiste, Menü „Weitere Aktionen“, Info
 
 ### Geändert

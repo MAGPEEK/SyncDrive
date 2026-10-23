@@ -9,13 +9,13 @@ using SyncDrive.Client.App.Status;
 
 namespace SyncDrive.Client.Ui;
 
-/// <summary>Hauptfenster: linke Navigation mit fünf festen Seiten, rechts die gewählte Seite.</summary>
+/// <summary>Hauptfenster: linke Navigation mit vier festen Seiten, rechts die gewählte Seite.</summary>
 public sealed partial class MainWindowViewModel : ObservableObject
 {
     private readonly ShellViewModel _shell;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsSyncTasks), nameof(IsBackup), nameof(IsLogs), nameof(IsNotifications), nameof(IsSettings))]
+    [NotifyPropertyChangedFor(nameof(IsSyncTasks), nameof(IsLogs), nameof(IsNotifications), nameof(IsSettings))]
     private MainPage _page = MainPage.SyncTasks;
 
     public MainWindowViewModel(ShellViewModel shell, IUiServices ui)
@@ -53,8 +53,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public NotificationsViewModel Notifications { get; }
 
     public bool IsSyncTasks => Page == MainPage.SyncTasks;
-
-    public bool IsBackup => Page == MainPage.BackupTask;
 
     public bool IsLogs => Page == MainPage.Logs;
 
@@ -494,9 +492,6 @@ public sealed partial class SettingsViewModel(ShellViewModel shell) : Observable
     private bool _showDesktopNotifications;
 
     [ObservableProperty]
-    private bool _showTips;
-
-    [ObservableProperty]
     private bool _minimalTrayIcon;
 
     [ObservableProperty]
@@ -585,7 +580,6 @@ public sealed partial class SettingsViewModel(ShellViewModel shell) : Observable
             DesktopShortcutFolder = settings.DesktopShortcutFolder ?? ShortcutFolders.FirstOrDefault();
             Language = settings.Language;
             ShowDesktopNotifications = settings.ShowDesktopNotifications;
-            ShowTips = settings.ShowTips;
             MinimalTrayIcon = settings.MinimalTrayIcon;
             ShowContextMenu = settings.ShowContextMenu;
             ShowOverlays = settings.ShowOverlays;
@@ -615,7 +609,6 @@ public sealed partial class SettingsViewModel(ShellViewModel shell) : Observable
         DesktopShortcutFolder = DesktopShortcutFolder,
         Language = Language,
         ShowDesktopNotifications = ShowDesktopNotifications,
-        ShowTips = ShowTips,
         MinimalTrayIcon = MinimalTrayIcon,
         ShowContextMenu = ShowContextMenu,
         ShowOverlays = ShowOverlays,
