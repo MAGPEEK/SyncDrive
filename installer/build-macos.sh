@@ -29,6 +29,19 @@ for program in syncdrive syncdrive-daemon syncdrive_cli; do
 done
 "$app/Contents/MacOS/syncdrive_cli" --help > /dev/null
 
+# Rauchtest: der Daemon läuft an, und nach einem harten Abbruch (kill -9, wie „Sofort beenden“) startet er wieder
+smoke="$work/smoke-home"
+alive() { kill -0 "$1" 2> /dev/null; }
+SYNCDRIVE_CLIENT_HOME="$smoke" "$app/Contents/MacOS/syncdrive-daemon" & daemon=$!
+sleep 5
+alive "$daemon" || { echo "Daemon startet nicht:" >&2; cat "$smoke/logs/daemon.log" >&2 || true; exit 1; }
+kill -9 "$daemon"
+SYNCDRIVE_CLIENT_HOME="$smoke" "$app/Contents/MacOS/syncdrive-daemon" & daemon=$!
+sleep 5
+alive "$daemon" || { echo "Daemon startet nach einem Abbruch nicht wieder:" >&2; cat "$smoke/logs/daemon.log" >&2 || true; exit 1; }
+kill "$daemon"
+rm -rf "$smoke"
+
 # 2. Programmsymbol aus dem Grundzeichen (dieselbe Zeichnung wie unter Windows)
 SYNCDRIVE_WRITE_ICONSET="$work/SyncDrive.iconset" \
   dotnet test "$root/tests/SyncDrive.Client.Tray.Tests" -c Release --filter "FullyQualifiedName~The_mac_icon_set" --nologo

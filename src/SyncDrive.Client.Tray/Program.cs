@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Avalonia;
+using SyncDrive.Client.Daemon;
 
 namespace SyncDrive.Client.Tray;
 
@@ -19,8 +20,8 @@ public static class Program
         }
 
         var userKey = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(Environment.UserName.ToUpperInvariant())))[..16];
-        using var single = new Mutex(initiallyOwned: true, $@"Local\SyncDrive.Tray.{userKey}", out var first);
-        if (!first)
+        using var single = SingleInstance.TryAcquire($"SyncDrive.Tray.{userKey}", ClientPaths.Default().Root);
+        if (single is null)
         {
             return 0; // Oberfläche läuft schon; ihr Tray-Symbol ist da
         }
@@ -28,6 +29,7 @@ public static class Program
         return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 
+    // macOS: nur in der Menüleiste, kein Dock-Symbol (LSUIElement allein genügt Avalonia nicht)
     public static AppBuilder BuildAvaloniaApp() =>
-        AppBuilder.Configure<App>().UsePlatformDetect().LogToTrace();
+        AppBuilder.Configure<App>().UsePlatformDetect().With(new MacOSPlatformOptions { ShowInDock = false }).LogToTrace();
 }

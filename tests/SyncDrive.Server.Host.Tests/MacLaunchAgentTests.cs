@@ -49,5 +49,10 @@ public sealed class MacLaunchAgentTests : IDisposable
         fromImage.Apply(true);
 
         Assert.False(File.Exists(fromImage.PlistPath)); // auch ein alter Eintrag ist weg; aus „Programme“ entsteht er neu
+
+        new MacLaunchAgent("/Users/anna/build/SyncDrive.app/Contents/MacOS/syncdrive", _folder).Apply(true);
+        Assert.False(File.Exists(fromImage.PlistPath)); // Build-Ordner: kein Autostart
+        new MacLaunchAgent("/Users/anna/Applications/SyncDrive.app/Contents/MacOS/syncdrive", _folder).Apply(true);
+        Assert.True(File.Exists(fromImage.PlistPath)); // „Programme“ im Benutzerordner zählt
     }
 }

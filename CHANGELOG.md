@@ -5,6 +5,17 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.40.1] – 2026-10-23 – Mac: Start nach Beenden, Dock, Programmsymbol
+
+### Behoben
+- **Mac: Die App startete nach dem ersten Beenden nicht mehr.** Oberfläche und Daemon verhinderten Doppelstarts mit einem benannten
+  Mutex; unter macOS bleibt dafür eine Datei liegen, wenn ein Prozess hart endet, und jeder weitere Start hielt sich für den zweiten und
+  beendete sich still. Jetzt eine Dateisperre, die das System mit dem Prozess freigibt (Windows: weiter der Mutex). Ein liegengebliebener
+  Socket wird beim Start des Daemons entfernt. Rauchtest im Mac-Build: Daemon starten, hart abbrechen (`kill -9`), neu starten.
+- **Mac: SyncDrive erschien im Dock**, obwohl es nur in die Menüleiste gehört.
+- **Mac: Programmsymbol** nach Apples Raster (Kachel mittig mit Rand) statt randlos; im Dock und im Finder so groß wie andere Symbole.
+- Mac: Autostart nur, wenn die App in „Programme“ liegt (nicht aus dem Disk-Image oder einem Build-Ordner).
+
 ## [0.40.0] – 2026-10-23 – Seitenleiste als Ordnerbaum, Symbol „Teilen“
 
 ### Geändert
