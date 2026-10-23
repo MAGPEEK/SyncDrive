@@ -5,6 +5,11 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.37.2] – 2026-10-23 – Panel-Symbole etwas kleiner
+
+### Geändert
+- Panel am Tray-Symbol: Symbole der Fußleiste 19 statt 22 Pixel, Knöpfe entsprechend schmaler.
+
 ## [0.37.1] – 2026-10-23 – „Speicherplatz freigeben“ wirklich behoben
 
 ### Behoben
