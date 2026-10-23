@@ -1,5 +1,6 @@
 @implements IDisposable
 @inject BrowserViewModel Browser
+@inject FolderTreeViewModel Tree
 @inject SessionViewModel Session
 @inject SearchViewModel Search
 @inject RecentViewModel Recent
@@ -95,16 +96,28 @@
     </nav>
 
     <aside class="categories @(_navOpen ? "open" : "")">
-        @foreach (var space in OwnSpaces)
+        <div class="category-heading">@T.Categories</div>
+        @foreach (var space in OwnSpaces.Where(s => s.Role == "owner"))
         {
-            if (space.Role != "owner" && OwnSpaces.First(s => s.Role != "owner") == space)
+            @SpaceNode(space)
+        }
+        @if (OwnSpaces.Any(s => s.Role != "owner"))
+        {
+            <div class="category tree-group">
+                <button class="tree-toggle" aria-expanded="@Tree.TeamFoldersExpanded" aria-label="@T.TeamFolders" @onclick="Tree.ToggleTeamFolders">
+                    <span class="chevron @(Tree.TeamFoldersExpanded ? "open" : "")"></span>
+                </button>
+                <button class="tree-label" @onclick="Tree.ToggleTeamFolders">
+                    <Icon Class="category-icon" Name="people" /><span>@T.TeamFolders</span>
+                </button>
+            </div>
+            @if (Tree.TeamFoldersExpanded)
             {
-                <div class="category-heading">@T.TeamFolders</div>
+                @foreach (var space in OwnSpaces.Where(s => s.Role != "owner"))
+                {
+                    @SpaceNode(space, depth: 1)
+                }
             }
-            <button class="category @(_view == View.Folder && space == Browser.Space ? "active" : "")" @onclick="() => OpenSpaceAsync(space)">
-                <FileIcon Folder="true" Name="" />
-                <span>@Browser.SpaceLabel(space)</span>
-            </button>
         }
         <button class="category @(SharedWithMeActive ? "active" : "")" @onclick="ShowSharedWithMeAsync">
             <Icon Class="category-icon" Name="people" /><span>@T.SharedWithMe</span>
@@ -115,7 +128,6 @@
         <button class="category @(_view == View.FileRequests ? "active" : "")" @onclick="() => ShowSharedByMeAsync(View.FileRequests)">
             <Icon Class="category-icon" Name="inbox" /><span>@T.FileRequests</span>
         </button>
-        <div class="category-line"></div>
         <button class="category @(_view == View.Recent ? "active" : "")" @onclick="ShowRecentAsync">
             <Icon Class="category-icon" Name="clock" /><span>@T.Recent</span>
         </button>
@@ -296,6 +308,61 @@
 </div>
 
 @code {
+    /// <summary>Ein Space als Wurzel des Baums: Pfeil klappt auf, der Name öffnet ihn.</summary>
+    private RenderFragment SpaceNode(SpaceSummary space, int depth = 0) => __builder =>
+    {
+        <div class="category tree-row @(_view == View.Folder && space == Browser.Space && Browser.Path.Length == 0 ? "active" : "")"
+             style="--depth:@depth">
+            @TreeToggle(space.Id, string.Empty, Browser.SpaceLabel(space))
+            <button class="tree-label" @onclick="() => OpenSpaceAsync(space)">
+                <FileIcon Folder="true" Name="" /><span>@Browser.SpaceLabel(space)</span>
+            </button>
+        </div>
+        @FolderNodes(space, string.Empty, depth + 1)
+    };
+
+    /// <summary>Unterordner einer geöffneten Ebene, rekursiv; ein Klick öffnet den Ordner in der Liste.</summary>
+    private RenderFragment FolderNodes(SpaceSummary space, string path, int depth) => __builder =>
+    {
+        @foreach (var folder in Tree.Children(space.Id, path))
+        {
+            <div class="category tree-row @(_view == View.Folder && space == Browser.Space && Browser.Path == folder.Path ? "active" : "")"
+                 style="--depth:@depth">
+                @TreeToggle(space.Id, folder.Path, folder.Name)
+                <button class="tree-label" @onclick="() => OpenFolderAsync(space, folder.Path)">
+                    <FileIcon Folder="true" Name="" /><span>@folder.Name</span>
+                </button>
+            </div>
+            @FolderNodes(space, folder.Path, depth + 1)
+        }
+    };
+
+    private RenderFragment TreeToggle(string spaceId, string path, string name) => __builder =>
+    {
+        @if (Tree.IsLeaf(spaceId, path))
+        {
+            <span class="tree-toggle"></span>
+        }
+        else
+        {
+            <button class="tree-toggle" aria-expanded="@Tree.IsExpanded(spaceId, path)" aria-label="@name"
+                    @onclick="() => Tree.ToggleAsync(spaceId, path, Token)" @onclick:stopPropagation>
+                <span class="chevron @(Tree.IsExpanded(spaceId, path) ? "open" : "")"></span>
+            </button>
+        }
+    };
+
+    private async Task OpenFolderAsync(SpaceSummary space, string path)
+    {
+        Show(View.Folder);
+        if (space != Browser.Space)
+        {
+            await Browser.OpenSpaceAsync(space, Token);
+        }
+
+        await Browser.NavigateAsync(path, Token);
+    }
+
     private enum View
     {
         Folder,
@@ -353,12 +420,13 @@
         await Marks.LoadAsync(Token);
     }
 
-    private IEnumerable<ViewModel> Models => [Browser, Search, Recent, Versions, Trash, Marks, Notes, Account, Share, SharedByMe, Live];
+    private IEnumerable<ViewModel> Models => [Browser, Tree, Search, Recent, Versions, Trash, Marks, Notes, Account, Share, SharedByMe, Live];
 
     /// <summary>Echtzeit: Seitenleiste, Glocke, Sterne und die offene Ansicht frisch vom Server.</summary>
     private async Task ReloadAsync()
     {
         await Browser.ReloadSpacesAsync(Token);
+        await Tree.RefreshAsync(Token); // neue oder umbenannte Ordner auch in der Seitenleiste
         await Notes.LoadAsync(Token);
         await Marks.LoadAsync(Token);
         switch (_view)

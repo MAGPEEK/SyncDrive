@@ -5,6 +5,17 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.40.0] – 2026-10-23 – Seitenleiste als Ordnerbaum, Symbol „Teilen“
+
+### Geändert
+- Weboberfläche, Seitenleiste mit Überschrift **„Kategorien“**:
+  - **Meine Dateien** klappt über einen Pfeil zum **Ordnerbaum** auf, Ebene für Ebene; ein Klick auf einen Ordner öffnet ihn.
+  - **Team-Ordner** ist eine aufklappbare Gruppe, jeder Team-Ordner hat seinen eigenen Baum.
+  - Darunter wie bisher: Mit mir geteilt, Von mir geteilt, Dateianfragen, Zuletzt, Favoriten, Papierkorb, „Meine Labels“.
+  - Der Baum aktualisiert sich mit den Echtzeit-Änderungen.
+- Symbol **„Teilen“** (Symbolleiste) und „Von mir geteilt“ (Seitenleiste): klares Kettenglied als Linie gleicher Stärke statt der
+  Person mit Plus, auch klein scharf.
+
 ## [0.39.3] – 2026-10-23 – Neue Unterzeile der Anmeldeseite
 
 ### Geändert
