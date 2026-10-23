@@ -246,8 +246,41 @@ public sealed class LocalFileStore : ILocalStore
     private string RawRelative(string fullPath) =>
         Path.GetRelativePath(_root, fullPath).Replace(Path.DirectorySeparatorChar, '/');
 
-    private string ToFullPath(RelativePath path) =>
-        path.IsRoot ? _root : Path.Combine(_root, path.Value.Replace('/', Path.DirectorySeparatorChar));
+    /// <summary>
+    /// Pfad auf der Platte. Der Sync rechnet mit Namen in NFC; liegt eine Datei in anderer Unicode-Form vor (z. B. „Ä“ als A + Trema, wie es
+    /// macOS-Programme oft schreiben, kopiert auf Windows oder Linux), findet ein NFC-Pfad sie dort nicht. Fehlt ein Abschnitt mit Nicht-ASCII-
+    /// Zeichen, wird er deshalb im Ordner unter seiner tatsächlichen Schreibweise gesucht. Nur dann: ASCII-Namen haben keine zweite Form.
+    /// </summary>
+    private string ToFullPath(RelativePath path)
+    {
+        if (path.IsRoot)
+        {
+            return _root;
+        }
+
+        var direct = Path.Combine(_root, path.Value.Replace('/', Path.DirectorySeparatorChar));
+        if (Path.Exists(direct) || System.Text.Ascii.IsValid(path.Value))
+        {
+            return direct;
+        }
+
+        var current = _root;
+        foreach (var segment in path.Segments)
+        {
+            var next = Path.Combine(current, segment);
+            if (!Path.Exists(next) && !System.Text.Ascii.IsValid(segment) && Directory.Exists(current))
+            {
+                var actual = Directory.EnumerateFileSystemEntries(current)
+                    .Select(Path.GetFileName)
+                    .FirstOrDefault(name => name is not null && name.Normalize(System.Text.NormalizationForm.FormC) == segment);
+                next = actual is null ? next : Path.Combine(current, actual);
+            }
+
+            current = next;
+        }
+
+        return current;
+    }
 
     private sealed class StagedFile(FileStream stream, string tempPath, string targetPath) : IStagedFile
     {

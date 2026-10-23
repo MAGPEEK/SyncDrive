@@ -49,6 +49,26 @@ public class DefaultFiltersTests
         Assert.False(Dir("System Volume Information").Allowed);
     }
 
+    [Theory]
+    [InlineData(".Trashes")]
+    [InlineData(".fseventsd")]
+    [InlineData(".Spotlight-V100")]
+    [InlineData(".TemporaryItems")]
+    [InlineData(".DocumentRevisions-V100")]
+    public void Folders_macos_manages_itself_are_never_synced(string folder)
+    {
+        Assert.Equal(FilterDecision.Reject(FilterReason.Name), Dir(folder));
+    }
+
+    [Theory]
+    [InlineData(".DS_Store")]
+    [InlineData("Fotos/._Urlaub.jpg")] // AppleDouble: Zusatzdaten einer Datei auf fremden Dateisystemen
+    [InlineData(".localized")]
+    public void Finder_helper_files_are_never_synced(string path)
+    {
+        Assert.False(File(path).Allowed);
+    }
+
     [Fact]
     public void Paths_longer_than_247_characters_are_rejected()
     {

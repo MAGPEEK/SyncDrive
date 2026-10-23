@@ -5,11 +5,11 @@ on:
   pull_request:
 jobs:
   build-test:
-    # Der Server läuft auf Linux, der Client auf Windows: beides wird getestet.
+    # Der Server läuft auf Linux, der Client auf Windows und macOS (Apple Silicon): alles wird getestet.
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4

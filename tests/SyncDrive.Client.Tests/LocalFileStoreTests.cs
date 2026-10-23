@@ -32,6 +32,39 @@ public sealed class LocalFileStoreTests : IDisposable
         Assert.True(attributes.HasFlag(FileAttributes.Hidden)); // Windows: Attribut; Linux meldet Namen mit Punkt als versteckt
     }
 
+    /// <summary>
+    /// Namen in NFD (wie sie macOS-Programme schreiben, hierher kopiert): Der Scan meldet sie in NFC, und unter diesem Namen lässt sich die
+    /// Datei auch lesen, prüfen und entfernen – auf Dateisystemen, die Unicode-Formen nicht gleichsetzen (NTFS, ext4), wie auf APFS.
+    /// </summary>
+    [Fact]
+    public async Task Names_written_in_another_unicode_form_are_found_under_their_nfc_name()
+    {
+        var folder = "Übersicht".Normalize(NormalizationForm.FormD);
+        var file = "Bericht für Köln.txt".Normalize(NormalizationForm.FormD);
+        Write($"{folder}/{file}", "Inhalt");
+
+        var scanned = new List<string>();
+        await foreach (var item in _store.ScanAsync(RelativePath.Root, Ct))
+        {
+            if (item is ScanItem.Found found)
+            {
+                scanned.Add(found.Entry.Path.Value);
+            }
+        }
+
+        var path = P("Übersicht/Bericht für Köln.txt");
+        Assert.Equal(["Übersicht", "Übersicht/Bericht für Köln.txt"], scanned);
+        Assert.Equal(6, (await _store.StatAsync(path, Ct))!.Size);
+        await using (var stream = await _store.OpenReadAsync(path, Ct))
+        using (var reader = new StreamReader(stream))
+        {
+            Assert.Equal("Inhalt", await reader.ReadToEndAsync());
+        }
+
+        Assert.NotNull(await _store.MoveToTrashAsync(path, Ct));
+        Assert.Null(await _store.StatAsync(path, Ct));
+    }
+
     private string Full(string relative) => Path.Combine(_root, relative.Replace('/', Path.DirectorySeparatorChar));
 
     private void Write(string relative, string content = "x")

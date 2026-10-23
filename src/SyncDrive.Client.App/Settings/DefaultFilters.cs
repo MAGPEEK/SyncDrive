@@ -25,6 +25,9 @@ public static class DefaultFilters
         "@tmp", "@eaDir", "#recycle", "#snapshot", "@sharebin", "$Recycle.Bin",
         "desktop.ini", ".ds_store", "thumbs.db", "Icon\r", "System Volume Information",
         "Program Files", "Program Files (x86)", "ProgramData",
+
+        // macOS: Ordner, die Finder, Spotlight und Time Machine selbst anlegen (Dateien mit Punkt fängt schon die Präfixregel)
+        ".Trashes", ".fseventsd", ".Spotlight-V100", ".TemporaryItems", ".DocumentRevisions-V100", ".AppleDouble", ".AppleDB",
     ];
 
     /// <summary>Dateinamen, die nur als Datei ausgeschlossen sind.</summary>

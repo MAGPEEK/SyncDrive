@@ -5,6 +5,20 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.38.0] – 2026-10-23 – macOS Stufe 0: Engine und Tests auch auf dem Mac
+
+Erste Stufe der Portierung auf macOS (Apple Silicon); der Mac-Client selbst erscheint mit 1.0.0 zusammen mit Windows.
+
+### Hinzugefügt
+- CI baut und testet alles zusätzlich auf **macOS (Apple Silicon)**.
+- Standardfilter: Ordner, die macOS selbst anlegt (`.Trashes`, `.fseventsd`, `.Spotlight-V100`, `.TemporaryItems`,
+  `.DocumentRevisions-V100`, `.AppleDouble`, `.AppleDB`), werden nie synchronisiert.
+
+### Behoben
+- Dateien und Ordner, deren Namen in einer anderen Unicode-Form auf der Platte stehen (z. B. „Ü“ als U + Trema, wie es viele
+  macOS-Programme schreiben, auf Windows kopiert), ließen sich nach dem Erkennen nicht lesen, prüfen oder löschen: Der Sync rechnet mit
+  NFC, NTFS und ext4 setzen die Formen aber nicht gleich. Der Client sucht solche Namen jetzt in ihrer tatsächlichen Schreibweise.
+
 ## [0.37.4] – 2026-10-23 – Deutlicheres Programmsymbol im Explorer
 
 ### Geändert
