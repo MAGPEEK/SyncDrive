@@ -32,6 +32,14 @@ public static class IpcProtocol
         Converters = { new JsonStringEnumConverter(), new RelativePathConverter() },
     };
 
+    /// <summary>
+    /// Wo die Pipe tatsächlich liegt. Windows: der Name. macOS und Linux: .NET legt dort einen Unix-Socket unter <c>$TMPDIR</c> an; unter macOS
+    /// ist das ein langer Pfad (<c>/var/folders/…/T/</c>), und Socket-Pfade dürfen höchstens 104 Zeichen lang sein. Deshalb ein kurzer fester
+    /// Pfad unter <c>/tmp</c>; dass nur der eigene Benutzer spricht, prüft <see cref="PipeOptions.CurrentUserOnly"/> auf beiden Seiten.
+    /// </summary>
+    public static string Endpoint(string pipeName) =>
+        OperatingSystem.IsWindows() || Path.IsPathRooted(pipeName) ? pipeName : Path.Combine("/tmp", pipeName);
+
     /// <summary>Pipe-Name je Benutzer; der Name selbst verrät den Benutzernamen nicht.</summary>
     public static string DefaultPipeName(string userName) =>
         "syncdrive-" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(userName.ToUpperInvariant())))[..16];

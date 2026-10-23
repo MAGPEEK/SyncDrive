@@ -43,7 +43,7 @@ public sealed class IpcClient : IDaemonClient
 
     public static async Task<IpcClient> ConnectAsync(string pipeName, TimeSpan timeout, CancellationToken ct)
     {
-        var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, IpcProtocol.Options);
+        var pipe = new NamedPipeClientStream(".", IpcProtocol.Endpoint(pipeName), PipeDirection.InOut, IpcProtocol.Options);
         try
         {
             await pipe.ConnectAsync(timeout, ct);

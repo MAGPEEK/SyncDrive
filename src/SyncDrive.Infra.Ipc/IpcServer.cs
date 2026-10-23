@@ -17,7 +17,8 @@ public sealed class IpcServer(string pipeName, IDaemonControl control, IClientSe
         while (!ct.IsCancellationRequested)
         {
             var pipe = new NamedPipeServerStream(
-                pipeName, PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte, IpcProtocol.Options);
+                IpcProtocol.Endpoint(pipeName), PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances, PipeTransmissionMode.Byte,
+                IpcProtocol.Options);
             try
             {
                 await pipe.WaitForConnectionAsync(ct);
