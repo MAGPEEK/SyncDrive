@@ -5,6 +5,12 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.39.3] – 2026-10-23 – Neue Unterzeile der Anmeldeseite
+
+### Geändert
+- Anmeldeseite: Unterzeile „SyncDrive – Deine Daten jederzeit von überall abrufen“ (englisch „SyncDrive – access your data anytime,
+  from anywhere“) statt „… Ihre Dateien auf Ihrem eigenen Server“.
+
 ## [0.39.2] – 2026-10-23 – Mac: Panel wie unter Windows
 
 ### Geändert
