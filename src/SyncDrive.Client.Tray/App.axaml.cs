@@ -116,6 +116,7 @@ public partial class App : Application
         var menu = new NativeMenu { pause, settings, new NativeMenuItemSeparator(), about, troubleshoot, new NativeMenuItemSeparator(), exit };
         var tray = new TrayIcon { Menu = menu, ToolTipText = shell.Tooltip, IsVisible = true };
         tray.Clicked += (_, _) => windows.TogglePanel();
+        MacOSProperties.SetIsTemplateIcon(tray, true); // nur macOS: Vorlagenbild, hell oder dunkel wie die Menüleiste
         TrayIcon.SetIcons(this, [tray]);
         var spin = 0;
         var spinner = new DispatcherTimer(TimeSpan.FromMilliseconds(110), DispatcherPriority.Background, (_, _) =>

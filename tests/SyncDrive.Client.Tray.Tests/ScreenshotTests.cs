@@ -324,6 +324,12 @@ public sealed class ScreenshotTests
                         },
                     },
                     new Image { Source = Badges.TrayBitmap(state, notify, minimal: false, size: 24), Width = 24, Height = 24 },
+                    new Border
+                    {
+                        Background = Brushes.WhiteSmoke, // macOS-Menüleiste (hell); das Vorlagenbild färbt macOS selbst
+                        Padding = new(4),
+                        Child = new Image { Source = Badges.TemplateTrayBitmap(state, notify, 36, spin: 45), Width = 18, Height = 18 },
+                    },
                     new TextBlock { Text = name, FontSize = 11, HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center },
                 },
             });
@@ -335,6 +341,6 @@ public sealed class ScreenshotTests
             badges.Children.Add(new FolderBadge { Kind = kind, Width = 40, Height = 40 });
         }
 
-        Save(new Window { Width = 760, Height = 300, Content = new StackPanel { Children = { row, badges } } }, "tray-icons");
+        Save(new Window { Width = 760, Height = 340, Content = new StackPanel { Children = { row, badges } } }, "tray-icons");
     }
 }

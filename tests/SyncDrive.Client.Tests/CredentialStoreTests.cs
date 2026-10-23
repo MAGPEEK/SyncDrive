@@ -70,3 +70,38 @@ public sealed class CredentialStoreTests : IDisposable
         Assert.Null(await store.GetAsync("k", default));
     }
 }
+
+/// <summary>Schlüsselbund nur unter macOS (in der CI auf dem Mac-Runner); ein eigener Dienstname je Lauf, am Ende wieder entfernt.</summary>
+public sealed class KeychainCredentialStoreTests
+{
+    [Fact]
+    public async Task A_secret_round_trips_can_be_replaced_and_deleted()
+    {
+        if (!OperatingSystem.IsMacOS())
+        {
+            return;
+        }
+
+        var store = new KeychainCredentialStore("SyncDrive-Test-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Assert.Null(await store.GetAsync("connection/c1/device-token", default));
+
+            await store.SaveAsync("connection/c1/device-token", "token-1", default);
+            await store.SaveAsync("connection/c1/device-token", "token-2 mit Ümlaut", default);
+            await store.SaveAsync("connection/c2/device-token", "anderer", default);
+
+            Assert.Equal("token-2 mit Ümlaut", await store.GetAsync("connection/c1/device-token", default));
+            Assert.Equal("anderer", await store.GetAsync("connection/c2/device-token", default));
+
+            await store.DeleteAsync("connection/c1/device-token", default);
+            await store.DeleteAsync("gibt-es-nicht", default);
+            Assert.Null(await store.GetAsync("connection/c1/device-token", default));
+        }
+        finally
+        {
+            await store.DeleteAsync("connection/c1/device-token", default);
+            await store.DeleteAsync("connection/c2/device-token", default);
+        }
+    }
+}

@@ -14,6 +14,9 @@ namespace SyncDrive.Client.Tray;
 internal static class TrayArt
 {
     private const int SmallIconWidth = 49; // SM_CXSMICON
+
+    /// <summary>Menüleiste: 18 Punkt hoch, auf Retina-Bildschirmen (alle M-Macs) doppelt.</summary>
+    private const int MenuBarSize = 36;
     private static readonly Dictionary<(TrayState, bool, bool, int, bool, int), WindowIcon> Cache = [];
 
     public static WindowIcon Icon(ShellViewModel shell, int spin)
@@ -23,7 +26,10 @@ internal static class TrayArt
         if (!Cache.TryGetValue(key, out var icon))
         {
             using var stream = new MemoryStream();
-            Badges.TrayBitmap(key.state, key.Item2, key.Item3, key.Item4, key.Item5, key.Item6).Save(stream);
+            var bitmap = OperatingSystem.IsMacOS()
+                ? Badges.TemplateTrayBitmap(key.state, key.Item2, MenuBarSize, key.Item6) // macOS färbt das Vorlagenbild selbst
+                : Badges.TrayBitmap(key.state, key.Item2, key.Item3, key.Item4, key.Item5, key.Item6);
+            bitmap.Save(stream);
             stream.Position = 0;
             icon = new WindowIcon(stream);
             Cache[key] = icon;

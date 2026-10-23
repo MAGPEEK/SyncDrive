@@ -98,7 +98,7 @@ public static class Badges
     /// Zeichnet das Abzeichen in <paramref name="r"/> (quadratisch gedacht). <paramref name="rotation"/> dreht die Pfeile des Abgleichs (Grad,
     /// für das kreisende Tray-Symbol); <paramref name="bold"/> zieht die Zeichen kräftiger, damit sie auch 16 Pixel klein lesbar bleiben.
     /// </summary>
-    public static void Draw(DrawingContext ctx, Rect r, BadgeKind kind, double rotation = 0, bool bold = false)
+    public static void Draw(DrawingContext ctx, Rect r, BadgeKind kind, double rotation = 0, bool bold = false, bool template = false)
     {
         if (kind == BadgeKind.None)
         {
@@ -107,9 +107,19 @@ public static class Badges
 
         var center = r.Center;
         var radius = Math.Min(r.Width, r.Height) / 2;
-        ctx.DrawEllipse(new SolidColorBrush(ColorOf(kind)), new Pen(Brushes.White, Math.Max(1, radius * 0.12)), center, radius, radius);
         var u = radius / 10; // Raster für die Zeichen
-        var pen = new Pen(Brushes.White, (bold ? 2.9 : 2.2) * u, lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round);
+        var ink = template ? Brushes.Black : Brushes.White;
+        if (template)
+        {
+            // Vorlagenbild der Menüleiste: nur die Form zählt; Ring und Zeichen schwarz, die Mitte bleibt frei (Punkt: gefüllt)
+            ctx.DrawEllipse(kind == BadgeKind.Notification ? Brushes.Black : null, new Pen(ink, 1.4 * u), center, radius - (0.7 * u), radius - (0.7 * u));
+        }
+        else
+        {
+            ctx.DrawEllipse(new SolidColorBrush(ColorOf(kind)), new Pen(Brushes.White, Math.Max(1, radius * 0.12)), center, radius, radius);
+        }
+
+        var pen = new Pen(ink, (bold ? 2.9 : 2.2) * u, lineCap: PenLineCap.Round, lineJoin: PenLineJoin.Round);
         switch (kind)
         {
             case BadgeKind.Done:
@@ -129,7 +139,7 @@ public static class Badges
                 break;
             case BadgeKind.Error:
                 ctx.DrawLine(pen, center + new Vector(0, -5 * u), center + new Vector(0, 1.2 * u));
-                ctx.DrawEllipse(Brushes.White, null, center + new Vector(0, 4.6 * u), 1.4 * u, 1.4 * u);
+                ctx.DrawEllipse(ink, null, center + new Vector(0, 4.6 * u), 1.4 * u, 1.4 * u);
                 break;
             case BadgeKind.Pause:
                 ctx.DrawLine(pen, center + new Vector(-2.4 * u, -4.2 * u), center + new Vector(-2.4 * u, 4.2 * u));
@@ -138,7 +148,7 @@ public static class Badges
             case BadgeKind.Connecting:
                 foreach (var x in new[] { -4.0, 0, 4.0 })
                 {
-                    ctx.DrawEllipse(Brushes.White, null, center + new Vector(x * u, 0), 1.4 * u, 1.4 * u);
+                    ctx.DrawEllipse(ink, null, center + new Vector(x * u, 0), 1.4 * u, 1.4 * u);
                 }
 
                 break;
@@ -214,6 +224,47 @@ public static class Badges
             {
                 var dot = size * 0.34;
                 Draw(ctx, new Rect(size - dot, 0, dot, dot), BadgeKind.Notification);
+            }
+        }
+
+        return bitmap;
+    }
+
+    /// <summary>
+    /// Menüleisten-Symbol unter macOS als Vorlagenbild (template): schwarz auf transparent, macOS färbt es passend zur Menüleiste. Farben gehen
+    /// dabei verloren, deshalb trägt die Form den Zustand: Abzeichen als Ring mit Zeichen, aus dem Ordner ausgespart.
+    /// </summary>
+    public static Bitmap TemplateTrayBitmap(TrayState state, bool hasNotifications, int size, double spin = 0)
+    {
+        var bitmap = new RenderTargetBitmap(new PixelSize(size, size));
+        using (var ctx = bitmap.CreateDrawingContext())
+        {
+            var disconnected = state == TrayState.Disconnected;
+            var badge = disconnected || For(state) == BadgeKind.Done ? BadgeKind.None : For(state);
+            var side = size * (badge == BadgeKind.Sync ? 0.7 : 0.6);
+            var badgeRect = new Rect(size - side, size - side, side, side);
+            var dot = size * 0.3;
+            var dotRect = new Rect(size - dot, 0, dot, dot);
+            double At(double f) => Math.Round(f * size);
+            Geometry folder = Folder(0, 0, At(0.06), At(0.16), At(0.94), At(0.84), At(0.4), At(0.28));
+            foreach (var (show, rect) in new[] { (badge != BadgeKind.None, badgeRect), (hasNotifications, dotRect) })
+            {
+                if (show)
+                {
+                    var gap = size * 0.06; // Luft zwischen Ordner und Abzeichen
+                    folder = new CombinedGeometry(GeometryCombineMode.Exclude, folder, new EllipseGeometry(rect.Inflate(gap)));
+                }
+            }
+
+            using (ctx.PushOpacity(disconnected ? 0.45 : 1))
+            {
+                ctx.DrawGeometry(Brushes.Black, null, folder);
+            }
+
+            Draw(ctx, badgeRect, badge, spin, bold: true, template: true);
+            if (hasNotifications)
+            {
+                Draw(ctx, dotRect, BadgeKind.Notification, template: true);
             }
         }
 

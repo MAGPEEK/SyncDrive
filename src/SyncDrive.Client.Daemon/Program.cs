@@ -9,16 +9,16 @@ using SyncDrive.Infra.Sqlite.Client;
 
 // Daemon des SyncDrive-Clients: ein Prozess je angemeldetem Benutzer (ADR-8a). Die Oberfläche startet ihn bei Bedarf und spricht
 // über die Pipe mit ihm; er läuft weiter, wenn die Oberfläche geschlossen wird.
-if (!OperatingSystem.IsWindows())
+if (!OperatingSystem.IsWindows() && !OperatingSystem.IsMacOS())
 {
-    Console.Error.WriteLine("Der SyncDrive-Client läuft derzeit nur unter Windows.");
+    Console.Error.WriteLine("Der SyncDrive-Client läuft unter Windows und macOS.");
     return 2;
 }
 
 var paths = ClientPaths.Default();
 if (args is ["--uninstall"])
 {
-    return await UninstallAsync(paths);
+    return OperatingSystem.IsWindows() ? await UninstallAsync(paths) : 0; // macOS: kein Installer; Aufräumen folgt mit Stufe 3 (ADR-14)
 }
 
 paths.EnsureCreated();
@@ -48,23 +48,36 @@ Console.CancelKeyPress += (_, e) =>
 AppDomain.CurrentDomain.ProcessExit += (_, _) => stop.Cancel();
 
 var options = SupervisorOptions.Default with { OnCrash = (task, e) => Log($"Aufgabe {task} abgestürzt, Neustart folgt: {e}") };
-var host = new DaemonHost(
-    paths,
-    new SqliteClientConfigStore(paths.ConfigDatabase),
-    new DpapiCredentialStore(paths.Secrets),
-    Environment.MachineName,
-    IpcProtocol.DefaultPipeName(Environment.UserName),
-    options with { Runner = options.Runner with { OnError = (path, error) => Log($"{path}: {error.Code} {error.Message}") } },
-    autostart: new WindowsAutostart(Path.Combine(AppContext.BaseDirectory, "syncdrive.exe")),
-    shellIntegration: new ShellMenuRegistrar(
-        new CurrentUserClasses(), new SqliteClientConfigStore(paths.ConfigDatabase), Path.Combine(AppContext.BaseDirectory, "syncdrive.exe")),
-    cloudFolders: WindowsCloudFolders.IsSupported
-        ? new WindowsCloudFolders(
-            typeof(DaemonHost).Assembly.GetName().Version?.ToString(3) ?? "1.0.0", Log,
-            CloudRegistrationExecutable(),
-            Path.Combine(AppContext.BaseDirectory, "syncdrive.exe") + ",0")
-        : null,
-    log: Log);
+// Je Plattform die Adapter (ADR-14); Engine, Pipe und Konfiguration sind überall dieselben.
+var runner = options with { Runner = options.Runner with { OnError = (path, error) => Log($"{path}: {error.Code} {error.Message}") } };
+var config = new SqliteClientConfigStore(paths.ConfigDatabase);
+var pipe = IpcProtocol.DefaultPipeName(Environment.UserName);
+var host = OperatingSystem.IsWindows()
+    ? new DaemonHost(
+        paths,
+        config,
+        new DpapiCredentialStore(paths.Secrets),
+        Environment.MachineName,
+        pipe,
+        runner,
+        autostart: new WindowsAutostart(Path.Combine(AppContext.BaseDirectory, "syncdrive.exe")),
+        shellIntegration: new ShellMenuRegistrar(new CurrentUserClasses(), config, Path.Combine(AppContext.BaseDirectory, "syncdrive.exe")),
+        cloudFolders: WindowsCloudFolders.IsSupported
+            ? new WindowsCloudFolders(
+                typeof(DaemonHost).Assembly.GetName().Version?.ToString(3) ?? "1.0.0", Log,
+                CloudRegistrationExecutable(),
+                Path.Combine(AppContext.BaseDirectory, "syncdrive.exe") + ",0")
+            : null,
+        log: Log)
+    : new DaemonHost(
+        paths,
+        config,
+        new KeychainCredentialStore(),
+        Environment.MachineName,
+        pipe,
+        runner,
+        autostart: new MacLaunchAgent(Path.Combine(AppContext.BaseDirectory, "syncdrive")),
+        log: Log); // macOS: Finder-Aktionen und Dateien auf Abruf kommen mit der File-Provider-Erweiterung (Stufe 2)
 
 Log("Daemon gestartet");
 try

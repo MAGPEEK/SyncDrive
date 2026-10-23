@@ -25,6 +25,10 @@
     <ProjectReference Include="..\SyncDrive.Client.Daemon\SyncDrive.Client.Daemon.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="SyncDrive.Client.Tray.Tests" />
+  </ItemGroup>
+
   <Import Project="..\CloudRegistration.targets" />
 
 </Project>

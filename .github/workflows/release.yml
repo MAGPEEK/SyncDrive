@@ -1,4 +1,4 @@
-# Ein Tag vX.Y.Z baut die Windows-Pakete und das Server-Image (Docker Hub magpeek/syncdrive-server, Tags <version> und latest) und legt ein GitHub-Release an.
+# Ein Tag vX.Y.Z baut die Windows-Pakete, das Mac-Disk-Image und das Server-Image (Docker Hub magpeek/syncdrive-server, Tags <version> und latest) und legt ein GitHub-Release an.
 name: release
 on:
   push:
@@ -21,6 +21,22 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: client
+          path: artifacts/client/*
+
+  client-macos:
+    # Mac-Client (Apple Silicon) als Disk-Image; bis 1.0 eine Vorschau, ad-hoc signiert (ADR-14)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+      - run: bash installer/build-macos.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: client-macos
           path: artifacts/client/*
 
   server-image:
@@ -48,13 +64,17 @@ jobs:
             ${{ steps.names.outputs.image }}:latest
 
   publish:
-    needs: [client, server-image]
+    needs: [client, client-macos, server-image]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: client
+          path: dist
+      - uses: actions/download-artifact@v4
+        with:
+          name: client-macos
           path: dist
       - name: Release notes aus dem CHANGELOG
         run: |

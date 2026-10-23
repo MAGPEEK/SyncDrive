@@ -114,6 +114,10 @@ public sealed record WebTexts
     public required string ForMobile { get; init; }
     public required string DesktopTitle { get; init; }
     public required string DesktopText { get; init; }
+
+    public required string DownloadWindows { get; init; }
+
+    public required string DownloadMac { get; init; }
     public required string MobileTitle { get; init; }
     public required string MobileText { get; init; }
     public required string Back { get; init; }
@@ -406,8 +410,10 @@ public sealed record WebTexts
         AppsText = "Install the desktop app to keep folders on your computer in sync, or open SyncDrive in the browser on your phone.",
         ForDesktop = "For desktop",
         ForMobile = "For mobile",
-        DesktopTitle = "Desktop app for Windows",
-        DesktopText = "Keeps folders on your computer in sync with this server, shows the status in Explorer and frees up space on demand. For Windows 10 and 11 (64-bit).",
+        DesktopTitle = "Desktop app for Windows and Mac",
+        DesktopText = "Keeps folders on your computer in sync with this server and shows the status in Explorer or Finder. For Windows 10 and 11 (64-bit) and for Macs with Apple silicon (M1 or later, macOS 13 or later; preview until 1.0).",
+        DownloadWindows = "For Windows",
+        DownloadMac = "For Mac",
         MobileTitle = "On your phone",
         MobileText = "There is no phone app yet. Scan the code with your phone camera to open SyncDrive in the browser; browsing, uploading and sharing all work there.",
         Back = "Back",
@@ -699,8 +705,10 @@ public sealed record WebTexts
         AppsText = "Installieren Sie die Desktop-App, damit Ordner auf Ihrem Computer synchron bleiben, oder öffnen Sie SyncDrive im Browser Ihres Telefons.",
         ForDesktop = "Für Desktop",
         ForMobile = "Für Mobilgeräte",
-        DesktopTitle = "Desktop-App für Windows",
-        DesktopText = "Hält Ordner auf Ihrem Computer mit diesem Server synchron, zeigt den Status im Explorer und gibt bei Bedarf Speicherplatz frei. Für Windows 10 und 11 (64 Bit).",
+        DesktopTitle = "Desktop-App für Windows und Mac",
+        DesktopText = "Hält Ordner auf Ihrem Computer mit diesem Server synchron und zeigt den Status im Explorer oder Finder. Für Windows 10 und 11 (64 Bit) und für Macs mit Apple-Chip (ab M1, ab macOS 13; Vorschau bis 1.0).",
+        DownloadWindows = "Für Windows",
+        DownloadMac = "Für Mac",
         MobileTitle = "Auf dem Telefon",
         MobileText = "Eine App für Telefone gibt es noch nicht. Scannen Sie den Code mit der Kamera Ihres Telefons, um SyncDrive im Browser zu öffnen; Durchsuchen, Hochladen und Freigeben funktionieren dort.",
         Back = "Zurück",

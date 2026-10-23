@@ -5,6 +5,20 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.39.0] – 2026-10-23 – macOS Stufe 1: Mac-Client als Vorschau (Disk-Image)
+
+### Hinzugefügt
+- **Mac-Client (Vorschau, Apple Silicon, ab macOS 13)** als Disk-Image `SyncDrive-Client-<Version>-<Build>-arm64.dmg`: App zum Ziehen
+  nach „Programme“, nur in der Menüleiste (kein Dock-Symbol). Synchronisiert Ordner wie unter Windows; Dateien auf Abruf und
+  Finder-Aktionen folgen mit 1.0 (File Provider). Noch ohne Apple-Signatur: beim ersten Start Rechtsklick → „Öffnen“.
+  - Anmeldedaten im **Schlüsselbund** (Dienst „SyncDrive“, Kontonamen als Hash).
+  - **Beim Anmelden öffnen** über einen LaunchAgent (`~/Library/LaunchAgents/org.syncdrive.client.plist`).
+  - **Menüleisten-Symbol** als Vorlagenbild: macOS färbt es hell oder dunkel; Zustand als Ring mit Zeichen, kreisende Pfeile beim Abgleich.
+  - **Mitteilungen** über das Mitteilungszentrum.
+  - Ordner von iCloud Drive und anderen Cloud-Anbietern (`~/Library/CloudStorage`) werden als Sync-Ziel erkannt und gemeldet.
+- Release-Workflow baut das Disk-Image auf einem Mac-Runner; die CI baut das App-Paket bei jedem Lauf.
+- README und Weboberfläche („Desktop- und Mobil-Apps“): Download **für Windows und für Mac**.
+
 ## [0.38.0] – 2026-10-23 – macOS Stufe 0: Engine und Tests auch auf dem Mac
 
 Erste Stufe der Portierung auf macOS (Apple Silicon); der Mac-Client selbst erscheint mit 1.0.0 zusammen mit Windows.

@@ -17,7 +17,7 @@
 
 # What is SyncDrive?
 
-SyncDrive keeps your files on your own server — a NAS, a mini PC or a small VPS — and in sync on your Windows PCs. Share folders
+SyncDrive keeps your files on your own server — a NAS, a mini PC or a small VPS — and in sync on your Windows PCs and Macs. Share folders
 and links, restore earlier versions, and reach everything from the browser.
 
 - **Sync** folders two-way, upload-only or download-only; keep files **online-only** and fetch them when opened.
@@ -90,17 +90,24 @@ Volume: `/data` (required). HTTPS variables, all further settings, updates and t
 # Desktop client
 
 <p>
-  <a href="https://github.com/MAGPEEK/SyncDrive/releases"><b>⬇ Download SyncDrive Client for Windows</b></a>
-  — Windows 10 (2004+) and 11, x64
+  <a href="https://github.com/MAGPEEK/SyncDrive/releases/latest"><b>⬇ Download SyncDrive Client for Windows</b></a>
+  — Windows 10 (2004+) and 11, x64<br>
+  <a href="https://github.com/MAGPEEK/SyncDrive/releases/latest"><b>⬇ Download SyncDrive Client for Mac</b></a>
+  — Apple silicon (M1 or later), macOS 13 or later · <i>preview until 1.0</i>
 </p>
 
 | File | Use it for |
 |---|---|
-| `SyncDrive-Client-<version>-<build>-x64.exe` | Setup — double-click and follow the wizard |
-| `SyncDrive-Client-<version>-<build>-x64.msi` | Silent install and software distribution (Intune, GPO) |
+| `SyncDrive-Client-<version>-<build>-x64.exe` | Windows: setup — double-click and follow the wizard |
+| `SyncDrive-Client-<version>-<build>-x64.msi` | Windows: silent install and software distribution (Intune, GPO) |
+| `SyncDrive-Client-<version>-<build>-arm64.dmg` | Mac: open and drag SyncDrive into *Applications* |
 
 No administrator rights needed. After installation, enter your server address — e.g. `http://drive.example.lan:8080` — and your
-user name. The installer also adds the command line tool `syncdrive_cli`. Details: **[docs/client.md](docs/client.md)**.
+user name. The Windows installer also adds the command line tool `syncdrive_cli`. Details: **[docs/client.md](docs/client.md)**.
+
+**Mac preview:** syncs folders two-way and shows the status in the menu bar; online-only files and Finder actions follow with 1.0.
+The app is not yet signed by Apple: on first start, right-click SyncDrive in *Applications* → *Open*, or allow it under
+*System Settings → Privacy & Security*.
 
 # Other deployment methods
 
