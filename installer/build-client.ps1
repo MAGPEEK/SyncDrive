@@ -7,6 +7,7 @@
      in einen gemeinsamen Ordner.
   2. Baut daraus die MSI (WiX 5) und das Setup-Programm.
   Die Version kommt aus Directory.Build.props, die Build-Nummer aus der Zahl der Git-Commits (oder -Build).
+  Mit gesetzten SYNCDRIVE_SIGNING_*-Variablen signiert sign.ps1 Programme, MSI und Setup (Azure Artifact Signing), sonst bleiben sie unsigniert.
 
 .EXAMPLE
   pwsh installer/build-client.ps1
@@ -42,12 +43,17 @@ foreach ($project in 'SyncDrive.Client.CloudRegistration', 'SyncDrive.Client.Cli
     Invoke-Dotnet publish (Join-Path $root "src\$project\$project.csproj") @common
 }
 
+# Vor der MSI signieren, damit sie die signierten Dateien enthält; Smart App Control prüft jede geladene EXE und DLL
+$sign = Join-Path $PSScriptRoot 'sign.ps1'
+& $sign -Path (Get-ChildItem $publish -Recurse -Include *.exe, *.dll).FullName
+
 Write-Host 'Baue MSI ...'
 $msiOut = Join-Path $work 'msi'
 Invoke-Dotnet build (Join-Path $PSScriptRoot 'SyncDrive.Client.Msi\SyncDrive.Client.Msi.wixproj') -c Release --nologo `
     "-p:PublishDir=$publish" "-p:OutputPath=$msiOut\" "-p:BaseIntermediateOutputPath=$work\msi-obj\"
 $msi = Join-Path $Output "$name.msi"
 Copy-Item (Join-Path $msiOut 'SyncDrive-Client.msi') $msi -Force
+& $sign -Path $msi
 
 Write-Host 'Baue Setup ...'
 $setupOut = Join-Path $work 'setup'

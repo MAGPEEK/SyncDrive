@@ -1,4 +1,4 @@
-# Ein Tag vX.Y.Z baut die Windows-Pakete, das Mac-Disk-Image und das Server-Image (Docker Hub magpeek/syncdrive-server, Tags <version> und latest) und legt ein GitHub-Release an.
+# Ein Tag vX.Y.Z baut die Windows-Pakete (mit Azure Artifact Signing signiert), das Mac-Disk-Image und das Server-Image (Docker Hub magpeek/syncdrive-server, Tags <version> und latest) und legt ein GitHub-Release an.
 name: release
 on:
   push:
@@ -7,9 +7,17 @@ env:
   DOCKERHUB_USER: magpeek
 permissions:
   contents: write
+  id-token: write   # Anmeldung bei Azure per OIDC für Artifact Signing
 jobs:
   client:
     runs-on: windows-latest
+    # Azure Artifact Signing (docs/development.md): die Umgebung "release" bindet die Azure-Anmeldung an diesen Job. Ohne die
+    # Variable ARTIFACT_SIGNING_ACCOUNT bleibt der Client unsigniert.
+    environment: release
+    env:
+      SYNCDRIVE_SIGNING_ENDPOINT: ${{ vars.ARTIFACT_SIGNING_ENDPOINT }}
+      SYNCDRIVE_SIGNING_ACCOUNT: ${{ vars.ARTIFACT_SIGNING_ACCOUNT }}
+      SYNCDRIVE_SIGNING_PROFILE: ${{ vars.ARTIFACT_SIGNING_PROFILE }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -17,6 +25,12 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 9.0.x
+      - if: vars.ARTIFACT_SIGNING_ACCOUNT != ''
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
       - run: pwsh installer/build-client.ps1
       - uses: actions/upload-artifact@v4
         with:

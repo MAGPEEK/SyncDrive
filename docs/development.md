@@ -52,3 +52,29 @@ The architecture is hexagonal: the core knows nothing about databases, HTTP or W
 The version lives in `Directory.Build.props` and must match the top entry of `CHANGELOG.md` (a test checks this). Pushing a tag
 `vX.Y.Z` runs `.github/workflows/release.yml`: it builds the Windows packages, pushes the multi-arch server image to Docker Hub
 and creates a GitHub release.
+
+## Code signing (Windows)
+
+Smart App Control and SmartScreen block unsigned programs. `installer/sign.ps1` signs every unsigned EXE and DLL of the client, the MSI
+and the setup (including its Burn engine) with [Azure Artifact Signing](https://learn.microsoft.com/azure/artifact-signing/) (formerly
+Trusted Signing). Without `SYNCDRIVE_SIGNING_ACCOUNT` the build stays unsigned, so local builds need no Azure access.
+
+One-time setup in Azure:
+
+1. Create an Artifact Signing account, complete the identity validation and create a certificate profile (*Public Trust*).
+2. Register an app in Microsoft Entra ID and add a federated credential for GitHub Actions: organisation `MAGPEEK`, repository
+   `SyncDrive`, entity *Environment*, name `release`.
+3. Give that app the role *Artifact Signing Certificate Profile Signer* (formerly *Trusted Signing Certificate Profile Signer*) on the
+   certificate profile.
+
+Then, in GitHub under *Settings → Secrets and variables → Actions → Variables*, add:
+
+| Variable | Example |
+|---|---|
+| `ARTIFACT_SIGNING_ENDPOINT` | `https://weu.codesigning.azure.net/` (region of the signing account) |
+| `ARTIFACT_SIGNING_ACCOUNT` | name of the signing account |
+| `ARTIFACT_SIGNING_PROFILE` | name of the certificate profile |
+| `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` | application (client) ID and directory (tenant) ID of the app |
+
+The next tag signs the Windows packages. To sign a local build, run `az login` and set the same values as `SYNCDRIVE_SIGNING_ENDPOINT`,
+`SYNCDRIVE_SIGNING_ACCOUNT` and `SYNCDRIVE_SIGNING_PROFILE` before `pwsh installer/build-client.ps1`.

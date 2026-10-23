@@ -13,4 +13,21 @@
     <PackageReference Include="WixToolset.Bal.wixext" Version="5.0.2" />
   </ItemGroup>
 
+  <!--
+    Signieren mit sign.ps1, sobald SYNCDRIVE_SIGNING_ACCOUNT gesetzt ist: WiX löst die Burn-Engine heraus (SignBundleEngine), setzt sie
+    signiert wieder ein und lässt dann das fertige Setup signieren (SignBundle).
+  -->
+  <PropertyGroup>
+    <SignOutput Condition=" '$(SYNCDRIVE_SIGNING_ACCOUNT)' != '' ">true</SignOutput>
+    <SignScript>$(MSBuildThisFileDirectory)..\sign.ps1</SignScript>
+  </PropertyGroup>
+
+  <Target Name="SignBundleEngine">
+    <Exec Command="pwsh -NoProfile -File &quot;$(SignScript)&quot; -Path &quot;%(SignBundleEngine.FullPath)&quot;" />
+  </Target>
+
+  <Target Name="SignBundle">
+    <Exec Command="pwsh -NoProfile -File &quot;$(SignScript)&quot; -Path &quot;%(SignBundle.FullPath)&quot;" />
+  </Target>
+
 </Project>
