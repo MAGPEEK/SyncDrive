@@ -19,6 +19,9 @@ jobs:
       - run: dotnet format --verify-no-changes
       - run: dotnet build -c Release
       - run: dotnet test -c Release --no-build
+      # Mac: auch das App-Paket bauen, damit Paketfehler nicht erst beim Release auffallen
+      - if: runner.os == 'macOS'
+        run: bash installer/build-macos.sh 0 artifacts/client
 
   server-image:
     runs-on: ubuntu-latest

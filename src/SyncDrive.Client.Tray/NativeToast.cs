@@ -14,6 +14,11 @@ internal static class NativeToast
 
     public static bool TryShow(string title, string message)
     {
+        if (OperatingSystem.IsMacOS())
+        {
+            return TryShowOnMac(title, message);
+        }
+
         if (!OperatingSystem.IsWindows() || Helper() is not { } helper)
         {
             return false;
@@ -31,6 +36,31 @@ internal static class NativeToast
             return true;
         }
         catch (Exception e) when (e is Win32Exception or IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// macOS: Mitteilung über AppleScript (<c>display notification</c>). Das geht ohne signierte App; mit der Signatur folgt
+    /// <c>UNUserNotificationCenter</c> unter eigenem Namen und Symbol (ADR-14, Stufe 3). Texte werden als AppleScript-Zeichenketten maskiert.
+    /// </summary>
+    internal static string AppleScript(string title, string message) =>
+        $"display notification {Quote(message)} with title {Quote(title)}";
+
+    private static string Quote(string text) => "\"" + text.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("\"", "\\\"", StringComparison.Ordinal) + "\"";
+
+    private static bool TryShowOnMac(string title, string message)
+    {
+        try
+        {
+            var start = new ProcessStartInfo("/usr/bin/osascript") { UseShellExecute = false, CreateNoWindow = true };
+            start.ArgumentList.Add("-e");
+            start.ArgumentList.Add(AppleScript(title, message));
+            using var _ = Process.Start(start);
+            return true;
+        }
+        catch (Exception e) when (e is Win32Exception or IOException)
         {
             return false;
         }

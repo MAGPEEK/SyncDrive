@@ -53,7 +53,9 @@
                     <button @onclick="Apps.Back">@T.Back</button>
                     @if (Apps.DesktopUrl is { } url)
                     {
-                        <a class="button primary" href="@url" target="_blank" rel="noopener noreferrer">@T.Download</a>
+                        @* Beide Pakete liegen auf derselben Release-Seite (.exe/.msi und .dmg) *@
+                        <a class="button primary" href="@url" target="_blank" rel="noopener noreferrer">@T.DownloadWindows</a>
+                        <a class="button primary" href="@url" target="_blank" rel="noopener noreferrer">@T.DownloadMac</a>
                     }
                 </div>
                 break;

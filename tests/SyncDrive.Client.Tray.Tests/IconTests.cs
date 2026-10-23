@@ -23,6 +23,33 @@ public sealed class IconTests
         }
     }
 
+    /// <summary>
+    /// Symbolsatz für das macOS-App-Paket (<c>iconutil -c icns</c> macht daraus <c>SyncDrive.icns</c>); mit
+    /// <c>SYNCDRIVE_WRITE_ICONSET=&lt;Ordner&gt;.iconset</c> geschrieben, sonst nur gezeichnet und geprüft.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_mac_icon_set_has_every_size_iconutil_expects()
+    {
+        var target = Environment.GetEnvironmentVariable("SYNCDRIVE_WRITE_ICONSET");
+        var names = new List<string>();
+        foreach (var points in new[] { 16, 32, 128, 256, 512 })
+        {
+            foreach (var scale in new[] { 1, 2 })
+            {
+                var name = scale == 1 ? $"icon_{points}x{points}.png" : $"icon_{points}x{points}@2x.png";
+                var (_, png) = Render(points * scale);
+                names.Add(name);
+                if (target is { Length: > 0 })
+                {
+                    Directory.CreateDirectory(target);
+                    File.WriteAllBytes(Path.Combine(target, name), png);
+                }
+            }
+        }
+
+        Assert.Equal(10, names.Count);
+    }
+
     private static (int Size, byte[] Png) Render(int size)
     {
         var bitmap = new RenderTargetBitmap(new PixelSize(size, size));
