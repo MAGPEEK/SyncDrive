@@ -39,4 +39,15 @@ public sealed class MacLaunchAgentTests : IDisposable
         agent.Apply(false);
         Assert.False(File.Exists(agent.PlistPath));
     }
+
+    [Fact]
+    public void Started_from_the_disk_image_no_launch_agent_points_to_a_path_that_disappears_on_eject()
+    {
+        new MacLaunchAgent("/Applications/SyncDrive.app/Contents/MacOS/syncdrive", _folder).Apply(true);
+        var fromImage = new MacLaunchAgent("/Volumes/SyncDrive/SyncDrive.app/Contents/MacOS/syncdrive", _folder);
+
+        fromImage.Apply(true);
+
+        Assert.False(File.Exists(fromImage.PlistPath)); // auch ein alter Eintrag ist weg; aus „Programme“ entsteht er neu
+    }
 }

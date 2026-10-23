@@ -65,6 +65,51 @@ public sealed class LocalFileStoreTests : IDisposable
         Assert.Null(await _store.StatAsync(path, Ct));
     }
 
+    /// <summary>
+    /// macOS: Eine vom Sync geschriebene Datei muss im Finder normal erscheinen und sich öffnen lassen – nicht versteckt, lesbar, kein
+    /// „in Arbeit“-Datum (Finder graut Dateien mit Erstellungsdatum 24.01.1984 aus), keine fremden Zusatzattribute.
+    /// </summary>
+    [Fact]
+    public async Task On_macos_a_downloaded_file_looks_like_any_other_file_in_finder()
+    {
+        if (!OperatingSystem.IsMacOS())
+        {
+            return;
+        }
+
+        await using (var staged = await _store.StageAsync(P("Ordner/Bericht.pdf"), Ct))
+        {
+            await staged.Content.WriteAsync("%PDF-1.4"u8.ToArray(), Ct);
+            await staged.CommitAsync(new DateTimeOffset(2026, 9, 11, 13, 35, 0, TimeSpan.Zero), Ct);
+        }
+
+        var file = Full("Ordner/Bericht.pdf");
+        var stat = Run("/usr/bin/stat", "-f", "%SB|%Sm|%Sf|%Sp|%Su", file);
+        var folder = Run("/usr/bin/stat", "-f", "%Sf|%Sp", Full("Ordner"));
+        var xattr = Run("/usr/bin/xattr", "-l", file);
+        var parts = stat.Split('|');
+
+        Assert.True(
+            !parts[2].Contains("hidden", StringComparison.Ordinal) && parts[3].StartsWith("-rw", StringComparison.Ordinal)
+                && !parts[0].Contains("1984", StringComparison.Ordinal) && !folder.Contains("hidden", StringComparison.Ordinal)
+                && xattr.Length == 0,
+            $"Datei: {stat} | Ordner: {folder} | xattr: {xattr}");
+    }
+
+    private static string Run(string program, params string[] arguments)
+    {
+        var start = new System.Diagnostics.ProcessStartInfo(program) { RedirectStandardOutput = true, UseShellExecute = false };
+        foreach (var argument in arguments)
+        {
+            start.ArgumentList.Add(argument);
+        }
+
+        using var process = System.Diagnostics.Process.Start(start)!;
+        var output = process.StandardOutput.ReadToEnd().Trim();
+        process.WaitForExit();
+        return output;
+    }
+
     private string Full(string relative) => Path.Combine(_root, relative.Replace('/', Path.DirectorySeparatorChar));
 
     private void Write(string relative, string content = "x")

@@ -77,9 +77,13 @@ public sealed class MacLaunchAgent(string executable, string? launchAgents = nul
     public string PlistPath { get; } = Path.Combine(
         launchAgents ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Library", "LaunchAgents"), Label + ".plist");
 
+    /// <summary>Aus dem geöffneten Disk-Image gestartet (<c>/Volumes/…</c>): der Pfad verschwindet beim Auswerfen.</summary>
+    public static bool RunsFromDiskImage(string executable) => executable.StartsWith("/Volumes/", StringComparison.Ordinal);
+
     public void Apply(bool enabled)
     {
-        if (!enabled)
+        // Ein Autostart auf das Disk-Image liefe nach dem Auswerfen ins Leere; erst aus „Programme“ heraus anlegen
+        if (!enabled || RunsFromDiskImage(executable))
         {
             File.Delete(PlistPath);
             return;

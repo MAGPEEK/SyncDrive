@@ -20,9 +20,10 @@ public partial class PanelWindow : Window
         {
             var area = screen.WorkingArea;
             var scale = screen.Scaling;
+            // Windows: über der Taskleiste unten rechts; macOS: unter der Menüleiste oben rechts, dort sitzt das Symbol
             Position = new PixelPoint(
                 area.Right - (int)(Width * scale) - (int)(12 * scale),
-                area.Bottom - (int)(Height * scale) - (int)(12 * scale));
+                OperatingSystem.IsMacOS() ? area.Y + (int)(6 * scale) : area.Bottom - (int)(Height * scale) - (int)(12 * scale));
         }
 
         Show();
