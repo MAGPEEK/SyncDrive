@@ -20,17 +20,31 @@ public partial class PanelWindow : Window
     /// <summary>Wann das Panel zuletzt durch Fokusverlust zuging (ein Klick aufs Symbol soll es dann nicht sofort neu öffnen).</summary>
     public DateTimeOffset HiddenAt { get; private set; } = DateTimeOffset.MinValue;
 
-    public void ShowNearTray(PanelViewModel viewModel)
+    /// <param name="anchor">macOS: Lage des Menüleisten-Symbols in Punkten (oben links); das Panel öffnet mittig darunter.</param>
+    public void ShowNearTray(PanelViewModel viewModel, (double X, double Y, double Width, double Height)? anchor = null)
     {
         DataContext = viewModel;
         if (Screens.Primary is { } screen)
         {
             var area = screen.WorkingArea;
             var scale = screen.Scaling;
-            // Windows: über der Taskleiste unten rechts; macOS: unter der Menüleiste oben rechts, dort sitzt das Symbol
-            Position = new PixelPoint(
-                area.Right - (int)(Width * scale) - (int)(12 * scale),
-                OperatingSystem.IsMacOS() ? area.Y + (int)(6 * scale) : area.Bottom - (int)(Height * scale) - (int)(12 * scale));
+            if (anchor is { } icon)
+            {
+                // Mittig unter dem Symbol, 4 Punkte Abstand; nicht über den Bildschirmrand hinaus
+                var x = (int)((icon.X + (icon.Width / 2) - (Width / 2)) * scale);
+                var y = (int)((icon.Y + icon.Height + 4) * scale);
+                var margin = (int)(8 * scale);
+                Position = new PixelPoint(
+                    Math.Clamp(x, area.X + margin, area.Right - (int)(Width * scale) - margin),
+                    Math.Max(y, area.Y));
+            }
+            else
+            {
+                // Windows: über der Taskleiste unten rechts (dort sitzt der Infobereich)
+                Position = new PixelPoint(
+                    area.Right - (int)(Width * scale) - (int)(12 * scale),
+                    area.Bottom - (int)(Height * scale) - (int)(12 * scale));
+            }
         }
 
         Show();

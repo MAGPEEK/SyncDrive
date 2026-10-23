@@ -5,6 +5,12 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.41.1] – 2026-10-23 – Mac: Panel genau unter dem Symbol
+
+### Geändert
+- Mac: Das Panel öffnet **mittig direkt unter dem Menüleisten-Symbol** (Lage des Symbols von AppKit erfragt), nicht mehr am rechten
+  Bildschirmrand; am Rand bleibt es ganz sichtbar.
+
 ## [0.41.0] – 2026-10-23 – Mac: Klick aufs Symbol öffnet das Panel wie unter Windows
 
 ### Geändert

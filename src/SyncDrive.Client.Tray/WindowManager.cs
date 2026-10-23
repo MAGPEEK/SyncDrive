@@ -33,6 +33,9 @@ public sealed class WindowManager(IClassicDesktopStyleApplicationLifetime lifeti
         }
     }
 
+    /// <summary>macOS: liefert die Lage des Menüleisten-Symbols, damit das Panel genau darunter aufgeht.</summary>
+    public Func<(double X, double Y, double Width, double Height)?>? TrayAnchor { get; set; }
+
     public void TogglePanel()
     {
         if (_shell is null)
@@ -48,7 +51,7 @@ public sealed class WindowManager(IClassicDesktopStyleApplicationLifetime lifeti
         else if (DateTimeOffset.UtcNow - _panel.HiddenAt > TimeSpan.FromMilliseconds(400))
         {
             // Der Klick aufs Symbol nimmt dem offenen Panel zuerst den Fokus (es schließt sich); er soll es nicht gleich wieder öffnen
-            _panel.ShowNearTray(_shell.Panel);
+            _panel.ShowNearTray(_shell.Panel, TrayAnchor?.Invoke());
         }
     }
 
