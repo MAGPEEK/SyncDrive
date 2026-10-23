@@ -5,6 +5,12 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.35.1] – 2026-10-23 – Build-Korrektur
+
+### Behoben
+- DOCX-Anzeige: Mit neueren Compilern (CI) schlug der Build fehl, weil `Reverse()` auf einem Array die Span-Variante ohne Rückgabe
+  wählte. Jetzt eine einfache Schleife rückwärts.
+
 ## [0.35.0] – 2026-10-23 – Anmeldung über OAuth 2.0
 
 ### Hinzugefügt

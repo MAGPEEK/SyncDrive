@@ -203,9 +203,9 @@ public static class DocumentViews
             }
         }
 
-        foreach (var tag in tags.Reverse())
+        for (var i = tags.Length - 1; i >= 0; i--) // nicht tags.Reverse(): auf Arrays wählen neuere Compiler die Span-Variante ohne Rückgabe
         {
-            html.Append("</").Append(tag).Append('>');
+            html.Append("</").Append(tags[i]).Append('>');
         }
     }
 
