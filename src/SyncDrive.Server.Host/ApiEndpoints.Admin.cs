@@ -39,6 +39,8 @@ public static partial class ApiEndpoints
             Respond(await admin.CreateTeamFolderAsync(Caller(http), request, ct)));
         secured.MapPatch("/admin/team-folders/{spaceId}", async (string spaceId, NameRequest request, HttpContext http, AdminService admin, CancellationToken ct) =>
             Respond(await admin.RenameTeamFolderAsync(Caller(http), spaceId, request, ct)));
+        secured.MapDelete("/admin/team-folders/{spaceId}", async (string spaceId, HttpContext http, AdminService admin, CancellationToken ct) =>
+            await admin.DeleteTeamFolderAsync(Caller(http), spaceId, ct) is { } error ? Problem(error) : Results.NoContent());
         secured.MapPut("/admin/team-folders/{spaceId}/members", async (string spaceId, TeamMemberRequest request, HttpContext http, AdminService admin, CancellationToken ct) =>
             Respond(await admin.SetTeamMemberAsync(Caller(http), spaceId, request, ct)));
         secured.MapDelete("/admin/team-folders/{spaceId}/members/{kind}/{memberId}", async (

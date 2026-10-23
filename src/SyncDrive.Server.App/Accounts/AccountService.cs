@@ -82,12 +82,18 @@ public sealed class AccountService(IAccountStore store, IPasswordHasher hasher, 
             return Fail<DeviceRegistrationResponse>(ErrorCode.Unauthorized, "Anmeldung fehlgeschlagen.");
         }
 
+        return await IssueDeviceAsync(user.Id, deviceName, request.ClientType, request.ClientVersion, ct);
+    }
+
+    /// <summary>Neues Geräte-Token für einen schon geprüften Benutzer (Passwort oder externer Anbieter).</summary>
+    public async Task<ServiceResult<DeviceRegistrationResponse>> IssueDeviceAsync(
+        string userId, string deviceName, string? clientType, string? clientVersion, CancellationToken ct)
+    {
         var token = TokenPrefix + Base64Url(RandomNumberGenerator.GetBytes(32));
         var deviceId = "d_" + Guid.NewGuid().ToString("N");
         var now = clock.GetUtcNow();
         await store.AddDeviceAsync(
-            new DeviceRecord(deviceId, user.Id, deviceName, HashToken(token), now, false,
-                Trimmed(request.ClientType), Trimmed(request.ClientVersion), now), ct);
+            new DeviceRecord(deviceId, userId, deviceName, HashToken(token), now, false, Trimmed(clientType), Trimmed(clientVersion), now), ct);
         return ServiceResult.Ok(new DeviceRegistrationResponse(deviceId, token));
     }
 

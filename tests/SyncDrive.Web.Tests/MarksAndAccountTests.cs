@@ -200,6 +200,25 @@ public sealed class MarksAndAccountTests(HostFactory factory) : IClassFixture<Ho
     }
 
     [Fact]
+    public async Task The_apps_dialog_links_the_desktop_download_and_shows_a_qr_code_of_the_web_address()
+    {
+        var page = await OpenPageAsync();
+        var apps = new AppsViewModel(page.Api, WebTexts.English);
+
+        await apps.OpenAsync("https://drive.example.lan/", default);
+        var overview = apps.Current;
+        apps.ShowMobile();
+        var qr = Convert.FromBase64String(apps.QrCode!["data:image/png;base64,".Length..]);
+        apps.Back();
+        apps.ShowDesktop();
+
+        Assert.Equal(AppsViewModel.Page.Overview, overview);
+        Assert.Equal("https://github.com/MAGPEEK/SyncDrive/releases/latest", apps.DesktopUrl);
+        Assert.Equal((byte)0x89, qr[0]); // PNG
+        Assert.Equal(AppsViewModel.Page.Desktop, apps.Current);
+    }
+
+    [Fact]
     public async Task The_client_list_shows_all_devices_and_unlinks_another_one_but_not_this_browser()
     {
         var page = await OpenPageAsync();

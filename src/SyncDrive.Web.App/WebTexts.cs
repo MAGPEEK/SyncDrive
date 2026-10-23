@@ -22,6 +22,8 @@ public sealed record WebTexts
     public required string UploadFolder { get; init; }
     public required string CreateShortcut { get; init; }
     public required string Download { get; init; }
+    public required string TooLargeToView { get; init; }
+    public required string CannotView { get; init; }
     public required string Rename { get; init; }
     public required string Delete { get; init; }
     public required string Open { get; init; }
@@ -105,6 +107,46 @@ public sealed record WebTexts
     public required string StorageUsed { get; init; }
     public required string StorageUsedOf { get; init; }
     public required string ClientList { get; init; }
+    public required string GetApps { get; init; }
+    public required string AppsTitle { get; init; }
+    public required string AppsText { get; init; }
+    public required string ForDesktop { get; init; }
+    public required string ForMobile { get; init; }
+    public required string DesktopTitle { get; init; }
+    public required string DesktopText { get; init; }
+    public required string MobileTitle { get; init; }
+    public required string MobileText { get; init; }
+    public required string Back { get; init; }
+    public required string SignInWith { get; init; }
+    public required string Or { get; init; }
+    public required string RefusedOff { get; init; }
+    public required string RefusedCancelled { get; init; }
+    public required string RefusedExpired { get; init; }
+    public required string RefusedProvider { get; init; }
+    public required string RefusedNoName { get; init; }
+    public required string RefusedNoAccount { get; init; }
+    public required string RefusedLinkedElsewhere { get; init; }
+    public required string RefusedGone { get; init; }
+    public required string RefusedLocked { get; init; }
+    public required string SignInTab { get; init; }
+    public required string OAuthIntro { get; init; }
+    public required string OAuthEnabled { get; init; }
+    public required string OAuthDisplayName { get; init; }
+    public required string OAuthIssuer { get; init; }
+    public required string OAuthIssuerHint { get; init; }
+    public required string OAuthAuthorization { get; init; }
+    public required string OAuthToken { get; init; }
+    public required string OAuthUserInfo { get; init; }
+    public required string OAuthClientId { get; init; }
+    public required string OAuthClientSecret { get; init; }
+    public required string OAuthSecretKept { get; init; }
+    public required string OAuthScopes { get; init; }
+    public required string OAuthUserNameClaim { get; init; }
+    public required string OAuthUserNameHint { get; init; }
+    public required string OAuthCreateUsers { get; init; }
+    public required string OAuthRedirect { get; init; }
+    public required string OAuthEndpoints { get; init; }
+    public required string OAuthProvider { get; init; }
     public required string DeviceName { get; init; }
     public required string ClientType { get; init; }
     public required string Version { get; init; }
@@ -207,6 +249,10 @@ public sealed record WebTexts
     public required string NewGroup { get; init; }
     public required string DeleteGroup { get; init; }
     public required string ConfirmDeleteGroup { get; init; }
+    public required string DeleteTeamFolder { get; init; }
+    public required string ConfirmDeleteTeamFolder { get; init; }
+    public required string TypeNameToConfirm { get; init; }
+    public required string TeamFolderDeleted { get; init; }
     public required string MembersOf { get; init; }
     public required string NoGroups { get; init; }
     public required string NewTeamFolder { get; init; }
@@ -248,6 +294,8 @@ public sealed record WebTexts
         UploadFolder = "Upload folder",
         CreateShortcut = "Alt+C then {0}",
         Download = "Download",
+        TooLargeToView = "This file is too large to show here (more than 5 MB). Download it to open it.",
+        CannotView = "This file cannot be shown here. Download it to open it.",
         Rename = "Rename",
         Delete = "Delete",
         Open = "Open",
@@ -331,6 +379,46 @@ public sealed record WebTexts
         StorageUsed = "{0} used",
         StorageUsedOf = "{0} of {1} used",
         ClientList = "Client list",
+        GetApps = "Desktop & mobile apps",
+        AppsTitle = "SyncDrive on all your devices",
+        AppsText = "Install the desktop app to keep folders on your computer in sync, or open SyncDrive in the browser on your phone.",
+        ForDesktop = "For desktop",
+        ForMobile = "For mobile",
+        DesktopTitle = "Desktop app for Windows",
+        DesktopText = "Keeps folders on your computer in sync with this server, shows the status in Explorer and frees up space on demand. For Windows 10 and 11 (64-bit).",
+        MobileTitle = "On your phone",
+        MobileText = "There is no phone app yet. Scan the code with your phone camera to open SyncDrive in the browser; browsing, uploading and sharing all work there.",
+        Back = "Back",
+        SignInWith = "Sign in with {0}",
+        Or = "or",
+        RefusedOff = "Signing in through the identity provider is switched off.",
+        RefusedCancelled = "The sign-in was cancelled at the identity provider.",
+        RefusedExpired = "The sign-in has expired. Please try again.",
+        RefusedProvider = "The identity provider did not confirm the sign-in. Please try again or ask your administrator.",
+        RefusedNoName = "The identity provider did not send a user name. Please ask your administrator.",
+        RefusedNoAccount = "There is no account for this sign-in. Please ask your administrator.",
+        RefusedLinkedElsewhere = "This account is already linked to another account at the identity provider.",
+        RefusedGone = "The linked account no longer exists. Please ask your administrator.",
+        RefusedLocked = "This account is locked.",
+        SignInTab = "Sign-in (OAuth 2.0)",
+        OAuthIntro = "Let people sign in with an existing identity provider (OAuth 2.0 with PKCE and OpenID Connect UserInfo, e.g. Keycloak, Authentik, Microsoft Entra ID or Google). The first sign-in links the provider account to the SyncDrive account with the same user name.",
+        OAuthEnabled = "Allow sign-in through the identity provider",
+        OAuthDisplayName = "Button text (provider name)",
+        OAuthIssuer = "Issuer URL",
+        OAuthIssuerHint = "SyncDrive reads the endpoints from <issuer>/.well-known/openid-configuration. Leave them empty to fill them in automatically.",
+        OAuthAuthorization = "Authorization endpoint",
+        OAuthToken = "Token endpoint",
+        OAuthUserInfo = "UserInfo endpoint",
+        OAuthClientId = "Client ID",
+        OAuthClientSecret = "Client secret",
+        OAuthSecretKept = "A secret is stored. Leave the field empty to keep it.",
+        OAuthScopes = "Scopes",
+        OAuthUserNameClaim = "Claim with the user name",
+        OAuthUserNameHint = "Use a claim that users cannot change themselves at the provider.",
+        OAuthCreateUsers = "Create an account on the first sign-in if none exists",
+        OAuthRedirect = "Redirect URI (register this at the provider)",
+        OAuthEndpoints = "Endpoints",
+        OAuthProvider = "Identity provider",
         DeviceName = "Device name",
         ClientType = "Client type",
         Version = "Version",
@@ -433,6 +521,10 @@ public sealed record WebTexts
         NewGroup = "New group",
         DeleteGroup = "Delete group",
         ConfirmDeleteGroup = "Delete the group “{0}”? Its members lose the access they had through this group.",
+        DeleteTeamFolder = "Delete team folder",
+        ConfirmDeleteTeamFolder = "Permanently delete the team folder “{0}” with all files, versions and shares? Nobody can access it any more, and the recycle bin does not keep it.",
+        TypeNameToConfirm = "Type the name of the team folder to confirm",
+        TeamFolderDeleted = "Team folder “{0}” deleted.",
         MembersOf = "Members of “{0}”",
         NoGroups = "No groups yet.",
         NewTeamFolder = "New team folder",
@@ -474,6 +566,8 @@ public sealed record WebTexts
         UploadFolder = "Ordner hochladen",
         CreateShortcut = "Alt+C dann {0}",
         Download = "Herunterladen",
+        TooLargeToView = "Diese Datei ist zu groß für die Anzeige hier (mehr als 5 MB). Laden Sie sie herunter, um sie zu öffnen.",
+        CannotView = "Diese Datei lässt sich hier nicht anzeigen. Laden Sie sie herunter, um sie zu öffnen.",
         Rename = "Umbenennen",
         Delete = "Löschen",
         Open = "Öffnen",
@@ -556,6 +650,46 @@ public sealed record WebTexts
         StorageUsed = "{0} belegt",
         StorageUsedOf = "{0} von {1} belegt",
         ClientList = "Geräteliste",
+        GetApps = "Desktop- und Mobil-Apps",
+        AppsTitle = "SyncDrive auf allen Ihren Geräten",
+        AppsText = "Installieren Sie die Desktop-App, damit Ordner auf Ihrem Computer synchron bleiben, oder öffnen Sie SyncDrive im Browser Ihres Telefons.",
+        ForDesktop = "Für Desktop",
+        ForMobile = "Für Mobilgeräte",
+        DesktopTitle = "Desktop-App für Windows",
+        DesktopText = "Hält Ordner auf Ihrem Computer mit diesem Server synchron, zeigt den Status im Explorer und gibt bei Bedarf Speicherplatz frei. Für Windows 10 und 11 (64 Bit).",
+        MobileTitle = "Auf dem Telefon",
+        MobileText = "Eine App für Telefone gibt es noch nicht. Scannen Sie den Code mit der Kamera Ihres Telefons, um SyncDrive im Browser zu öffnen; Durchsuchen, Hochladen und Freigeben funktionieren dort.",
+        Back = "Zurück",
+        SignInWith = "Anmelden mit {0}",
+        Or = "oder",
+        RefusedOff = "Die Anmeldung über den Identitätsanbieter ist ausgeschaltet.",
+        RefusedCancelled = "Die Anmeldung wurde beim Identitätsanbieter abgebrochen.",
+        RefusedExpired = "Die Anmeldung ist abgelaufen. Bitte versuchen Sie es erneut.",
+        RefusedProvider = "Der Identitätsanbieter hat die Anmeldung nicht bestätigt. Bitte erneut versuchen oder den Administrator fragen.",
+        RefusedNoName = "Der Identitätsanbieter hat keinen Benutzernamen gesendet. Bitte wenden Sie sich an Ihren Administrator.",
+        RefusedNoAccount = "Für diese Anmeldung gibt es kein Konto. Bitte wenden Sie sich an Ihren Administrator.",
+        RefusedLinkedElsewhere = "Dieses Konto ist schon mit einem anderen Konto beim Identitätsanbieter verknüpft.",
+        RefusedGone = "Das verknüpfte Konto gibt es nicht mehr. Bitte wenden Sie sich an Ihren Administrator.",
+        RefusedLocked = "Dieses Konto ist gesperrt.",
+        SignInTab = "Anmeldung (OAuth 2.0)",
+        OAuthIntro = "Anmelden über einen vorhandenen Identitätsanbieter (OAuth 2.0 mit PKCE und OpenID-Connect-UserInfo, z. B. Keycloak, Authentik, Microsoft Entra ID oder Google). Die erste Anmeldung verknüpft das Konto beim Anbieter mit dem SyncDrive-Konto gleichen Namens.",
+        OAuthEnabled = "Anmeldung über den Identitätsanbieter erlauben",
+        OAuthDisplayName = "Text des Knopfs (Name des Anbieters)",
+        OAuthIssuer = "Issuer-Adresse",
+        OAuthIssuerHint = "SyncDrive liest die Endpunkte aus <Issuer>/.well-known/openid-configuration. Leer lassen, um sie automatisch zu füllen.",
+        OAuthAuthorization = "Autorisierungsendpunkt",
+        OAuthToken = "Token-Endpunkt",
+        OAuthUserInfo = "UserInfo-Endpunkt",
+        OAuthClientId = "Client-ID",
+        OAuthClientSecret = "Client-Secret",
+        OAuthSecretKept = "Ein Secret ist gespeichert. Feld leer lassen, um es zu behalten.",
+        OAuthScopes = "Scopes",
+        OAuthUserNameClaim = "Claim mit dem Benutzernamen",
+        OAuthUserNameHint = "Einen Claim wählen, den Benutzer beim Anbieter nicht selbst ändern können.",
+        OAuthCreateUsers = "Beim ersten Anmelden ein Konto anlegen, wenn es keins gibt",
+        OAuthRedirect = "Rücksprungadresse (beim Anbieter eintragen)",
+        OAuthEndpoints = "Endpunkte",
+        OAuthProvider = "Identitätsanbieter",
         DeviceName = "Gerätename",
         ClientType = "Client-Typ",
         Version = "Version",
@@ -658,6 +792,10 @@ public sealed record WebTexts
         NewGroup = "Neue Gruppe",
         DeleteGroup = "Gruppe löschen",
         ConfirmDeleteGroup = "Gruppe „{0}“ löschen? Ihre Mitglieder verlieren den Zugriff, den sie über diese Gruppe hatten.",
+        DeleteTeamFolder = "Team-Ordner löschen",
+        ConfirmDeleteTeamFolder = "Team-Ordner „{0}“ mit allen Dateien, Versionen und Freigaben endgültig löschen? Danach hat niemand mehr Zugriff, auch der Papierkorb behält ihn nicht.",
+        TypeNameToConfirm = "Zur Bestätigung den Namen des Team-Ordners eingeben",
+        TeamFolderDeleted = "Team-Ordner „{0}“ gelöscht.",
         MembersOf = "Mitglieder von „{0}“",
         NoGroups = "Noch keine Gruppen.",
         NewTeamFolder = "Neuer Team-Ordner",
@@ -696,6 +834,20 @@ public sealed record WebTexts
         ErrorCode.QuotaExceeded => QuotaExceeded,
         ErrorCode.TooManyAttempts => TooManyAttempts,
         _ => string.Format(CultureInfo.CurrentCulture, GenericError, error.Message),
+    };
+
+    /// <summary>Text zu einem Ablehnungscode der Anmeldung über den Anbieter; unbekannte Codes als allgemeiner Fehler.</summary>
+    public string OAuthRefusalText(string code) => code switch
+    {
+        OAuthRefusal.Off => RefusedOff,
+        OAuthRefusal.Cancelled => RefusedCancelled,
+        OAuthRefusal.Expired => RefusedExpired,
+        OAuthRefusal.NoName => RefusedNoName,
+        OAuthRefusal.NoAccount => RefusedNoAccount,
+        OAuthRefusal.LinkedElsewhere => RefusedLinkedElsewhere,
+        OAuthRefusal.Gone => RefusedGone,
+        OAuthRefusal.Locked => RefusedLocked,
+        _ => RefusedProvider,
     };
 
     /// <summary>Anzeigename einer Rolle (<c>viewer</c> → „Viewer“ / „Betrachter“).</summary>

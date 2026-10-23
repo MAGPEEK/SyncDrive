@@ -130,6 +130,20 @@ public sealed class TeamsViewModel(IDriveApi api, WebTexts texts) : ViewModel(te
         return ok;
     }
 
+    /// <summary>Löscht den Team-Ordner endgültig mit Inhalt; danach ist nichts mehr gewählt.</summary>
+    public async Task<bool> DeleteTeamFolderAsync(TeamFolderInfo team, CancellationToken ct)
+    {
+        var ok = await RunAsync(() => api.DeleteTeamFolderAsync(team.SpaceId, ct), Explain);
+        if (ok)
+        {
+            SelectedTeam = null;
+            Inform(string.Format(CultureInfo.CurrentCulture, Texts.TeamFolderDeleted, team.Name));
+        }
+
+        await LoadAsync(ct);
+        return ok;
+    }
+
     public async Task SetMemberAsync(TeamFolderInfo team, string kind, string id, string role, CancellationToken ct)
     {
         await RunAsync(() => api.SetTeamMemberAsync(team.SpaceId, kind, id, role, ct), Explain);

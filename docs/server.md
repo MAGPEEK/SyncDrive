@@ -114,6 +114,7 @@ All settings are environment variables with the prefix `SYNCDRIVE_Server__` (two
 | `SYNCDRIVE_Server__BackupDirectory` | — (off) | Target of the nightly backup, ideally another disk. Empty disables the backup. |
 | `SYNCDRIVE_Server__BackupTime` | `02:30` | Time of day for the backup in the container time zone (`TZ`). |
 | `SYNCDRIVE_Server__BackupsToKeep` | `7` | Number of database snapshots to keep; blocks are only ever added. |
+| `SYNCDRIVE_Server__DesktopClientUrl` | project release page | Where "Desktop & mobile apps → Download" in the web interface leads. Set it if you host the Windows packages yourself. |
 | `SYNCDRIVE_Server__MaxBlockBytes` | `8388608` (8 MiB) | Largest accepted block upload. Clients send at most 4 MiB. |
 | `SYNCDRIVE_Server__MaxLongPollSeconds` | `60` | Longest wait of a change long-poll request. Keep it below a proxy's read timeout. |
 | `SYNCDRIVE_Server__MaxPublicUploadBytes` | `4294967296` (4 GiB) | Largest file anyone may upload through a file request link. |
@@ -138,8 +139,30 @@ directory must be writable for that UID (`sudo chown 1654 /path/to/dir`). To put
 e.g. `- /mnt/usb/syncdrive-backup:/backup`.
 
 Settings that live in the database and are changed in the web interface (account menu → *Administration*): users, quotas,
-groups, team folders, sharing policies (public links, file requests, password requirement, maximum validity) and the sign-in page
-(server name, welcome text, background image).
+groups, team folders, sharing policies (public links, file requests, password requirement, maximum validity), sign-in through an
+identity provider and the sign-in page (server name, welcome text, background image).
+
+## Sign-in with an identity provider (OAuth 2.0)
+
+Under *Organisation settings → Sign-in (OAuth 2.0)* administrators connect an existing identity provider such as Keycloak,
+Authentik, Microsoft Entra ID or Google. SyncDrive uses the authorization code flow (RFC 6749) with PKCE (RFC 7636) and reads the
+user from the OpenID Connect UserInfo endpoint.
+
+1. At the provider, create a confidential client. Register the **redirect URI** shown in the tab, for example
+   `https://drive.example.org/api/v1/web/oauth/callback`. Behind a reverse proxy, set `SYNCDRIVE_Server__TrustForwardedHeaders=true`
+   so that the address uses the public host name and `https`.
+2. In SyncDrive, enter the **issuer URL** (for Keycloak `https://id.example.org/realms/<realm>`), the client ID and the client secret.
+   SyncDrive reads the endpoints from `<issuer>/.well-known/openid-configuration`; without discovery, enter them by hand.
+3. Choose the **claim with the user name** (default `preferred_username`). Pick one that users cannot change themselves at the provider.
+4. Optionally allow **creating accounts on first sign-in**. Otherwise only people who already have a SyncDrive account with the same
+   user name can sign in.
+
+The first sign-in links the provider account (`sub`) to the SyncDrive account. From then on only that link counts: another provider
+account with the same name cannot take the account over. Accounts created this way have a random password; they sign in to the
+web interface through the provider. For the desktop client, an administrator sets a password for them.
+
+The client secret is stored in the server database in the data volume and is part of the backups. It is never sent back to the
+browser.
 
 ## Backup and restore
 

@@ -26,6 +26,13 @@ public interface IDriveApi
     /// <summary>Anmeldeseite (ohne Anmeldung lesbar): Servername, Text, Hintergrundbild.</summary>
     Task<PortalInfo> GetPortalAsync(CancellationToken ct);
 
+    /// <summary>Anmeldeseite: Knopf „Anmelden mit …“ (ohne Anmeldung lesbar).</summary>
+    Task<OAuthLoginInfo> GetOAuthLoginAsync(CancellationToken ct);
+
+    Task<OAuthSettingsInfo> GetOAuthSettingsAsync(CancellationToken ct);
+
+    Task<OAuthSettingsInfo> SaveOAuthSettingsAsync(OAuthSettingsRequest request, CancellationToken ct);
+
     /// <summary>Nur Administratoren.</summary>
     Task<PortalInfo> UpdatePortalAsync(string serverName, string? loginMessage, CancellationToken ct);
 
@@ -69,6 +76,12 @@ public interface IDriveApi
 
     /// <summary>Adresse des Vorschaubilds; die Revision steht darin, damit der Browser-Cache eine neue Fassung nicht übersieht.</summary>
     string ThumbnailUrl(string spaceId, string path, long revision, bool large = false);
+
+    /// <summary>PDF zum Ansehen im Browser (inline); der Server liefert nur PDF so aus.</summary>
+    string ViewUrl(string spaceId, string path, long revision);
+
+    /// <summary>Inhalt einer Datei für die Anzeige in der Oberfläche (Text, Markdown, RTF, DOCX); die Aufrufer begrenzen die Größe.</summary>
+    Task<byte[]> ReadFileAsync(string spaceId, string path, CancellationToken ct);
 
     /// <summary>Einträge unter <paramref name="path"/>, deren Name den Begriff enthält.</summary>
     Task<IReadOnlyList<DriveItem>> SearchAsync(string spaceId, string path, string query, CancellationToken ct);
@@ -119,6 +132,8 @@ public interface IDriveApi
     /// <summary>Eigener Speicher: belegt in den eigenen Spaces und das Kontingent (null = unbegrenzt).</summary>
     Task<StorageInfo> GetStorageAsync(CancellationToken ct);
 
+    Task<ClientAppsInfo> GetClientAppsAsync(CancellationToken ct);
+
     /// <summary>Freigabedialog: Eingeladene, Link und Dateianfrage eines Elements (nur wer den Space verwaltet).</summary>
     Task<SharingResponse> GetSharingAsync(string spaceId, string path, CancellationToken ct);
 
@@ -164,6 +179,8 @@ public interface IDriveApi
     Task<TeamFolderInfo> CreateTeamFolderAsync(string name, CancellationToken ct);
 
     Task<TeamFolderInfo> RenameTeamFolderAsync(string spaceId, string name, CancellationToken ct);
+
+    Task DeleteTeamFolderAsync(string spaceId, CancellationToken ct);
 
     /// <summary>Benutzer (<c>user</c>) oder Gruppe (<c>group</c>) mit Rolle in den Team-Ordner aufnehmen oder die Rolle ändern.</summary>
     Task<TeamFolderInfo> SetTeamMemberAsync(string spaceId, string kind, string id, string role, CancellationToken ct);
@@ -225,6 +242,24 @@ public sealed class HttpDriveApi : IDriveApi, IPublicLinkApi
     {
         using var response = await _http.GetAsync("api/v1/web/portal", ct);
         return await ReadAsync<PortalInfo>(response, ct);
+    }
+
+    public async Task<OAuthLoginInfo> GetOAuthLoginAsync(CancellationToken ct)
+    {
+        using var response = await _http.GetAsync("api/v1/web/oauth", ct);
+        return await ReadAsync<OAuthLoginInfo>(response, ct);
+    }
+
+    public async Task<OAuthSettingsInfo> GetOAuthSettingsAsync(CancellationToken ct)
+    {
+        using var response = await _http.GetAsync("api/v1/admin/oauth", ct);
+        return await ReadAsync<OAuthSettingsInfo>(response, ct);
+    }
+
+    public async Task<OAuthSettingsInfo> SaveOAuthSettingsAsync(OAuthSettingsRequest request, CancellationToken ct)
+    {
+        using var response = await _http.PutAsJsonAsync("api/v1/admin/oauth", request, Json, ct);
+        return await ReadAsync<OAuthSettingsInfo>(response, ct);
     }
 
     public async Task<PortalInfo> UpdatePortalAsync(string serverName, string? loginMessage, CancellationToken ct)
@@ -325,6 +360,16 @@ public sealed class HttpDriveApi : IDriveApi, IPublicLinkApi
 
     public string ThumbnailUrl(string spaceId, string path, long revision, bool large = false) =>
         $"api/v1/spaces/{Escape(spaceId)}/thumbnail?path={Escape(path)}&v={revision}" + (large ? "&size=large" : string.Empty);
+
+    public string ViewUrl(string spaceId, string path, long revision) =>
+        $"api/v1/spaces/{Escape(spaceId)}/view?path={Escape(path)}&v={revision}";
+
+    public async Task<byte[]> ReadFileAsync(string spaceId, string path, CancellationToken ct)
+    {
+        using var response = await _http.GetAsync(DownloadUrl(spaceId, path), ct);
+        await EnsureAsync(response, ct);
+        return await response.Content.ReadAsByteArrayAsync(ct);
+    }
 
     public Task<IReadOnlyList<DriveItem>> SearchAsync(string spaceId, string path, string query, CancellationToken ct) =>
         FindAsync($"api/v1/spaces/{Escape(spaceId)}/search?q={Escape(query)}&path={Escape(path)}", ct);
@@ -437,6 +482,12 @@ public sealed class HttpDriveApi : IDriveApi, IPublicLinkApi
         await EnsureAsync(response, ct);
     }
 
+    public async Task<ClientAppsInfo> GetClientAppsAsync(CancellationToken ct)
+    {
+        using var response = await _http.GetAsync("api/v1/web/apps", ct);
+        return await ReadAsync<ClientAppsInfo>(response, ct);
+    }
+
     public async Task<StorageInfo> GetStorageAsync(CancellationToken ct)
     {
         using var response = await _http.GetAsync("api/v1/account/storage", ct);
@@ -527,6 +578,12 @@ public sealed class HttpDriveApi : IDriveApi, IPublicLinkApi
     {
         using var response = await _http.PostAsJsonAsync("api/v1/admin/groups", new NameRequest(name), Json, ct);
         return await ReadAsync<GroupInfo>(response, ct);
+    }
+
+    public async Task DeleteTeamFolderAsync(string spaceId, CancellationToken ct)
+    {
+        using var response = await _http.DeleteAsync($"api/v1/admin/team-folders/{Escape(spaceId)}", ct);
+        await EnsureAsync(response, ct);
     }
 
     public async Task DeleteGroupAsync(string groupId, CancellationToken ct)

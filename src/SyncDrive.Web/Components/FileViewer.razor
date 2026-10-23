@@ -1,0 +1,91 @@
+@implements IDisposable
+@inject ViewerViewModel Viewer
+
+@* Doppelklick auf eine Datei: Bild, PDF (eingebauter Betrachter des Browsers) oder lesbarer Text/Markdown/RTF/DOCX in einem Fenster. *@
+@if (Viewer.Item is { } item)
+{
+    <div class="backdrop preview" tabindex="-1" @ref="_box" @onkeydown="Key" @onclick="CloseAsync">
+        <div class="viewer @(Viewer.Kind == ViewerKind.Image ? "image" : "document")" role="dialog" aria-modal="true" aria-label="@item.Name" @onclick:stopPropagation>
+            <div class="viewer-bar">
+                <span class="name">@item.Name</span>
+                <a class="button" href="@Viewer.DownloadUrl(Space)" download="@item.Name">@T.Download</a>
+                <button @onclick="CloseAsync">@T.Close</button>
+            </div>
+            <div class="viewer-body">
+                @if (Viewer.Problem is { } problem)
+                {
+                    <p class="viewer-note">@problem</p>
+                }
+                else if (Viewer.State == ListState.Loading)
+                {
+                    <p class="viewer-note">@T.Loading</p>
+                }
+                else
+                {
+                    switch (Viewer.Kind)
+                    {
+                        case ViewerKind.Image when ImageUrl is not null:
+                            <img src="@ImageUrl" alt="@item.Name" />
+                            break;
+                        case ViewerKind.Pdf:
+                            <iframe src="@Viewer.PdfUrl" title="@item.Name"></iframe>
+                            break;
+                        case ViewerKind.Markdown or ViewerKind.Docx when Viewer.Html is { } html:
+                            <article class="doc-view">@((MarkupString)html)</article>
+                            break;
+                        case ViewerKind.Text or ViewerKind.Rtf when Viewer.Text is { } text:
+                            <pre class="text-view @(Viewer.Kind == ViewerKind.Rtf ? "prose" : "")">@text</pre>
+                            break;
+                    }
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public SpaceSummary Space { get; set; } = null!;
+
+    /// <summary>Große Vorschau für Bilder (der Server verkleinert sie).</summary>
+    [Parameter]
+    public string? ImageUrl { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private ElementReference _box;
+    private DriveItem? _focused;
+
+    private WebTexts T => Viewer.Texts;
+
+    protected override void OnInitialized() => Viewer.Changed += Refresh;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Viewer.Item is { } item && !ReferenceEquals(item, _focused))
+        {
+            _focused = item; // Fokus ins Fenster, damit Esc wirkt
+            await _box.FocusAsync();
+        }
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private async Task Key(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            await CloseAsync();
+        }
+    }
+
+    private async Task CloseAsync()
+    {
+        _focused = null;
+        Viewer.Close();
+        await OnClose.InvokeAsync();
+    }
+
+    public void Dispose() => Viewer.Changed -= Refresh;
+}

@@ -1,0 +1,104 @@
+@implements IDisposable
+@inject OAuthViewModel OAuth
+
+@* Anmeldung über einen Identitätsanbieter (OAuth 2.0): Schalter, Anbieter, Client, Benutzername-Claim, Rücksprungadresse. *@
+<form class="policies oauth-settings" @onsubmit="SaveAsync" @onsubmit:preventDefault>
+    @if (_edit is null)
+    {
+        <div class="list-note">@T.Loading</div>
+    }
+    else
+    {
+        <p class="sub">@T.OAuthIntro</p>
+        <label class="check-row"><input type="checkbox" @bind="_enabled" /><span>@T.OAuthEnabled</span></label>
+        <fieldset>
+            <legend>@T.OAuthProvider</legend>
+            <label class="field"><span>@T.OAuthDisplayName</span><input @bind="_displayName" placeholder="Keycloak" maxlength="64" /></label>
+            <label class="field"><span>@T.OAuthIssuer</span><input @bind="_issuer" type="url" placeholder="https://id.example.org/realms/firma" /></label>
+            <p class="sub">@T.OAuthIssuerHint</p>
+            <label class="field"><span>@T.OAuthRedirect</span><input value="@_edit.RedirectUri" readonly /></label>
+        </fieldset>
+        <fieldset>
+            <legend>@T.OAuthClientId</legend>
+            <label class="field"><span>@T.OAuthClientId</span><input @bind="_clientId" autocomplete="off" /></label>
+            <label class="field">
+                <span>@T.OAuthClientSecret</span>
+                <input @bind="_secret" type="password" autocomplete="new-password" placeholder="@(_edit.HasClientSecret ? "••••••••" : string.Empty)" />
+            </label>
+            @if (_edit.HasClientSecret)
+            {
+                <p class="sub">@T.OAuthSecretKept</p>
+            }
+            <label class="field"><span>@T.OAuthScopes</span><input @bind="_scopes" /></label>
+            <label class="field"><span>@T.OAuthUserNameClaim</span><input @bind="_claim" /></label>
+            <p class="sub">@T.OAuthUserNameHint</p>
+            <label class="check-row"><input type="checkbox" @bind="_createUsers" /><span>@T.OAuthCreateUsers</span></label>
+        </fieldset>
+        <fieldset>
+            <legend>@T.OAuthEndpoints</legend>
+            <label class="field"><span>@T.OAuthAuthorization</span><input @bind="_authorization" type="url" /></label>
+            <label class="field"><span>@T.OAuthToken</span><input @bind="_token" type="url" /></label>
+            <label class="field"><span>@T.OAuthUserInfo</span><input @bind="_userInfo" type="url" /></label>
+        </fieldset>
+        <div><button type="submit" class="primary">@T.Save</button></div>
+        <Toast Model="OAuth" />
+    }
+</form>
+
+@code {
+    private OAuthSettingsInfo? _edit;
+    private bool _enabled;
+    private bool _createUsers;
+    private string _displayName = string.Empty;
+    private string _issuer = string.Empty;
+    private string _clientId = string.Empty;
+    private string _secret = string.Empty;
+    private string _scopes = string.Empty;
+    private string _claim = string.Empty;
+    private string _authorization = string.Empty;
+    private string _token = string.Empty;
+    private string _userInfo = string.Empty;
+
+    [Parameter]
+    public CancellationToken Token { get; set; }
+
+    private WebTexts T => OAuth.Texts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        OAuth.Changed += Refresh;
+        await OAuth.LoadAsync(Token);
+        Take(OAuth.Settings);
+    }
+
+    /// <summary>Formular mit dem gespeicherten Stand füllen (auch nach dem Speichern: Endpunkte aus der Discovery erscheinen).</summary>
+    private void Take(OAuthSettingsInfo? settings)
+    {
+        if (settings is null)
+        {
+            return;
+        }
+
+        _edit = settings;
+        (_enabled, _createUsers, _displayName, _issuer, _clientId, _scopes, _claim) =
+            (settings.Enabled, settings.CreateUsers, settings.DisplayName, settings.Issuer, settings.ClientId, settings.Scopes, settings.UserNameClaim);
+        (_authorization, _token, _userInfo, _secret) = (settings.AuthorizationEndpoint, settings.TokenEndpoint, settings.UserInfoEndpoint, string.Empty);
+    }
+
+    private async Task SaveAsync()
+    {
+        var edited = _edit! with
+        {
+            Enabled = _enabled, CreateUsers = _createUsers, DisplayName = _displayName, Issuer = _issuer, ClientId = _clientId,
+            Scopes = _scopes, UserNameClaim = _claim, AuthorizationEndpoint = _authorization, TokenEndpoint = _token, UserInfoEndpoint = _userInfo,
+        };
+        if (await OAuth.SaveAsync(edited, _secret, Token))
+        {
+            Take(OAuth.Settings);
+        }
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => OAuth.Changed -= Refresh;
+}

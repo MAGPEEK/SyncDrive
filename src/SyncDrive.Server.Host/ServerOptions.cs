@@ -46,4 +46,10 @@ public sealed class ServerOptions
 
     /// <summary>So viele Datenbank-Stände bleiben liegen; Blöcke werden nur ergänzt, nie gelöscht.</summary>
     public int BackupsToKeep { get; set; } = 7;
+
+    /// <summary>
+    /// Wohin „Desktop-App herunterladen“ in der Weboberfläche führt (Profilmenü → Desktop- und Mobil-Apps). Standard: die Release-Seite
+    /// des Projekts; wer die Pakete selbst bereitstellt, trägt hier seine Adresse ein.
+    /// </summary>
+    public string DesktopClientUrl { get; set; } = "https://github.com/MAGPEEK/SyncDrive/releases/latest";
 }

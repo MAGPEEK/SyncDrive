@@ -142,6 +142,12 @@ internal static class SqliteDatabase
             value TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS applied_migration (
             name TEXT PRIMARY KEY);
+        CREATE TABLE IF NOT EXISTS user_external (
+            provider TEXT NOT NULL,
+            subject TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            PRIMARY KEY (provider, subject),
+            UNIQUE (provider, user_id));
         CREATE TABLE IF NOT EXISTS space_group (
             space_id TEXT NOT NULL,
             group_id TEXT NOT NULL,

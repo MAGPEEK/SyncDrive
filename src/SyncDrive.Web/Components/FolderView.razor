@@ -2,6 +2,7 @@
 @inject BrowserViewModel Browser
 @inject MarksViewModel Marks
 @inject IJSRuntime Js
+@inject ViewerViewModel Viewer
 
 @* Ordneransicht („My Drive“ und geteilte Spaces): Symbolleiste, Liste mit Auswahl, Kontextmenü, Dialoge, Hochladen. Logik im BrowserViewModel. *@
 <div class="view" @onclick="CloseMenus" @onkeydown="CreateKeyAsync">
@@ -209,18 +210,9 @@
         <Toast Model="Browser" />
     }
 
-    @if (_preview is { } shown && Browser.ThumbnailUrl(shown, large: true) is { } large)
+    @if (Browser.Space is { } viewerSpace)
     {
-        <div class="backdrop preview" tabindex="-1" @ref="_previewBox" @onkeydown="PreviewKey" @onclick="ClosePreview">
-            <figure @onclick:stopPropagation>
-                <img src="@large" alt="@shown.Name" @onerror="() => Browser.ThumbnailFailed(large)" />
-                <figcaption>
-                    <span class="name">@shown.Name</span>
-                    <a class="button" href="@Browser.DownloadUrl(shown)" download="@shown.Name">@T.Download</a>
-                    <button @onclick="ClosePreview">@T.Close</button>
-                </figcaption>
-            </figure>
-        </div>
+        <FileViewer Space="viewerSpace" ImageUrl="@_imageUrl" OnClose="() => _focusList = true" />
     }
 
     @if (Browser.Uploads.Count > 0)
@@ -335,11 +327,6 @@
             _focusName = false;
             await _nameInput.FocusAsync();
         }
-        else if (_focusPreview && _preview is not null)
-        {
-            _focusPreview = false;
-            await _previewBox.FocusAsync();
-        }
         else if (_focusList)
         {
             _focusList = false;
@@ -349,36 +336,31 @@
 
     private string Arrow(SortColumn column) => Browser.Sort != column ? string.Empty : Browser.Descending ? "▼" : "▲";
 
+    /// <summary>
+    /// Doppelklick oder „Öffnen“: Ordner betreten; Bilder, PDF, Text, Markdown, RTF und DOCX im Betrachter zeigen; alles andere
+    /// herunterladen.
+    /// </summary>
     private async Task OpenItemAsync(DriveItem item)
     {
         CloseMenus();
-        if (Browser.ThumbnailUrl(item, large: true) is not null)
+        if (item.IsFolder)
         {
-            _preview = item; // Bilder groß zeigen statt herunterladen
-            _focusPreview = true;
+            await Browser.OpenAsync(item, Token);
             return;
         }
 
-        await Browser.OpenAsync(item, Token);
-    }
-
-    private DriveItem? _preview;
-    private bool _focusPreview;
-    private ElementReference _previewBox;
-
-    private void ClosePreview()
-    {
-        _preview = null;
-        _focusList = true;
-    }
-
-    private void PreviewKey(KeyboardEventArgs e)
-    {
-        if (e.Key == "Escape")
+        _imageUrl = Browser.ThumbnailUrl(item, large: true);
+        var kind = ViewerViewModel.KindOf(item);
+        if (kind == ViewerKind.None || (kind == ViewerKind.Image && _imageUrl is null))
         {
-            ClosePreview();
+            await Js.InvokeVoidAsync("syncDrive.download", Browser.DownloadUrl(item), item.Name);
+            return;
         }
+
+        await Viewer.OpenAsync(Browser.Space!, item, Token);
     }
+
+    private string? _imageUrl;
 
     private async Task ShowVersionsAsync(DriveItem item)
     {

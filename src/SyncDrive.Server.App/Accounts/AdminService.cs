@@ -9,7 +9,8 @@ namespace SyncDrive.Server.App.Accounts;
 /// ändern dürfen, bleibt so immer einer übrig. Gesperrte Benutzer und neue Passwörter melden alle Geräte des Benutzers ab.
 /// </summary>
 public sealed partial class AdminService(
-    IAccountStore store, IGroupStore groups, AccountService accounts, SpaceService spaces, Items.NotificationService notes)
+    IAccountStore store, IGroupStore groups, AccountService accounts, SpaceService spaces, Items.NotificationService notes,
+    IChangeNotifier notifier)
 {
     public async Task<ServiceResult<AdminUsersResponse>> ListUsersAsync(Principal caller, CancellationToken ct)
     {

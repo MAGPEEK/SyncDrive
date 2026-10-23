@@ -98,6 +98,12 @@ public interface IAccountStore
 
     Task RenameSpaceAsync(string spaceId, string name, CancellationToken ct);
 
+    /// <summary>
+    /// Löscht einen Team-Ordner samt Inhalt, Verlauf, Mitgliedern, Freigaben, Links, Favoriten und Labels darin. False, wenn es keinen
+    /// Team-Ordner mit dieser Id gibt (eigene Spaces von Benutzern bleiben unberührt).
+    /// </summary>
+    Task<bool> DeleteTeamSpaceAsync(string spaceId, CancellationToken ct);
+
     /// <summary>Direkte Mitglieder und Gruppen eines Space mit Rolle.</summary>
     Task<IReadOnlyList<SpaceMember>> ListSpaceMembersAsync(string spaceId, CancellationToken ct);
 

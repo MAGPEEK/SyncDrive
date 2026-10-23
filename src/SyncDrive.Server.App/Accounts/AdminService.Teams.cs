@@ -191,6 +191,26 @@ public sealed partial class AdminService
     }
 
     /// <summary>Prüft Admin-Recht und dass es ein Team-Ordner ist (eigene Spaces der Benutzer verwaltet die Konsole nicht); liefert den Namen.</summary>
+    /// <summary>
+    /// Löscht den Team-Ordner endgültig mit allem darin. Wer gerade darauf wartet (Weboberfläche, Desktop-Client), wird geweckt und findet
+    /// ihn nicht mehr. Die Blockdateien bleiben liegen, weil andere Spaces dieselben Inhalte haben können.
+    /// </summary>
+    public async Task<ServiceError?> DeleteTeamFolderAsync(Principal caller, string spaceId, CancellationToken ct)
+    {
+        if (await TeamAsync(caller, spaceId, ct) is { IsSuccess: false } denied)
+        {
+            return denied.Error;
+        }
+
+        if (!await store.DeleteTeamSpaceAsync(spaceId, ct))
+        {
+            return new ServiceError(ErrorCode.NotFound, "Team-Ordner unbekannt.");
+        }
+
+        notifier.Notify(spaceId);
+        return null;
+    }
+
     private async Task<ServiceResult<string>> TeamAsync(Principal caller, string spaceId, CancellationToken ct)
     {
         if (!caller.IsAdmin)

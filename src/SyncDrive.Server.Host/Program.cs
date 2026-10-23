@@ -74,6 +74,9 @@ services.AddSingleton<PortalService>();
 services.AddSingleton<IAvatarStore>(sp =>
     new FileAvatarStore(Path.Combine(sp.GetRequiredService<IOptions<ServerOptions>>().Value.DataDirectory, "avatars")));
 services.AddSingleton<AvatarService>();
+services.AddSingleton<IOAuthStore>(sp => new SqliteOAuthStore(DatabasePath(sp)));
+services.AddHttpClient<IOAuthProvider, HttpOAuthProvider>();
+services.AddSingleton<ExternalSignInService>();
 services.AddSingleton<IThumbnailRenderer, SkiaThumbnailRenderer>();
 services.AddSingleton<IThumbnailCache>(sp =>
     new FileThumbnailCache(Path.Combine(sp.GetRequiredService<IOptions<ServerOptions>>().Value.DataDirectory, "thumbnails")));

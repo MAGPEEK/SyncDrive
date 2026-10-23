@@ -82,6 +82,7 @@ public static partial class ApiEndpoints
         MapWeb(api, secured);
         MapSharing(api, secured);
         MapAdmin(secured);
+        MapOAuth(api, secured);
     }
 
     /// <summary>

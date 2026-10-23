@@ -16,6 +16,9 @@
         case Tab.Groups:
             <GroupsView Token="Token" />
             break;
+        case Tab.SignIn:
+            <OAuthView Token="Token" />
+            break;
         case Tab.Policies:
             <PoliciesView Token="Token" />
             break;
@@ -38,6 +41,7 @@
         Groups,
         TeamFolders,
         Policies,
+        SignIn,
     }
 
     private Tab? _tab;
@@ -55,6 +59,6 @@
     private Tab Current => _tab is { } tab && Tabs.Any(t => t.Tab == tab) ? tab : Tabs.First().Tab;
 
     private IEnumerable<(Tab Tab, string Label)> Tabs => Area == Section.Organisation
-        ? [(Tab.Policies, T.PoliciesTab), (Tab.TeamFolders, T.TeamFoldersTab)]
+        ? [(Tab.Policies, T.PoliciesTab), (Tab.TeamFolders, T.TeamFoldersTab), (Tab.SignIn, T.SignInTab)]
         : [(Tab.Users, T.Users), (Tab.Groups, T.Groups)];
 }

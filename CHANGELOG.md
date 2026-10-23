@@ -5,6 +5,68 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.35.0] – 2026-10-23 – Anmeldung über OAuth 2.0
+
+### Hinzugefügt
+- Organisationseinstellungen, neuer Reiter **„Anmeldung (OAuth 2.0)“**: Anbindung an einen Identitätsanbieter (Keycloak, Authentik,
+  Microsoft Entra ID, Google …).
+  - **Ablauf:** Authorization Code (RFC 6749) mit PKCE S256 (RFC 7636); `state` gegen CSRF in einem kurzlebigen Cookie; Code-Tausch auf
+    dem Server mit Client-Secret; Benutzer über den UserInfo-Endpunkt von OpenID Connect.
+  - **Einstellungen:** Endpunkte aus der Discovery (`/.well-known/openid-configuration`) oder von Hand; Claim für den Benutzernamen; auf
+    Wunsch Konten beim ersten Anmelden anlegen.
+  - **Rücksprungadresse:** Der Reiter zeigt sie zum Eintragen beim Anbieter.
+- Anmeldeseite: Knopf **„Anmelden mit …“** unter dem Formular, wenn die Anbindung eingeschaltet ist; verständliche Meldungen bei
+  Ablehnung.
+- API: `GET /api/v1/web/oauth`, `GET /api/v1/web/oauth/start`, `GET /api/v1/web/oauth/callback`, `GET`/`PUT /api/v1/admin/oauth`.
+  Dokumentiert in `docs/server.md`.
+
+### Sicherheit
+- Das erste Anmelden verknüpft das Konto beim Anbieter (`sub`) dauerhaft mit dem SyncDrive-Konto gleichen Namens. Danach zählt nur
+  diese Verknüpfung, sodass ein anderes Anbieter-Konto mit demselben Namen das Konto nicht übernehmen kann.
+- Endpunkte nur über `https` (http nur für localhost). Das Client-Secret geht nie an den Browser zurück. Fehler kommen nur als feste
+  Codes auf die Anmeldeseite, damit über einen Link kein fremder Text auf der Seite erscheint.
+- Ende-zu-Ende geprüft mit einem kleinen Test-Anbieter, der Secret, Redirect-URI und PKCE prüft. Getestet sind Übernahmeversuch,
+  gefälschter `state` und Code, unbekanntes Konto und Rechte.
+
+## [0.34.0] – 2026-10-23 – Dateien in der Weboberfläche ansehen
+
+### Hinzugefügt
+- Weboberfläche: **Doppelklick öffnet Dateien im Betrachter**, ohne Herunterladen:
+  - Bilder groß, wie bisher.
+  - **PDF** im eingebauten PDF-Betrachter des Browsers.
+  - **Markdown** formatiert (Überschriften, Listen, Tabellen, Code).
+  - **Word-Dokumente (DOCX)** mit Überschriften, Absätzen, Fett/Kursiv/Unterstrichen, Aufzählungen und Tabellen.
+  - **RTF** als lesbarer Text.
+  - Text- und Quelltextdateien (txt, log, csv, json, xml, yaml, Code …).
+
+  Mit Herunterladen und Schließen (auch Esc). Dateien, die sich nicht anzeigen lassen, lädt der Doppelklick herunter. Textformate bis
+  5 MB.
+- Server: `GET /api/v1/spaces/{s}/view?path=` liefert PDF inline und lässt sich nur in die eigene Oberfläche einbetten
+  (`frame-ancestors 'self'`). Alle anderen Formate bekommen 415, damit hochgeladenes HTML oder SVG nie im Kontext der Seite läuft.
+
+### Sicherheit
+- Markdown ohne Roh-HTML; Links nur `http`, `https`, `mailto`, Anker und relative Ziele, alles andere wird entschärft. DOCX und RTF
+  werden in eigenen, kleinen Wandlern gelesen (Texte maskiert, feste Elementmenge, ZIP-Inhalt begrenzt). HTML-Dateien erscheinen nur als
+  Quelltext.
+
+## [0.33.0] – 2026-10-23 – Desktop- und Mobil-Apps
+
+### Hinzugefügt
+- Weboberfläche, Profilmenü: **„Desktop- und Mobil-Apps“** öffnet einen Dialog mit eigenem Bild, kurzer Erklärung und zwei Wegen.
+  - „Für Desktop“ beschreibt den Windows-Client und führt zum Download.
+  - „Für Mobilgeräte“ zeigt einen QR-Code mit der Adresse der Weboberfläche zum Öffnen im Browser des Telefons (eine Telefon-App gibt
+    es noch nicht).
+- Server: `SYNCDRIVE_Server__DesktopClientUrl` legt fest, wohin der Download führt (Standard: Release-Seite des Projekts), API
+  `GET /api/v1/web/apps`. Der QR-Code entsteht im Browser (QRCoder, MIT).
+
+## [0.32.3] – 2026-10-23 – Team-Ordner löschen
+
+### Behoben
+- Verwaltung, Team-Ordner: Ein angelegter Team-Ordner ließ sich nicht wieder löschen. Neu ist „Team-Ordner löschen“: Er entfernt den
+  Ordner endgültig mit Dateien, Versionen, Verlauf, Mitgliedern, Gruppenrollen, Freigaben, Links, Favoriten und Labels darin. Zur
+  Bestätigung muss man den Namen eintippen. Die eigenen Spaces der Benutzer lassen sich so nie löschen, und nur Administratoren dürfen es.
+  API: `DELETE /api/v1/admin/team-folders/{spaceId}`. Blockdateien bleiben liegen, weil andere Spaces dieselben Inhalte haben können.
+
 ## [0.32.2] – 2026-10-23 – Symbole im Desktop-Client
 
 ### Geändert

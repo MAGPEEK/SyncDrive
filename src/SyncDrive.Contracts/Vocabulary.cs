@@ -36,3 +36,20 @@ public static class LinkKinds
     /// <summary>Dateianfrage: Jeder mit dem Link kann Dateien in den Ordner hochladen, sieht aber dessen Inhalt nicht.</summary>
     public const string Request = "request";
 }
+
+/// <summary>
+/// Warum eine Anmeldung über den Identitätsanbieter scheiterte: der Server leitet mit <c>/?signin_error=&lt;Code&gt;</c> zurück, die
+/// Anmeldeseite zeigt den passenden Text. Nur feste Codes, damit niemand über einen Link eigenen Text auf die Seite bringt.
+/// </summary>
+public static class OAuthRefusal
+{
+    public const string Off = "off";
+    public const string Cancelled = "cancelled";
+    public const string Expired = "expired";
+    public const string Provider = "provider";
+    public const string NoName = "no-name";
+    public const string NoAccount = "no-account";
+    public const string LinkedElsewhere = "linked-elsewhere";
+    public const string Gone = "gone";
+    public const string Locked = "locked";
+}

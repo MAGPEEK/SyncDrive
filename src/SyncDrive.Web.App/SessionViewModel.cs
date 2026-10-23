@@ -23,12 +23,29 @@ public sealed class SessionViewModel(IDriveApi api, WebTexts texts)
 
     public string? Error { get; private set; }
 
+    /// <summary>Anmeldung über den Identitätsanbieter der Organisation; aus, solange unbekannt.</summary>
+    public OAuthLoginInfo OAuth { get; private set; } = new(false, string.Empty);
+
+    /// <summary>Der Knopf „Anmelden mit …“ führt hierhin; der Server leitet zum Anbieter weiter.</summary>
+    public const string OAuthStartUrl = "api/v1/web/oauth/start";
+
+    /// <summary>Rückkehr vom Anbieter ohne Erfolg (<c>?signin_error=</c>): nur bekannte Codes werden zu Text.</summary>
+    public void ShowRefusal(string? code)
+    {
+        Error = code is null ? null : Texts.OAuthRefusalText(code);
+        Changed?.Invoke();
+    }
+
     public async Task CheckAsync(CancellationToken ct)
     {
         try
         {
             Portal = await api.GetPortalAsync(ct);
             Session = await api.GetSessionAsync(ct);
+            if (Session is null)
+            {
+                OAuth = await api.GetOAuthLoginAsync(ct); // nur die Anmeldeseite braucht den Knopf
+            }
         }
         catch (Exception e) when (e is DriveException or HttpRequestException)
         {

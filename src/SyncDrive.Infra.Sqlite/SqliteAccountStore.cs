@@ -207,6 +207,45 @@ public sealed class SqliteAccountStore : IAccountStore
         return result;
     }
 
+    public async Task<bool> DeleteTeamSpaceAsync(string spaceId, CancellationToken ct)
+    {
+        await using var connection = await OpenAsync(ct);
+        await using var transaction = (SqliteTransaction)await connection.BeginTransactionAsync(ct);
+        string[] steps =
+        [
+            "DELETE FROM notification WHERE space_id = $s OR space_id IN (SELECT id FROM node_share WHERE space_id = $s)",
+            "DELETE FROM node_share WHERE space_id = $s",
+            "DELETE FROM share_link WHERE space_id = $s",
+            "DELETE FROM star WHERE space_id = $s",
+            "DELETE FROM label_item WHERE space_id = $s",
+            "DELETE FROM space_member WHERE space_id = $s",
+            "DELETE FROM space_group WHERE space_id = $s",
+            "DELETE FROM node WHERE space_id = $s",
+            "DELETE FROM change WHERE space_id = $s",
+            "DELETE FROM version WHERE space_id = $s",
+            "DELETE FROM idempotency WHERE space_id = $s",
+            "DELETE FROM block_ref WHERE space_id = $s",
+        ];
+        await using (var space = Command(connection, "DELETE FROM space WHERE id = $s AND kind = 'team'", ("$s", spaceId)))
+        {
+            space.Transaction = transaction;
+            if (await space.ExecuteNonQueryAsync(ct) == 0)
+            {
+                return false; // kein Team-Ordner: eigene Spaces der Benutzer werden hier nie gelöscht
+            }
+        }
+
+        foreach (var sql in steps)
+        {
+            await using var command = Command(connection, sql, ("$s", spaceId));
+            command.Transaction = transaction;
+            await command.ExecuteNonQueryAsync(ct);
+        }
+
+        await transaction.CommitAsync(ct);
+        return true;
+    }
+
     public Task RenameSpaceAsync(string spaceId, string name, CancellationToken ct) =>
         ExecuteAsync("UPDATE space SET name = $n WHERE id = $s", ct, ("$s", spaceId), ("$n", name));
 

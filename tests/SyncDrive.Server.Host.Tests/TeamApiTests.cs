@@ -139,4 +139,35 @@ public class TeamApiTests(HostFactory factory) : IClassFixture<HostFactory>
         Assert.Equal((HttpStatusCode.Forbidden, HttpStatusCode.Forbidden), (asAnna.StatusCode, annaCreates.StatusCode));
         Assert.Equal(HttpStatusCode.BadRequest, emptyName.StatusCode);
     }
+
+    [Fact]
+    public async Task Deleting_a_team_folder_removes_it_with_its_content_for_everyone_and_only_admins_may()
+    {
+        var admin = await factory.LoginAsync();
+        var (anna, annaId, _) = await UserAsync(admin, "anna");
+        var annasOwn = await anna.FirstSpaceIdAsync(); // vor der Mitgliedschaft: noch ihr einziger Space
+        var name = Unique("Archiv");
+        var team = await TeamAsync(admin, name);
+        (await MemberAsync(admin, team.SpaceId, "user", annaId, "manager")).EnsureSuccessStatusCode();
+        (await PutAsync(anna, team.SpaceId, "bericht.txt")).EnsureSuccessStatusCode();
+        (await anna.Http.PutAsync($"/api/v1/spaces/{team.SpaceId}/star?path=bericht.txt", null)).EnsureSuccessStatusCode();
+
+        using var byAnna = await anna.Http.DeleteAsync($"/api/v1/admin/team-folders/{team.SpaceId}");
+        using var ownSpace = await admin.Http.DeleteAsync($"/api/v1/admin/team-folders/{annasOwn}");
+        using var deleted = await admin.Http.DeleteAsync($"/api/v1/admin/team-folders/{team.SpaceId}");
+        using var again = await admin.Http.DeleteAsync($"/api/v1/admin/team-folders/{team.SpaceId}");
+        var listed = (await admin.Http.GetFromJsonAsync<TeamFoldersResponse>("/api/v1/admin/team-folders"))!.TeamFolders;
+        using var content = await anna.Http.GetAsync($"/api/v1/spaces/{team.SpaceId}/snapshot");
+        var stars = (await anna.Http.GetFromJsonAsync<ItemsResponse>("/api/v1/stars"))!;
+        using var recreated = await admin.Http.PostAsJsonAsync("/api/v1/admin/team-folders", new NameRequest(name));
+
+        Assert.Equal((HttpStatusCode.Forbidden, HttpStatusCode.NotFound), (byAnna.StatusCode, ownSpace.StatusCode));
+        Assert.Equal((HttpStatusCode.NoContent, HttpStatusCode.NotFound), (deleted.StatusCode, again.StatusCode));
+        Assert.DoesNotContain(listed, t => t.SpaceId == team.SpaceId);
+        Assert.Null(await SeesAsync(anna, team.SpaceId));
+        Assert.Equal(HttpStatusCode.NotFound, content.StatusCode);
+        Assert.Empty(stars.Items);
+        Assert.True(recreated.IsSuccessStatusCode); // der Name ist wieder frei
+        Assert.NotNull(await SeesAsync(anna, annasOwn)); // der eigene Space bleibt
+    }
 }

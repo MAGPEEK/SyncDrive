@@ -242,3 +242,23 @@ public sealed record SharingPolicies(
 /// mitgeschickten ab, hat sich etwas geändert.
 /// </summary>
 public sealed record AccountChangesResponse(string Stamp);
+
+/// <summary>Weboberfläche, „Desktop- und Mobil-Apps“ (<c>GET /web/apps</c>): wo es den Desktop-Client gibt.</summary>
+public sealed record ClientAppsInfo(string DesktopUrl);
+
+/// <summary>
+/// Anmeldung über einen externen Identitätsanbieter (OAuth 2.0, RFC 6749, Authorization Code mit PKCE, RFC 7636; Benutzer über den
+/// UserInfo-Endpunkt von OpenID Connect). Für Administratoren ohne Client-Secret: <see cref="HasClientSecret"/> sagt nur, ob eines gesetzt ist.
+/// <see cref="RedirectUri"/> ist die Adresse, die beim Anbieter eingetragen werden muss.
+/// </summary>
+public sealed record OAuthSettingsInfo(
+    bool Enabled, string DisplayName, string Issuer, string AuthorizationEndpoint, string TokenEndpoint, string UserInfoEndpoint,
+    string ClientId, bool HasClientSecret, string Scopes, string UserNameClaim, bool CreateUsers, string RedirectUri);
+
+/// <summary>Ändern der Anbindung. <see cref="ClientSecret"/>: null = unverändert lassen, leer = entfernen.</summary>
+public sealed record OAuthSettingsRequest(
+    bool Enabled, string? DisplayName, string? Issuer, string? AuthorizationEndpoint, string? TokenEndpoint, string? UserInfoEndpoint,
+    string? ClientId, string? ClientSecret, string? Scopes, string? UserNameClaim, bool CreateUsers);
+
+/// <summary>Anmeldeseite (ohne Anmeldung lesbar): ob es den Knopf „Anmelden mit …“ gibt und wie er heißt.</summary>
+public sealed record OAuthLoginInfo(bool Enabled, string DisplayName);

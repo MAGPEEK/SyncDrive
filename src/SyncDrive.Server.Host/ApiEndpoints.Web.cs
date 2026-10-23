@@ -37,10 +37,12 @@ public static partial class ApiEndpoints
         secured.MapGet("/web/session", async (HttpContext http, AccountService accounts, CancellationToken ct) =>
             Results.Ok(new WebSessionInfo(await accounts.UserNameOfAsync(Caller(http).UserId, ct) ?? "?", Caller(http).IsAdmin)));
         secured.MapDelete("/web/session", SignOutWeb);
+        secured.MapGet("/web/apps", (IOptions<ServerOptions> options) => Results.Ok(new ClientAppsInfo(options.Value.DesktopClientUrl)));
         secured.MapGet("/account/storage", async (HttpContext http, AdminService admin, CancellationToken ct) =>
             Results.Ok(await admin.StorageOfAsync(Caller(http).UserId, ct)));
         secured.MapGet("/account/changes/wait", WaitForAccountChanges);
         secured.MapGet("/spaces/{spaceId}/download", Download);
+        secured.MapGet("/spaces/{spaceId}/view", View);
         secured.MapGet("/spaces/{spaceId}/zip", Zip);
         secured.MapGet("/spaces/{spaceId}/thumbnail", (string spaceId, string? path, string? size, HttpContext http, PreviewService previews, CancellationToken ct) =>
             WithView(http, spaceId, SpaceRole.Previewer, async view =>
@@ -214,6 +216,46 @@ public static partial class ApiEndpoints
         }, ct);
 
     /// <summary>
+    /// Ansehen im Browser (Doppelklick in der Weboberfläche): nur PDF, als <c>inline</c> mit festem Inhaltstyp, damit der eingebaute
+    /// PDF-Betrachter sie zeigt. Andere Formate liefern 415, damit nie hochgeladenes HTML oder SVG im Kontext der Seite läuft. Einbetten
+    /// darf nur die eigene Oberfläche.
+    /// </summary>
+    private static Task<IResult> View(string spaceId, string? path, HttpContext http, SpaceService spaces, CancellationToken ct) =>
+        WithView(http, spaceId, SpaceRole.Viewer, async view =>
+        {
+            if (!string.Equals(System.IO.Path.GetExtension(path), ".pdf", StringComparison.OrdinalIgnoreCase))
+            {
+                return Results.StatusCode(StatusCodes.Status415UnsupportedMediaType);
+            }
+
+            var found = await view.GetNodeAsync(path ?? string.Empty, ct);
+            if (!found.IsSuccess || found.Value!.Node.Deleted || found.Value.Node.Kind != NodeKinds.File)
+            {
+                return Problem(found.Error ?? new ServiceError(ErrorCode.NotFound, "Keine Datei."));
+            }
+
+            var node = found.Value;
+            var name = node.Node.Path[(node.Node.Path.LastIndexOf('/') + 1)..];
+            http.Response.Headers.ContentDisposition = new System.Net.Mime.ContentDisposition { Inline = true, FileName = name }.ToString();
+            http.Response.Headers.ContentSecurityPolicy = "frame-ancestors 'self'";
+            http.Response.Headers.XFrameOptions = "SAMEORIGIN";
+            http.Response.Headers.XContentTypeOptions = "nosniff";
+            http.Response.Headers.CacheControl = "private, no-cache";
+            http.Response.ContentLength = node.Node.Size;
+            return Results.Stream(async body => await CopyBlocksAsync(body, spaces, node.Blocks, ct), "application/pdf");
+        }, ct);
+
+    private static async Task CopyBlocksAsync(Stream body, SpaceService spaces, IReadOnlyList<string> blocks, CancellationToken ct)
+    {
+        foreach (var hash in blocks)
+        {
+            var block = await spaces.OpenStoredBlockAsync(hash, ct);
+            await using var content = block.Value ?? throw new IOException($"Block {hash} fehlt.");
+            await content.CopyToAsync(body, ct);
+        }
+    }
+
+    /// <summary>
     /// Ordner oder mehrere Elemente eines Ordners als ZIP (<c>?path=a&amp;path=b</c>), beim Senden gepackt. Ein Element heißt wie es selbst,
     /// mehrere wie ihr Ordner.
     /// </summary>
@@ -225,18 +267,7 @@ public static partial class ApiEndpoints
     internal static IResult FileResult(HttpContext http, SpaceService spaces, string path, long size, IReadOnlyList<string> blocks, CancellationToken ct)
     {
         http.Response.ContentLength = size;
-        return Results.Stream(
-            async body =>
-            {
-                foreach (var hash in blocks)
-                {
-                    var block = await spaces.OpenStoredBlockAsync(hash, ct);
-                    await using var content = block.Value ?? throw new IOException($"Block {hash} fehlt.");
-                    await content.CopyToAsync(body, ct);
-                }
-            },
-            "application/octet-stream",
-            path[(path.LastIndexOf('/') + 1)..]);
+        return Results.Stream(body => CopyBlocksAsync(body, spaces, blocks, ct), "application/octet-stream", path[(path.LastIndexOf('/') + 1)..]);
     }
 
     internal static IResult ZipResult(SpaceService spaces, ServiceResult<IReadOnlyList<ArchiveEntry>> plan, string fileName, CancellationToken ct) =>

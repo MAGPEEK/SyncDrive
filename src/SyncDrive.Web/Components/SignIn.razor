@@ -1,4 +1,5 @@
 @inject SessionViewModel Session
+@inject NavigationManager Navigation
 
 @* Anmeldeseite: mittig Logo und eine halbtransparente Karte („Bei <Server> anmelden“) mit Name, Passwort und einer breiten
    Schaltfläche; darunter der Text des Administrators. Hintergrund: das Bild des Administrators oder ein eigener Verlauf. *@
@@ -27,6 +28,16 @@
                 <span>@T.SignInButton</span>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
             </button>
+
+            @if (Session.OAuth.Enabled)
+            {
+                @* Anmeldung über den Identitätsanbieter der Organisation; der Server leitet weiter und wieder zurück *@
+                <div class="portal-or"><span>@T.Or</span></div>
+                <a class="portal-oauth" href="@SessionViewModel.OAuthStartUrl">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z M9 12l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    <span>@string.Format(CultureInfo.CurrentCulture, T.SignInWith, Session.OAuth.DisplayName)</span>
+                </a>
+            }
         </form>
 
         @if (Session.Portal.LoginMessage is { } message)
@@ -45,6 +56,18 @@
     private WebTexts T => Session.Texts;
 
     private string? BackgroundStyle => Session.Portal.BackgroundUrl is { } url ? $"background-image:url('{url}')" : null;
+
+    /// <summary>Rückkehr vom Identitätsanbieter mit Fehler: Code anzeigen und aus der Adresse nehmen (Neuladen zeigt ihn nicht erneut).</summary>
+    protected override void OnInitialized()
+    {
+        var query = new Uri(Navigation.Uri).Query;
+        var code = System.Web.HttpUtility.ParseQueryString(query)["signin_error"];
+        if (code is not null)
+        {
+            Session.ShowRefusal(code);
+            Navigation.NavigateTo(Navigation.BaseUri, replace: true);
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

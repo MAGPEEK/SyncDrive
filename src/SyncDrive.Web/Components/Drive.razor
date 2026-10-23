@@ -85,6 +85,7 @@
                     <button class="menu-item" @onclick="() => Account.RemoveAvatarAsync(Token)">@T.RemovePicture</button>
                 }
                 <button class="menu-item" @onclick="() => { _accountOpen = false; _devicesOpen = true; }">@T.ClientList</button>
+                <button class="menu-item" @onclick="() => { _accountOpen = false; _appsOpen = true; }">@T.GetApps</button>
                 <div class="menu-line"></div>
                 <ThemeSwitch Texts="T" />
                 <div class="menu-line"></div>
@@ -269,6 +270,10 @@
     {
         <DevicesDialog Token="Token" OnClose="() => _devicesOpen = false" />
     }
+    @if (_appsOpen)
+    {
+        <AppsDialog Token="Token" OnClose="() => _appsOpen = false" />
+    }
 
     @if (_labelDialogFor is { } targets)
     {
@@ -316,6 +321,7 @@
     private bool _versionsOpen;
     private bool _portalOpen;
     private bool _devicesOpen;
+    private bool _appsOpen;
     private IReadOnlyList<LocatedItem>? _labelDialogFor;
     private LabelInfo? _deleteLabel;
     private LocatedItem? _shareFor;

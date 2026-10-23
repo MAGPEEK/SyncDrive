@@ -4,6 +4,15 @@ window.syncDrive = {
     relativePaths: input => Array.from(input.files, f => f.webkitRelativePath || f.name),
     // Tastenkürzel öffnen die Dateiauswahl wie ein Klick (Element per id, damit es auch außerhalb der Komponente gefunden wird).
     click: id => document.getElementById(id)?.click(),
+    // Doppelklick auf eine Datei, die sich nicht anzeigen lässt: herunterladen wie über den Knopf.
+    download: (url, name) => {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+    },
     // Hell/Dunkel: Wahl „system“, „light“ oder „dark“ je Browser; am html-Element steht immer das Ergebnis (light/dark), bei „system“ nach
     // der Einstellung des Betriebssystems, auch wenn sie sich ändert. Ohne Speicher (privates Fenster) gilt „system“.
     theme: {

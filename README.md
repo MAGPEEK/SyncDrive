@@ -84,6 +84,7 @@ Environment variables of the container:
 | `SYNCDRIVE_Server__BackupDirectory` | — (off) | Target of the nightly backup, ideally another disk |
 | `SYNCDRIVE_Server__BackupTime` | `02:30` | Time of the backup (`HH:mm`, in `TZ`) |
 | `SYNCDRIVE_Server__BackupsToKeep` | `7` | Number of database snapshots kept |
+| `SYNCDRIVE_Server__DesktopClientUrl` | project release page | Download link for the desktop client shown in the web interface |
 | `SYNCDRIVE_Server__MaxPublicUploadBytes` | `4294967296` | Largest file upload via file request link (4 GiB) |
 | `SYNCDRIVE_Server__MaxLongPollSeconds` | `60` | Longest wait for change notifications; keep below a proxy's timeout |
 | `TZ` | `UTC` | Time zone |

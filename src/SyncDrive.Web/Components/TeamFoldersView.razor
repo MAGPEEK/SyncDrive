@@ -5,6 +5,7 @@
 <div class="toolbar">
     <button class="primary" @onclick="() => Open(Dialog.New)">＋ @T.NewTeamFolder</button>
     <button class="tool" disabled="@(Teams.SelectedTeam is null)" @onclick="() => Open(Dialog.Rename)">✎ @T.Rename</button>
+    <button class="tool" disabled="@(Teams.SelectedTeam is null)" @onclick="() => Open(Dialog.Delete)">🗑 @T.DeleteTeamFolder</button>
 </div>
 <div class="admin-split">
     <div class="list">
@@ -80,15 +81,32 @@
 {
     <div class="backdrop">
         <form class="dialog" @onsubmit="SubmitAsync" @onsubmit:preventDefault>
-            <h2>@(_dialog == Dialog.New ? T.NewTeamFolder : T.Rename)</h2>
-            <label><span>@T.Name</span><input @ref="_input" @bind="_name" @bind:event="oninput" maxlength="64" /></label>
+            @if (_dialog == Dialog.Delete)
+            {
+                @* Endgültig und für alle Mitglieder: zur Bestätigung den Namen eintippen *@
+                <h2>@T.DeleteTeamFolder</h2>
+                <p>@string.Format(CultureInfo.CurrentCulture, T.ConfirmDeleteTeamFolder, Teams.SelectedTeam?.Name)</p>
+                <label><span>@T.TypeNameToConfirm</span><input @ref="_input" @bind="_name" @bind:event="oninput" maxlength="64" autocomplete="off" /></label>
+            }
+            else
+            {
+                <h2>@(_dialog == Dialog.New ? T.NewTeamFolder : T.Rename)</h2>
+                <label><span>@T.Name</span><input @ref="_input" @bind="_name" @bind:event="oninput" maxlength="64" /></label>
+            }
             @if (Teams.Message is { } message)
             {
                 <div class="dialog-error" role="alert">@message</div>
             }
             <div class="dialog-buttons">
                 <button type="button" @onclick="Close">@T.Cancel</button>
-                <button type="submit" class="primary" disabled="@string.IsNullOrWhiteSpace(_name)">@T.Ok</button>
+                @if (_dialog == Dialog.Delete)
+                {
+                    <button type="submit" class="primary danger" disabled="@(_name.Trim() != Teams.SelectedTeam?.Name)">@T.Delete</button>
+                }
+                else
+                {
+                    <button type="submit" class="primary" disabled="@string.IsNullOrWhiteSpace(_name)">@T.Ok</button>
+                }
             </div>
         </form>
     </div>
@@ -104,6 +122,7 @@ else
         None,
         New,
         Rename,
+        Delete,
     }
 
     private Dialog _dialog;
@@ -151,9 +170,12 @@ else
 
     private async Task SubmitAsync()
     {
-        var ok = _dialog == Dialog.New
-            ? await Teams.CreateTeamFolderAsync(_name, Token)
-            : await Teams.RenameTeamFolderAsync(Teams.SelectedTeam!, _name, Token);
+        var ok = _dialog switch
+        {
+            Dialog.New => await Teams.CreateTeamFolderAsync(_name, Token),
+            Dialog.Delete => _name.Trim() == Teams.SelectedTeam?.Name && await Teams.DeleteTeamFolderAsync(Teams.SelectedTeam!, Token),
+            _ => await Teams.RenameTeamFolderAsync(Teams.SelectedTeam!, _name, Token),
+        };
         if (ok)
         {
             _dialog = Dialog.None;

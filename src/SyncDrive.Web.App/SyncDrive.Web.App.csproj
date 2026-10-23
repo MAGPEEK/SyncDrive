@@ -12,4 +12,9 @@
     <ProjectReference Include="..\SyncDrive.Core\SyncDrive.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Markdig" Version="0.38.0" />
+    <PackageReference Include="QRCoder" Version="1.6.0" />
+  </ItemGroup>
+
 </Project>
