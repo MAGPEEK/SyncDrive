@@ -21,6 +21,7 @@ builder.Services.AddScoped<LiveUpdatesViewModel>();
 builder.Services.AddScoped<AppsViewModel>();
 builder.Services.AddScoped<ViewerViewModel>();
 builder.Services.AddScoped<OAuthViewModel>();
+builder.Services.AddScoped<FolderPickerViewModel>();
 builder.Services.AddScoped<SearchViewModel>();
 builder.Services.AddScoped<RecentViewModel>();
 builder.Services.AddScoped<TrashViewModel>();

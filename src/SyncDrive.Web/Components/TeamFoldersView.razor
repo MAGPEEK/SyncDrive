@@ -42,7 +42,7 @@
             @foreach (var member in selected.Members)
             {
                 <div class="invitee">
-                    <span class="category-icon">@(member.Kind == "group" ? "👥" : "👤")</span>
+                    <Icon Class="category-icon" Name="@(member.Kind == "group" ? "people" : "person")" />
                     <span class="name">@member.Name</span>
                     <select value="@member.Role" aria-label="@T.Access"
                             @onchange="e => Teams.SetMemberAsync(selected, member.Kind, member.Id, e.Value?.ToString() ?? member.Role, Token)">

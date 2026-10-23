@@ -1,0 +1,37 @@
+@inject IDriveApi Api
+@inject WebTexts T
+
+@* Organisationseinstellungen → Info: Produkt, Version von Server und Weboberfläche, Lizenz. *@
+<div class="policies info-view">
+    <div class="info-head">
+        <Logo Size="48" />
+        <div>
+            <h2>SyncDrive</h2>
+            <p class="sub">@T.InfoAbout</p>
+        </div>
+    </div>
+    <dl class="info-list">
+        <dt>@T.ServerVersion</dt>
+        <dd>@(_server?.Version ?? "…")</dd>
+        <dt>@T.WebVersion</dt>
+        <dd>@ProductVersion.Current</dd>
+        <dt>@T.License</dt>
+        <dd>MIT</dd>
+    </dl>
+</div>
+
+@code {
+    private ServerInfo? _server;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _server = await Api.GetServerInfoAsync(CancellationToken.None);
+        }
+        catch (Exception e) when (e is DriveException or HttpRequestException)
+        {
+            _server = new ServerInfo("SyncDrive", "?");
+        }
+    }
+}

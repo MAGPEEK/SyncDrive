@@ -107,23 +107,23 @@
             </button>
         }
         <button class="category @(SharedWithMeActive ? "active" : "")" @onclick="ShowSharedWithMeAsync">
-            <span class="category-icon">👥</span><span>@T.SharedWithMe</span>
+            <Icon Class="category-icon" Name="people" /><span>@T.SharedWithMe</span>
         </button>
         <button class="category @(_view == View.SharedByMe ? "active" : "")" @onclick="() => ShowSharedByMeAsync(View.SharedByMe)">
-            <span class="category-icon">🔗</span><span>@T.SharedWithOthers</span>
+            <Icon Class="category-icon" Name="link" /><span>@T.SharedWithOthers</span>
         </button>
         <button class="category @(_view == View.FileRequests ? "active" : "")" @onclick="() => ShowSharedByMeAsync(View.FileRequests)">
-            <span class="category-icon">📥</span><span>@T.FileRequests</span>
+            <Icon Class="category-icon" Name="inbox" /><span>@T.FileRequests</span>
         </button>
         <div class="category-line"></div>
         <button class="category @(_view == View.Recent ? "active" : "")" @onclick="ShowRecentAsync">
-            <span class="category-icon">🕘</span><span>@T.Recent</span>
+            <Icon Class="category-icon" Name="clock" /><span>@T.Recent</span>
         </button>
         <button class="category @(_view == View.Starred ? "active" : "")" @onclick="ShowStarredAsync">
-            <span class="category-icon">★</span><span>@T.Starred</span>
+            <Icon Class="category-icon" Name="star" /><span>@T.Starred</span>
         </button>
         <button class="category @(_view == View.Trash ? "active" : "")" @onclick="() => Show(View.Trash)">
-            <span class="category-icon">🗑</span><span>@T.RecycleBin</span>
+            <Icon Class="category-icon" Name="trash" /><span>@T.RecycleBin</span>
         </button>
         <div class="category-heading with-action">
             <span>@T.MyLabels</span>

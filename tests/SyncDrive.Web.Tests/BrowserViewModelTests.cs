@@ -286,4 +286,35 @@ public sealed class BrowserViewModelTests(HostFactory factory) : IClassFixture<H
         Assert.True(signedOut);
         Assert.Equal(HttpStatusCode.Unauthorized, (await page.Http.GetAsync("api/v1/web/session")).StatusCode);
     }
+
+    [Fact]
+    public async Task Items_are_copied_and_moved_into_a_chosen_folder_but_never_into_themselves()
+    {
+        var page = await OpenPageAsync();
+        var browser = page.Browser;
+        await browser.CreateFolderAsync("Archiv", default);
+        await browser.UploadAsync([File("bericht.txt", "Inhalt")], default);
+        var picker = new FolderPickerViewModel(page.Api, WebTexts.English);
+        var file = browser.Items.Single(i => i.Name == "bericht.txt");
+        var folder = browser.Items.Single(i => i.Name == "Archiv");
+
+        await picker.OpenAsync(browser.Space!, string.Empty, [file], move: false, null, default);
+        var folders = picker.Folders.Select(f => f.Name).ToList();
+        await picker.NavigateAsync("Archiv", default);
+        var copied = await picker.ConfirmAsync(default);
+        await picker.OpenAsync(browser.Space!, "Archiv", [file], move: true, null, default);
+        var movedOntoCopy = await picker.ConfirmAsync(default); // gleicher Name liegt schon dort
+        var conflict = picker.Message;
+        picker.Close();
+        await picker.OpenAsync(browser.Space!, "Archiv", [folder], move: true, null, default);
+        var intoItself = picker.CanPlaceHere;
+        await browser.LoadAsync(default);
+        await browser.NavigateAsync("Archiv", default);
+
+        Assert.Equal(["Archiv"], folders);
+        Assert.True(copied);
+        Assert.Equal((false, WebTexts.English.NameTaken), (movedOntoCopy, conflict));
+        Assert.False(intoItself);
+        Assert.Equal(["bericht.txt"], browser.Items.Select(i => i.Name));
+    }
 }

@@ -177,6 +177,11 @@ public sealed class BrowserViewModel(IDriveApi api, WebTexts texts) : ViewModel(
 
     public string DownloadUrl(DriveItem item) => api.DownloadUrl(Space!.Id, item.Path);
 
+    /// <summary>„In neuem Tab öffnen“: PDF und Bilder liefert der Server zum Ansehen; null für alles andere.</summary>
+    public string? ViewUrl(DriveItem item) => ViewerViewModel.KindOf(item) is ViewerKind.Pdf or ViewerKind.Image
+        ? api.ViewUrl(Space!.Id, item.Path, item.Revision)
+        : null;
+
     private static readonly HashSet<string> ImageExtensions = new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp" };
     private readonly HashSet<string> _failedThumbnails = new(StringComparer.Ordinal);
 

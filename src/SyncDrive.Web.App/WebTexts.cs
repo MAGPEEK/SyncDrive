@@ -147,6 +147,28 @@ public sealed record WebTexts
     public required string OAuthRedirect { get; init; }
     public required string OAuthEndpoints { get; init; }
     public required string OAuthProvider { get; init; }
+    public required string Preview { get; init; }
+    public required string OpenInNewTab { get; init; }
+    public required string CopyTo { get; init; }
+    public required string MoveTo { get; init; }
+    public required string CopyHere { get; init; }
+    public required string MoveHere { get; init; }
+    public required string ChooseFolder { get; init; }
+    public required string NoSubfolders { get; init; }
+    public required string CannotPlaceInside { get; init; }
+    public required string Copied { get; init; }
+    public required string Moved { get; init; }
+    public required string Information { get; init; }
+    public required string VersionHistory { get; init; }
+    public required string MoreActions { get; init; }
+    public required string KindLabel { get; init; }
+    public required string FolderKind { get; init; }
+    public required string FileKind { get; init; }
+    public required string InfoTab { get; init; }
+    public required string ServerVersion { get; init; }
+    public required string WebVersion { get; init; }
+    public required string InfoAbout { get; init; }
+    public required string License { get; init; }
     public required string DeviceName { get; init; }
     public required string ClientType { get; init; }
     public required string Version { get; init; }
@@ -419,6 +441,28 @@ public sealed record WebTexts
         OAuthRedirect = "Redirect URI (register this at the provider)",
         OAuthEndpoints = "Endpoints",
         OAuthProvider = "Identity provider",
+        Preview = "Preview",
+        OpenInNewTab = "Open in new tab",
+        CopyTo = "Copy to …",
+        MoveTo = "Move to …",
+        CopyHere = "Copy here",
+        MoveHere = "Move here",
+        ChooseFolder = "Choose a folder",
+        NoSubfolders = "No subfolders",
+        CannotPlaceInside = "A folder cannot be placed inside itself.",
+        Copied = "{0} item(s) copied.",
+        Moved = "{0} item(s) moved.",
+        Information = "Information",
+        VersionHistory = "Version history",
+        MoreActions = "More actions",
+        KindLabel = "Type",
+        FolderKind = "Folder",
+        FileKind = "{0} file",
+        InfoTab = "Info",
+        ServerVersion = "Server version",
+        WebVersion = "Web interface version",
+        InfoAbout = "SyncDrive – file sync with your own server. Desktop client for Windows, web interface and server in a Linux container.",
+        License = "License",
         DeviceName = "Device name",
         ClientType = "Client type",
         Version = "Version",
@@ -690,6 +734,28 @@ public sealed record WebTexts
         OAuthRedirect = "Rücksprungadresse (beim Anbieter eintragen)",
         OAuthEndpoints = "Endpunkte",
         OAuthProvider = "Identitätsanbieter",
+        Preview = "Vorschau",
+        OpenInNewTab = "In neuem Tab öffnen",
+        CopyTo = "Kopieren nach …",
+        MoveTo = "Verschieben nach …",
+        CopyHere = "Hierher kopieren",
+        MoveHere = "Hierher verschieben",
+        ChooseFolder = "Ordner wählen",
+        NoSubfolders = "Keine Unterordner",
+        CannotPlaceInside = "Ein Ordner kann nicht in sich selbst liegen.",
+        Copied = "{0} Element(e) kopiert.",
+        Moved = "{0} Element(e) verschoben.",
+        Information = "Informationen",
+        VersionHistory = "Versionsverlauf",
+        MoreActions = "Weitere Aktionen",
+        KindLabel = "Art",
+        FolderKind = "Ordner",
+        FileKind = "{0}-Datei",
+        InfoTab = "Info",
+        ServerVersion = "Version des Servers",
+        WebVersion = "Version der Weboberfläche",
+        InfoAbout = "SyncDrive – Dateisynchronisation mit dem eigenen Server. Desktop-Client für Windows, Weboberfläche und Server im Linux-Container.",
+        License = "Lizenz",
         DeviceName = "Gerätename",
         ClientType = "Client-Typ",
         Version = "Version",

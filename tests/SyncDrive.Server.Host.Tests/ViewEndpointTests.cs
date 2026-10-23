@@ -31,6 +31,12 @@ public class ViewEndpointTests(HostFactory factory) : IClassFixture<HostFactory>
         var pdf = "%PDF-1.4\n%Test\n"u8.ToArray();
         await PutAsync(anna, space, "Bericht.pdf", pdf);
         await PutAsync(anna, space, "seite.html", "<script>alert(1)</script>"u8.ToArray());
+        await PutAsync(anna, space, "bild.svg", "<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>"u8.ToArray());
+        await PutAsync(anna, space, "foto.png", [0x89, 0x50, 0x4E, 0x47]);
+        using var svg = await anna.Http.GetAsync($"/api/v1/spaces/{space}/view?path=bild.svg");
+        using var png = await anna.Http.GetAsync($"/api/v1/spaces/{space}/view?path=foto.png");
+        Assert.Equal(HttpStatusCode.UnsupportedMediaType, svg.StatusCode); // SVG könnte Skript enthalten
+        Assert.Equal(("image/png", "inline"), (png.Content.Headers.ContentType?.MediaType, png.Content.Headers.ContentDisposition?.DispositionType));
 
         using var view = await anna.Http.GetAsync($"/api/v1/spaces/{space}/view?path=Bericht.pdf");
         using var html = await anna.Http.GetAsync($"/api/v1/spaces/{space}/view?path=seite.html");

@@ -23,7 +23,7 @@
         @foreach (var group in Teams.Groups)
         {
             <div class="row item admin-groups @(group.Id == Teams.SelectedGroup?.Id ? "selected" : "")" @onclick="() => Teams.Select(group)">
-                <span class="col-title"><span class="category-icon">👥</span><span class="name">@group.Name</span></span>
+                <span class="col-title"><Icon Class="category-icon" Name="people" /><span class="name">@group.Name</span></span>
                 <span class="sub">@group.Members.Count</span>
             </div>
         }

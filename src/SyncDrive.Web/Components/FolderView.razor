@@ -3,6 +3,7 @@
 @inject MarksViewModel Marks
 @inject IJSRuntime Js
 @inject ViewerViewModel Viewer
+@inject FolderPickerViewModel Picker
 
 @* Ordneransicht („My Drive“ und geteilte Spaces): Symbolleiste, Liste mit Auswahl, Kontextmenü, Dialoge, Hochladen. Logik im BrowserViewModel. *@
 <div class="view" @onclick="CloseMenus" @onkeydown="CreateKeyAsync">
@@ -32,29 +33,72 @@
         </div>
         <InputFile id="@FilesInputId" OnChange="UploadAsync" multiple disabled="@(!Browser.CanWrite)" class="hidden-input" />
         <InputFile @ref="_folderInput" id="@FolderInputId" OnChange="UploadFolderAsync" multiple webkitdirectory disabled="@(!Browser.CanWrite)" class="hidden-input" />
-        <label class="tool @(Browser.CanWrite ? "" : "disabled")" for="@FilesInputId" title="@T.UploadFiles">⤒ @T.Upload</label>
-        @if (Browser.SelectionDownloadUrl is { } download)
-        {
-            <a class="tool" href="@download" download="@Browser.SelectionDownloadName">⤓ @T.Download</a>
-        }
-        else
-        {
-            <span class="tool disabled">⤓ @T.Download</span>
-        }
-        @if (Browser.CanShare)
-        {
-            <button class="tool" disabled="@(Browser.SelectedItems is not [_])" @onclick="() => ShareAsync(OnShare, Browser.SelectedItems[0])">👤 @T.Share</button>
-        }
-        <div class="create-wrap">
-            <button class="tool" disabled="@(Browser.Selected.Count == 0)" @onclick="ToggleLabels" @onclick:stopPropagation><svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M3 4v7.2c0 .5.2 1 .6 1.4l7.8 7.8a2 2 0 0 0 2.8 0l6.4-6.4a2 2 0 0 0 0-2.8L12.8 3.6c-.4-.4-.9-.6-1.4-.6H4a1 1 0 0 0-1 1Zm4.5 2a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z" /></svg> @T.Labels</button>
-            @if (_labelsOpen)
+        @* Nur Symbole in runden Knöpfen; was ein Knopf tut, steht beim Darüberfahren darunter (data-tip, CSS). *@
+        <div class="icon-bar">
+            <label class="icon-button @(Browser.CanWrite ? "" : "disabled")" for="@FilesInputId" data-tip="@T.UploadFiles" aria-label="@T.UploadFiles"><Icon Name="upload" /></label>
+            @if (Browser.SelectionDownloadUrl is { } download)
             {
-                <LabelMenu Class="create-menu" Items="Browser.SelectedLocated" Token="Token" OnNewLabel="NewLabelAsync" OnDone="CloseMenus" />
+                <a class="icon-button" href="@download" download="@Browser.SelectionDownloadName" data-tip="@T.Download" aria-label="@T.Download"><Icon Name="download" /></a>
             }
+            else
+            {
+                <span class="icon-button disabled" data-tip="@T.Download" aria-label="@T.Download"><Icon Name="download" /></span>
+            }
+            @if (Browser.CanShare)
+            {
+                <button class="icon-button" disabled="@(Browser.SelectedItems is not [_])" data-tip="@T.Share" aria-label="@T.Share"
+                        @onclick="() => ShareAsync(OnShare, Browser.SelectedItems[0])"><Icon Name="share" /></button>
+            }
+            <div class="create-wrap">
+                <button class="icon-button" disabled="@(Browser.Selected.Count == 0)" data-tip="@T.Labels" aria-label="@T.Labels"
+                        @onclick="ToggleLabels" @onclick:stopPropagation><Icon Name="label" /></button>
+                @if (_labelsOpen)
+                {
+                    <LabelMenu Class="create-menu" Items="Browser.SelectedLocated" Token="Token" OnNewLabel="NewLabelAsync" OnDone="CloseMenus" />
+                }
+            </div>
+            <button class="icon-button" disabled="@(!Browser.CanWrite || Browser.Selected.Count == 0)" data-tip="@T.CopyTo" aria-label="@T.CopyTo"
+                    @onclick="() => OpenPickerAsync(move: false)"><Icon Name="copy" /></button>
+            <button class="icon-button" disabled="@(!Browser.CanWrite || Browser.Selected.Count == 0)" data-tip="@T.Delete" aria-label="@T.Delete"
+                    @onclick="() => OpenDialog(Dialog.Delete)"><Icon Name="delete" /></button>
+            <div class="create-wrap">
+                <button class="icon-button" disabled="@(Browser.Selected.Count == 0)" data-tip="@T.MoreActions" aria-label="@T.MoreActions"
+                        aria-expanded="@(_moreOpen ? "true" : "false")" @onclick="ToggleMore" @onclick:stopPropagation><Icon Name="more" /></button>
+                @if (_moreOpen && Browser.SelectedItems is [var first, ..])
+                {
+                    var single = Browser.SelectedItems.Count == 1;
+                    <div class="menu create-menu more-menu" role="menu" @onclick:stopPropagation>
+                        @if (single && !first.IsFolder && ViewerViewModel.KindOf(first) != ViewerKind.None)
+                        {
+                            <button class="menu-item" @onclick="() => OpenItemAsync(first)">@T.Preview</button>
+                        }
+                        @if (single && Browser.ViewUrl(first) is { } tabUrl)
+                        {
+                            <a class="menu-item" href="@tabUrl" target="_blank" rel="noopener noreferrer" @onclick="CloseMenus">@T.OpenInNewTab</a>
+                        }
+                        @if (Browser.CanWrite)
+                        {
+                            <div class="menu-line"></div>
+                            <button class="menu-item" @onclick="() => OpenPickerAsync(move: false)">@T.CopyTo</button>
+                            <button class="menu-item" @onclick="() => OpenPickerAsync(move: true)">@T.MoveTo</button>
+                            <button class="menu-item" disabled="@(!single)" @onclick="() => OpenDialog(Dialog.Rename)">@T.Rename</button>
+                        }
+                        <div class="menu-line"></div>
+                        <button class="menu-item" @onclick="ToggleSelectionStarAsync">@(Marks.AllStarred(Browser.SelectedLocated) ? T.RemoveStar : T.AddStar)</button>
+                        <div class="menu-line"></div>
+                        <button class="menu-item" disabled="@(!single)" @onclick="() => ShowInfo(first)">@T.Information</button>
+                        @if (!first.IsFolder)
+                        {
+                            <button class="menu-item" disabled="@(!single)" @onclick="() => ShowVersionsAsync(first)">@T.VersionHistory</button>
+                        }
+                        @if (Browser.SelectionDownloadUrl is { } moreDownload)
+                        {
+                            <a class="menu-item" href="@moreDownload" download="@Browser.SelectionDownloadName" @onclick="CloseMenus">@T.Download</a>
+                        }
+                    </div>
+                }
+            </div>
         </div>
-        <button class="tool" disabled="@(!Browser.CanWrite || Browser.Selected.Count != 1)" @onclick="() => OpenDialog(Dialog.Rename)">✎ @T.Rename</button>
-        <button class="tool" disabled="@(!Browser.CanWrite || Browser.Selected.Count == 0)" @onclick="() => OpenDialog(Dialog.Delete)">🗑 @T.Delete</button>
-        <button class="tool" disabled="@(SingleFile is null)" @onclick="() => ShowVersionsAsync(SingleFile!)">🕘 @T.Versions</button>
         <div class="toolbar-fill"></div>
         @if (Browser.Selected.Count > 0)
         {
@@ -145,7 +189,10 @@
             {
                 <div class="menu-line"></div>
                 <button class="menu-item" disabled="@(Browser.Selected.Count != 1)" @onclick="() => OpenDialog(Dialog.Rename)">@T.Rename</button>
+                <button class="menu-item" @onclick="() => OpenPickerAsync(move: false)">@T.CopyTo</button>
+                <button class="menu-item" @onclick="() => OpenPickerAsync(move: true)">@T.MoveTo</button>
             }
+            <button class="menu-item" disabled="@(Browser.Selected.Count != 1)" @onclick="() => ShowInfo(context)">@T.Information</button>
             <div class="menu-line"></div>
             <button class="menu-item" @onclick="ToggleSelectionStarAsync">@(Marks.AllStarred(Browser.SelectedLocated) ? T.RemoveStar : T.AddStar)</button>
             <div class="submenu-wrap">
@@ -169,6 +216,76 @@
                 <div class="menu-line"></div>
                 <button class="menu-item danger" @onclick="() => OpenDialog(Dialog.Delete)">@T.Delete</button>
             }
+        </div>
+    }
+
+    @if (Picker.IsOpen)
+    {
+        @* Zielordner für Kopieren/Verschieben: Pfadleiste oben, darunter die Unterordner zum Betreten *@
+        <div class="backdrop" @onclick="Picker.Close">
+            <div class="dialog picker-dialog" role="dialog" aria-modal="true" aria-label="@T.ChooseFolder" @onclick:stopPropagation>
+                <h2>@(Picker.IsMove ? T.MoveTo : T.CopyTo)</h2>
+                <nav class="picker-crumbs">
+                    @foreach (var (label, path) in Picker.Crumbs)
+                    {
+                        <button class="crumb-button" @onclick="() => Picker.NavigateAsync(path, Token)">@label</button>
+                        <span class="crumb-sep">›</span>
+                    }
+                </nav>
+                <div class="picker-list">
+                    @if (Picker.State == ListState.Loading)
+                    {
+                        <div class="list-note">@T.Loading</div>
+                    }
+                    else if (Picker.Folders.Count == 0)
+                    {
+                        <div class="list-note">@T.NoSubfolders</div>
+                    }
+                    @foreach (var folder in Picker.Folders.Where(f => !Picker.IsHidden(f)))
+                    {
+                        <button class="picker-folder" @onclick="() => Picker.NavigateAsync(folder.Path, Token)">
+                            <FileIcon Folder="true" Name="" /><span class="name">@folder.Name</span><span class="submenu-arrow">›</span>
+                        </button>
+                    }
+                </div>
+                @if (Picker.Message is { } pickerMessage)
+                {
+                    <div class="dialog-error" role="alert">@pickerMessage</div>
+                }
+                <div class="dialog-buttons">
+                    <button type="button" @onclick="Picker.Close">@T.Cancel</button>
+                    <button type="button" class="primary" disabled="@(!Picker.CanPlaceHere)" @onclick="ConfirmPickerAsync">@(Picker.IsMove ? T.MoveHere : T.CopyHere)</button>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <Toast Model="Picker" />
+    }
+
+    @if (_infoItem is { } info)
+    {
+        <div class="backdrop" @onclick="() => _infoItem = null">
+            <div class="dialog info-dialog" role="dialog" aria-modal="true" aria-label="@T.Information" @onclick:stopPropagation>
+                <h2><FileIcon Folder="info.IsFolder" Name="@info.Name" /> @info.Name</h2>
+                <dl class="info-list">
+                    <dt>@T.KindLabel</dt>
+                    <dd>@(info.IsFolder ? T.FolderKind : string.Format(CultureInfo.CurrentCulture, T.FileKind, System.IO.Path.GetExtension(info.Name).TrimStart('.').ToUpperInvariant()))</dd>
+                    @if (!info.IsFolder)
+                    {
+                        <dt>@T.Size</dt>
+                        <dd>@WebTexts.FormatSize(info.Size)@(info.Size >= 1024 ? $" ({info.Size.ToString("N0", CultureInfo.CurrentCulture)} B)" : string.Empty)</dd>
+                    }
+                    <dt>@T.Location</dt>
+                    <dd>@(Browser.Space is { } infoSpace ? Browser.SpaceLabel(infoSpace) : string.Empty)/@info.Path</dd>
+                    <dt>@T.ModifiedTime</dt>
+                    <dd>@info.Modified.ToLocalTime().ToString("F", CultureInfo.CurrentCulture)</dd>
+                </dl>
+                <div class="dialog-buttons">
+                    <button type="button" class="primary" @onclick="() => _infoItem = null">@T.Close</button>
+                </div>
+            </div>
         </div>
     }
 
@@ -289,6 +406,7 @@
     {
         Browser.Changed += Refresh;
         Marks.Changed += Refresh;
+        Picker.Changed += Refresh;
     }
 
     /// <summary>Stern in der Zeile: nur dieses Element, die Auswahl bleibt.</summary>
@@ -299,6 +417,42 @@
         var items = Browser.SelectedLocated;
         CloseMenus();
         await Marks.ToggleStarAsync(items, Token);
+    }
+
+    private bool _moreOpen;
+    private DriveItem? _infoItem;
+
+    private void ToggleMore()
+    {
+        var open = !_moreOpen;
+        CloseMenus();
+        _moreOpen = open;
+    }
+
+    /// <summary>„Kopieren nach …“ / „Verschieben nach …“ für die Auswahl; Start im aktuellen Ordner.</summary>
+    private async Task OpenPickerAsync(bool move)
+    {
+        var items = Browser.SelectedItems;
+        CloseMenus();
+        if (Browser.Space is { } space && items.Count > 0)
+        {
+            await Picker.OpenAsync(space, Browser.Path, items, move, Browser.SpaceLabel(space), Token);
+        }
+    }
+
+    private async Task ConfirmPickerAsync()
+    {
+        if (await Picker.ConfirmAsync(Token))
+        {
+            await Browser.LoadAsync(Token);
+            _focusList = true;
+        }
+    }
+
+    private void ShowInfo(DriveItem item)
+    {
+        CloseMenus();
+        _infoItem = item;
     }
 
     private void ToggleLabels()
@@ -374,7 +528,7 @@
         _contextItem = item;
         _menuX = e.ClientX;
         _menuY = e.ClientY;
-        _createOpen = _labelsOpen = _contextLabels = false;
+        _createOpen = _labelsOpen = _contextLabels = _moreOpen = false;
     }
 
     private void CloseMenus()
@@ -383,6 +537,7 @@
         _createOpen = false;
         _labelsOpen = false;
         _contextLabels = false;
+        _moreOpen = false;
     }
 
     private void ToggleCreate()
@@ -526,5 +681,6 @@
     {
         Browser.Changed -= Refresh;
         Marks.Changed -= Refresh;
+        Picker.Changed -= Refresh;
     }
 }

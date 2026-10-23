@@ -5,6 +5,26 @@ Alle nennenswerten Änderungen an SyncDrive. Format nach [Keep a Changelog](http
 Korrekturen heben PATCH. Die Version steht an einer Stelle (`04-umsetzung/Directory.Build.props`); ein Test prüft, dass sie mit dem obersten
 Eintrag hier übereinstimmt. Jede Version bekommt ein Git-Tag `vX.Y.Z`. Die Versionen 0.1.0 bis 0.11.0 wurden nachträglich vergeben.
 
+## [0.36.0] – 2026-10-23 – Symbolleiste, Menü „Weitere Aktionen“, Info
+
+### Geändert
+- Weboberfläche, Symbolleiste der Ordneransicht: nur noch **runde Symbolknöpfe** mit kräftigen, gefüllten Symbolen (Hochladen,
+  Herunterladen, Freigeben, Labels, Kopieren nach, Löschen, Weitere Aktionen). Was ein Knopf tut, steht beim Darüberfahren darunter.
+- Seitenleiste und Verwaltungslisten: eigene Vektorsymbole statt Emojis (Mit mir geteilt, Von mir geteilt, Dateianfragen, Zuletzt,
+  Favoriten, Papierkorb, Personen, Gruppen); besser lesbar, auch im dunklen Design.
+
+### Hinzugefügt
+- Menü **„⋯ Weitere Aktionen“**:
+  - Vorschau, In neuem Tab öffnen
+  - Kopieren nach …, Verschieben nach …, Umbenennen
+  - Stern hinzufügen/entfernen
+  - Informationen, Versionsverlauf, Herunterladen
+- **Kopieren nach / Verschieben nach:** Zielordner im selben Space über eine Pfadleiste wählen. Ein Ordner kann nicht in sich selbst
+  landen; gleiche Namen am Ziel werden gemeldet. Auch im Kontextmenü.
+- **Informationen** zu einem Element: Art, Größe, Ort, Änderungszeit.
+- Organisationseinstellungen, Reiter **„Info“**: Version von Server und Weboberfläche, Lizenz.
+- Server: `view` liefert neben PDF auch Rasterbilder inline (für „In neuem Tab öffnen“); SVG und HTML weiter nicht.
+
 ## [0.35.1] – 2026-10-23 – Build-Korrektur
 
 ### Behoben

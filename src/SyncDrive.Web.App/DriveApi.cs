@@ -63,6 +63,12 @@ public interface IDriveApi
     /// <summary>Umbenennen und Verschieben; scheitert, wenn sich der Eintrag inzwischen geändert hat oder das Ziel belegt ist.</summary>
     Task MoveAsync(string spaceId, DriveItem item, string newPath, CancellationToken ct);
 
+    /// <summary>Kopie innerhalb des Space (Ordner samt Inhalt); am Ziel darf noch nichts liegen.</summary>
+    Task CopyAsync(string spaceId, DriveItem item, string newPath, CancellationToken ct);
+
+    /// <summary>Produkt und Version des Servers (<c>GET /info</c>).</summary>
+    Task<ServerInfo> GetServerInfoAsync(CancellationToken ct);
+
     /// <summary>In den Papierkorb (der Server hebt Gelöschtes auf).</summary>
     Task DeleteAsync(string spaceId, DriveItem item, CancellationToken ct);
 
@@ -342,6 +348,15 @@ public sealed class HttpDriveApi : IDriveApi, IPublicLinkApi
 
     public Task MoveAsync(string spaceId, DriveItem item, string newPath, CancellationToken ct) =>
         CommitAsync(spaceId, new CommitRequest(CommitOps.Move, item.Path, item.Revision, NewPath: newPath), ct);
+
+    public Task CopyAsync(string spaceId, DriveItem item, string newPath, CancellationToken ct) =>
+        CommitAsync(spaceId, new CommitRequest(CommitOps.Copy, item.Path, 0, NewPath: newPath), ct);
+
+    public async Task<ServerInfo> GetServerInfoAsync(CancellationToken ct)
+    {
+        using var response = await _http.GetAsync("api/v1/info", ct);
+        return await ReadAsync<ServerInfo>(response, ct);
+    }
 
     public Task DeleteAsync(string spaceId, DriveItem item, CancellationToken ct) =>
         CommitAsync(spaceId, new CommitRequest(CommitOps.Delete, item.Path, item.Revision), ct);

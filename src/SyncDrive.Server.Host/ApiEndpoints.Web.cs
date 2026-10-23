@@ -215,15 +215,27 @@ public static partial class ApiEndpoints
             return FileResult(http, spaces, node.Node.Path, size, blocks, ct);
         }, ct);
 
+    /// <summary>Was <c>view</c> ausliefert und mit welchem Typ: PDF und Rasterbilder; nie SVG oder HTML (liefen sonst als Seite).</summary>
+    private static string? ViewTypeOf(string? path) => System.IO.Path.GetExtension(path)?.ToLowerInvariant() switch
+    {
+        ".pdf" => "application/pdf",
+        ".jpg" or ".jpeg" => "image/jpeg",
+        ".png" => "image/png",
+        ".gif" => "image/gif",
+        ".webp" => "image/webp",
+        ".bmp" => "image/bmp",
+        _ => null,
+    };
+
     /// <summary>
-    /// Ansehen im Browser (Doppelklick in der Weboberfläche): nur PDF, als <c>inline</c> mit festem Inhaltstyp, damit der eingebaute
-    /// PDF-Betrachter sie zeigt. Andere Formate liefern 415, damit nie hochgeladenes HTML oder SVG im Kontext der Seite läuft. Einbetten
-    /// darf nur die eigene Oberfläche.
+    /// Ansehen im Browser (Doppelklick, „In neuem Tab öffnen“): PDF und Bilder als <c>inline</c> mit festem Inhaltstyp, damit der Browser
+    /// sie selbst zeigt. Andere Formate liefern 415, damit nie hochgeladenes HTML oder SVG im Kontext der Seite läuft. Einbetten darf
+    /// nur die eigene Oberfläche.
     /// </summary>
     private static Task<IResult> View(string spaceId, string? path, HttpContext http, SpaceService spaces, CancellationToken ct) =>
         WithView(http, spaceId, SpaceRole.Viewer, async view =>
         {
-            if (!string.Equals(System.IO.Path.GetExtension(path), ".pdf", StringComparison.OrdinalIgnoreCase))
+            if (ViewTypeOf(path) is not { } contentType)
             {
                 return Results.StatusCode(StatusCodes.Status415UnsupportedMediaType);
             }
@@ -242,7 +254,7 @@ public static partial class ApiEndpoints
             http.Response.Headers.XContentTypeOptions = "nosniff";
             http.Response.Headers.CacheControl = "private, no-cache";
             http.Response.ContentLength = node.Node.Size;
-            return Results.Stream(async body => await CopyBlocksAsync(body, spaces, node.Blocks, ct), "application/pdf");
+            return Results.Stream(async body => await CopyBlocksAsync(body, spaces, node.Blocks, ct), contentType);
         }, ct);
 
     private static async Task CopyBlocksAsync(Stream body, SpaceService spaces, IReadOnlyList<string> blocks, CancellationToken ct)
