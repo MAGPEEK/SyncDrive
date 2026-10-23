@@ -96,7 +96,7 @@
       <Setter Property="VerticalAlignment" Value="Center" />
       <Setter Property="Foreground" Value="{StaticResource NavText}" />
     </Style>
-    <!-- Symbolknöpfe der Panel-Fußleiste: 19 px, kräftiges Grau, beim Darüberfahren eine helle Akzentfläche -->
+    <!-- Symbolknöpfe der Panel-Fußleiste: 17 px, kräftiges Grau, beim Darüberfahren eine helle Akzentfläche -->
     <Style Selector="Button.tool">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="Padding" Value="6" />
@@ -107,8 +107,8 @@
       <Setter Property="Background" Value="{StaticResource AccentLight}" />
     </Style>
     <Style Selector="PathIcon.tool-icon">
-      <Setter Property="Width" Value="19" />
-      <Setter Property="Height" Value="19" />
+      <Setter Property="Width" Value="17" />
+      <Setter Property="Height" Value="17" />
       <Setter Property="Foreground" Value="{StaticResource NavText}" />
     </Style>
     <Style Selector="Button.tool:pointerover PathIcon.tool-icon">
