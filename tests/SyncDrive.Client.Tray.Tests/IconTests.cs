@@ -37,7 +37,7 @@ public sealed class IconTests
             foreach (var scale in new[] { 1, 2 })
             {
                 var name = scale == 1 ? $"icon_{points}x{points}.png" : $"icon_{points}x{points}@2x.png";
-                var (_, png) = Render(points * scale);
+                var (_, png) = RenderMac(points * scale);
                 names.Add(name);
                 if (target is { Length: > 0 })
                 {
@@ -56,6 +56,25 @@ public sealed class IconTests
         using (var ctx = bitmap.CreateDrawingContext())
         {
             Badges.DrawGlyph(ctx, new Rect(0, 0, size, size));
+        }
+
+        using var stream = new MemoryStream();
+        bitmap.Save(stream);
+        return (size, stream.ToArray());
+    }
+
+    /// <summary>
+    /// macOS-Programmsymbol nach Apples Raster: Die Kachel nimmt 824 von 1024 Punkten ein, mittig mit Rand; randlos wirkte sie im Dock zu groß
+    /// und flach neben den anderen Symbolen.
+    /// </summary>
+    private static (int Size, byte[] Png) RenderMac(int size)
+    {
+        var bitmap = new RenderTargetBitmap(new PixelSize(size, size));
+        using (var ctx = bitmap.CreateDrawingContext())
+        {
+            var body = size * 824.0 / 1024;
+            var margin = (size - body) / 2;
+            Badges.DrawGlyph(ctx, new Rect(margin, margin, body, body));
         }
 
         using var stream = new MemoryStream();

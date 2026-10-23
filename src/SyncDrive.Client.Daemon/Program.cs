@@ -23,10 +23,17 @@ if (args is ["--uninstall"])
 
 paths.EnsureCreated();
 var userKey = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(Environment.UserName.ToUpperInvariant())))[..16];
-using var single = new Mutex(initiallyOwned: true, $@"Local\SyncDrive.Daemon.{userKey}", out var first);
-if (!first)
+using var single = SingleInstance.TryAcquire($"SyncDrive.Daemon.{userKey}", paths.Root);
+if (single is null)
 {
     return 0; // läuft schon; die Oberfläche verbindet sich mit dem vorhandenen Daemon
+}
+
+// macOS: ein nach einem Absturz liegengebliebener Socket blockierte sonst das Lauschen; nur dieser Prozess darf ihn jetzt anlegen
+var endpoint = IpcProtocol.Endpoint(IpcProtocol.DefaultPipeName(Environment.UserName));
+if (!OperatingSystem.IsWindows() && File.Exists(endpoint))
+{
+    File.Delete(endpoint);
 }
 
 using var log = new StreamWriter(Path.Combine(paths.Logs, "daemon.log"), append: true) { AutoFlush = true };
@@ -72,7 +79,7 @@ var host = OperatingSystem.IsWindows()
     : new DaemonHost(
         paths,
         config,
-        new KeychainCredentialStore(),
+        OperatingSystem.IsMacOS() ? new KeychainCredentialStore() : throw new PlatformNotSupportedException(),
         Environment.MachineName,
         pipe,
         runner,
