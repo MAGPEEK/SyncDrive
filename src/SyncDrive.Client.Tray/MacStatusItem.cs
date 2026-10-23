@@ -47,6 +47,24 @@ internal sealed class MacStatusItem
 
     public void SetToolTip(string text) => SendPtr(_button, Selector("setToolTip:"), NsString(text));
 
+    /// <summary>
+    /// Wo das Symbol steht, in Punkten mit Ursprung oben links auf dem Hauptbildschirm (wie Avalonia rechnet); null, solange es kein Fenster
+    /// hat. AppKit zählt von unten links, daher die Umrechnung über die Höhe des Hauptbildschirms.
+    /// </summary>
+    public (double X, double Y, double Width, double Height)? Frame()
+    {
+        var window = Send(_button, "window");
+        var screens = Send(Class("NSScreen"), "screens");
+        if (window == IntPtr.Zero || screens == IntPtr.Zero)
+        {
+            return null;
+        }
+
+        var frame = SendRect(window, Selector("frame"));
+        var main = SendRect(SendULongRet(screens, Selector("objectAtIndex:"), 0), Selector("frame"));
+        return (frame.X, main.Height - frame.Y - frame.Height, frame.Width, frame.Height);
+    }
+
     private static IntPtr TargetClass()
     {
         var existing = Class("SyncDriveStatusTarget");
@@ -121,6 +139,16 @@ internal sealed class MacStatusItem
 
     [DllImport(ObjC, EntryPoint = "objc_msgSend")]
     private static extern void SendSize(IntPtr receiver, IntPtr selector, CGSize argument);
+
+    // arm64: Strukturen aus vier double kommen in Registern zurück, objc_msgSend genügt (kein _stret)
+    [DllImport(ObjC, EntryPoint = "objc_msgSend")]
+    private static extern CGRect SendRect(IntPtr receiver, IntPtr selector);
+
+    [DllImport(ObjC, EntryPoint = "objc_msgSend")]
+    private static extern IntPtr SendULongRet(IntPtr receiver, IntPtr selector, ulong argument);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private readonly record struct CGRect(double X, double Y, double Width, double Height);
 
     [DllImport(ObjC)]
     private static extern IntPtr objc_getClass(byte[] name);

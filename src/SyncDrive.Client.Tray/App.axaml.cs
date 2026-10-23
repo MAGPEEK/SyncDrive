@@ -182,6 +182,7 @@ public partial class App : Application
     {
         var item = new MacStatusItem();
         item.Clicked += () => Dispatcher.UIThread.Post(windows.TogglePanel);
+        windows.TrayAnchor = item.Frame;
         return (s => item.SetImage(TrayArt.MacImage(shell, s)), () => item.SetToolTip(shell.Tooltip));
     }
 
