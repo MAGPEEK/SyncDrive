@@ -18,6 +18,8 @@ Erste Stufe der Portierung auf macOS (Apple Silicon); der Mac-Client selbst ersc
 - Dateien und Ordner, deren Namen in einer anderen Unicode-Form auf der Platte stehen (z. B. „Ü“ als U + Trema, wie es viele
   macOS-Programme schreiben, auf Windows kopiert), ließen sich nach dem Erkennen nicht lesen, prüfen oder löschen: Der Sync rechnet mit
   NFC, NTFS und ext4 setzen die Formen aber nicht gleich. Der Client sucht solche Namen jetzt in ihrer tatsächlichen Schreibweise.
+- Verbindung Oberfläche ↔ Daemon unter macOS und Linux: Der Socket liegt jetzt unter `/tmp` statt im Temp-Ordner des Benutzers. Unter
+  macOS ist dieser Pfad länger als die erlaubten 104 Zeichen für Socket-Pfade; die Verbindung kam dort gar nicht zustande.
 
 ## [0.37.4] – 2026-10-23 – Deutlicheres Programmsymbol im Explorer
 
