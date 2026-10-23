@@ -339,6 +339,18 @@ public sealed class ViewModelTests : IAsyncDisposable
         Assert.Equal(@"C:\Users\x\SyncDrive 2", Assert.Single(_daemon.Created).LocalPath);
     }
 
+    [Fact]
+    public async Task Recently_changed_lists_changes_but_not_files_skipped_on_purpose()
+    {
+        var shell = await ConnectedShellAsync();
+        _daemon.Activity.Add(new("t1", new(Now, ActivityAction.Download, RelativePath.Parse("Bericht.pdf"), false, ActivityResult.Done)));
+        _daemon.Activity.Add(new("t1", new(Now, ActivityAction.Upload, RelativePath.Parse(".DS_Store"), false, ActivityResult.Unsynced, "Name")));
+
+        await shell.Panel.RefreshAsync(CancellationToken.None);
+
+        Assert.Equal(["Bericht.pdf"], shell.Panel.Recent.Select(r => r.Name));
+    }
+
     /// <summary>Viele Statusmeldungen ohne Abgleich (z. B. ein Server, der nicht antwortet) lösen kein Dauer-Nachladen des Panels aus.</summary>
     [Fact]
     public async Task A_stream_of_status_updates_reloads_the_panel_at_most_once_per_interval()

@@ -40,6 +40,13 @@ SYNCDRIVE_CLIENT_HOME="$smoke" "$app/Contents/MacOS/syncdrive-daemon" & daemon=$
 sleep 5
 alive "$daemon" || { echo "Daemon startet nach einem Abbruch nicht wieder:" >&2; cat "$smoke/logs/daemon.log" >&2 || true; exit 1; }
 kill "$daemon"
+
+# Rauchtest der Oberfläche: Menüleisten-Symbol über AppKit anlegen (MacStatusItem) und laufen lassen; stürzt sie ab, scheitert der Build
+SYNCDRIVE_CLIENT_HOME="$smoke" "$app/Contents/MacOS/syncdrive" --background & ui=$!
+sleep 8
+alive "$ui" || { echo "Oberfläche startet nicht" >&2; exit 1; }
+kill "$ui"
+pkill -f "$app/Contents/MacOS/syncdrive-daemon" || true
 rm -rf "$smoke"
 
 # 2. Programmsymbol aus dem Grundzeichen (dieselbe Zeichnung wie unter Windows)
